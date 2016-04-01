@@ -97,6 +97,12 @@ OSAL_IRQ_HANDLER(KINETIS_ADC0_IRQ_VECTOR) {
   /* Disable Interrupt, Disable Channel */
   adcp->adc->SC1A = ADCx_SC1n_ADCH(ADCx_SC1n_ADCH_DISABLED);
 
+  // check to see if this is a race condition interrupt that happened after converter is disabled
+  if( ((adcp)->state == ADC_READY) || (adcp->grpp == NULL) ) {
+    // ignore any extra samples taken after conversion is supposed to be turned off
+    OSAL_IRQ_EPILOGUE();
+  }
+  
   /* Read the sample into the buffer */
   adcp->samples[adcp->current_index++] = adcp->adc->RA;
 
@@ -104,12 +110,13 @@ OSAL_IRQ_HANDLER(KINETIS_ADC0_IRQ_VECTOR) {
 
   /*  At the end of the buffer then we may be finished */
   if (adcp->current_index == adcp->number_of_samples) {
+    /* We are never finished in circular mode */
+    more = ADCD1.grpp->circular;  // set this before isr_full_code, because isr_full_code NULLs out ADCD1.grpp
+    
     _adc_isr_full_code(&ADCD1);
 
     adcp->current_index = 0;
 
-    /* We are never finished in circular mode */
-    more = ADCD1.grpp->circular;
   }
 
   if (more) {
