@@ -157,7 +157,7 @@
  * @brief   ADC interrupt priority level setting.
  */
 #if !defined(KINETIS_ADC_IRQ_PRIORITY) || defined(__DOXYGEN__)
-#define KINETIS_ADC_IRQ_PRIORITY            5
+#define KINETIS_ADC_IRQ_PRIORITY            1
 #endif
 
 /** @} */
