@@ -35,3 +35,43 @@ void cmd_celcius(BaseSequentialStream *chp, int argc, char *argv[])
 }
 
 orchard_command("celcius", cmd_celcius);
+
+void cmd_adc(BaseSequentialStream *chp, int argc, char *argv[])
+{
+  (void)argv;
+  if (argc > 0) {
+    chprintf(chp, "Usage: celcius\r\n");
+    return;
+  }
+  
+  analogUpdateMic();
+  
+}
+
+orchard_command("adc", cmd_adc);
+
+
+void cmd_dump(BaseSequentialStream *chp, int argc, char *argv[])
+{
+  uint32_t i;
+  (void)argv;
+  if (argc > 0) {
+    chprintf(chp, "Usage: dump\r\n");
+    return;
+  }
+
+  dm_buf_ptr = 0;
+  while( dm_buf_ptr < DMBUF_DEPTH ) {
+    chThdSleepMilliseconds(100);
+  }
+  
+  for( i = 0; i < DMBUF_DEPTH; i++ ) {
+    if( i % 16 == 0 )
+      chprintf(chp, "\n\r" );
+    chprintf(chp, "%4d ", dm_buf[i]);
+  }
+  
+}
+
+orchard_command("dump", cmd_dump);
+

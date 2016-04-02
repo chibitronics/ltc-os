@@ -9,7 +9,8 @@
 #include "chbsem.h"
 
 static adcsample_t mic_sample[MIC_SAMPLE_DEPTH];
-static uint8_t mic_return[MIC_SAMPLE_DEPTH];
+uint16_t dm_buf[DMBUF_DEPTH];
+uint32_t dm_buf_ptr = 0;
 
 #define ADC_GRPCELCIUS_NUM_CHANNELS   2
 #define ADC_GRPCELCIUS_BUF_DEPTH      1
@@ -81,7 +82,7 @@ static const ADCConversionGroup adcgrpcelcius = {
 
 void analogUpdateTemperature(void) {
   adcAcquireBus(&ADCD1);
-  adcConvert(&ADCD1, &adcgrpcelcius, celcius_samples, ADC_GRPCELCIUS_BUF_DEPTH);
+  adcStartConversion(&ADCD1, &adcgrpcelcius, celcius_samples, ADC_GRPCELCIUS_BUF_DEPTH);
   adcReleaseBus(&ADCD1);
 }
 
@@ -96,13 +97,20 @@ static void adc_mic_end_cb(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
 
   uint8_t i;
 
-  for( i = 0 ; i < n; i++ ) { 
-    mic_return[i] = (uint8_t) buffer[i];
-  }
+  // pulse once per quantum
+  palWritePad(GPIOB, 7, PAL_LOW);  // green
+  palWritePad(GPIOB, 7, PAL_HIGH);  // green
 
-  chSysLockFromISR();
-  chEvtBroadcastI(&adc_mic_event);
-  chSysUnlockFromISR();
+  if( dm_buf_ptr < DMBUF_DEPTH ) {
+    for( i = 0 ; i < n; i++ ) { 
+      dm_buf[dm_buf_ptr++] = (uint16_t) buffer[i];
+    }
+  }
+  //dm_buf_ptr %= DMBUF_DEPTH;
+
+  //  chSysLockFromISR();
+  //  chEvtBroadcastI(&adc_mic_event);
+  //  chSysUnlockFromISR();
 }
 
 
@@ -111,28 +119,44 @@ static void adc_mic_end_cb(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
  * Mode:        Linear buffer, 8 samples of 1 channel, SW triggered.
  */
 static const ADCConversionGroup adcgrpmic = {
-  false,
+  true, // circular buffer mode
   1, // just one channel
-  adc_mic_end_cb,
-  NULL,
-  ADC_DADP1,  // microphone input channel
-  // SYCLK = 48MHz. ADCCLK = SYSCLK / 4 / 2 = 6 MHz
-  ADCx_CFG1_ADIV(ADCx_CFG1_ADIV_DIV_4) |
+  adc_mic_end_cb,  // callback
+  NULL,  // error callback
+  ADC_DADP0,  // microphone input channel
+  // CFG1 register
+  // SYSCLK = 48MHz.
+  // BUSCLK = SYSCLK / 4 = 12MHz
+  // ADCCLK = SYSCLK / 2 / 1 = 6 MHz
+  
+  // ADLPC = 0 (normal power)
+  // ADLSMP = 0 (short sample time)
+  // ADHSC = 0 (normal conversion sequence)
+  // -> 5 ADCK cycles + 5 bus clock cycles = SFCadder
+  // 20 ADCK cycles per sample
+  
+  ADCx_CFG1_ADIV(ADCx_CFG1_ADIV_DIV_2) |
   ADCx_CFG1_ADICLK(ADCx_CFG1_ADIVCLK_BUS_CLOCK_DIV_2) |
-  ADCx_CFG1_MODE(ADCx_CFG1_MODE_8_OR_9_BITS),  // 8 bits per sample
+  ADCx_CFG1_MODE(ADCx_CFG1_MODE_12_OR_13_BITS),  // 12 bits per sample
+  
+  // SC3 register
+  ADCx_SC3_ADCO |   // continuous conversions
   ADCx_SC3_AVGE |
-  ADCx_SC3_AVGS(ADCx_SC3_AVGS_AVERAGE_32_SAMPLES) // 32 sample average
-  // this should give ~6.25kHz sampling rate
+  ADCx_SC3_AVGS(ADCx_SC3_AVGS_AVERAGE_4_SAMPLES) // 4 sample average
+  
+  //      48 MHz sysclk
+  // /2   24 MHz busclk
+  // /2   12 MHz after prescaler
+  // /2   6 MHz after adiv
+  // /20  300ksps after base sample time @ 12 bps
+  // /4   75ksps after averaging by factor of 4
 };
 
 void analogUpdateMic(void) {
   adcAcquireBus(&ADCD1);
-  adcConvert(&ADCD1, &adcgrpmic, mic_sample, MIC_SAMPLE_DEPTH);
+  //  adcConvert(&ADCD1, &adcgrpmic, mic_sample, MIC_SAMPLE_DEPTH);
+  adcStartConversion(&ADCD1, &adcgrpmic, mic_sample, MIC_SAMPLE_DEPTH);
   adcReleaseBus(&ADCD1);
-}
-
-uint8_t *analogReadMic() {
-  return mic_return;
 }
 
 void analogStart() {

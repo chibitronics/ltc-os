@@ -90,7 +90,7 @@
 /*
  * LPTMR driver system settings.
  */
-#define KINETIS_LPTMR0_PRIORITY                 1
+#define KINETIS_LPTMR0_PRIORITY                 2
 
 /*
  * Processor specific widths of each port.
