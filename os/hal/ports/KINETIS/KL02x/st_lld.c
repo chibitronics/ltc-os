@@ -65,6 +65,26 @@ OSAL_IRQ_HANDLER(SysTick_Handler) {
   osalOsTimerHandlerI();
   osalSysUnlockFromISR();
 
+#if 0
+  ADCDriver *adcp = &ADCD1;
+  if( adcp->grpp != NULL ) {
+    if( adcp->adc->SC1A & 0x8 ) { 
+      /* Read the sample into the buffer */
+      adcp->samples[adcp->current_index++] = adcp->adc->RA;
+
+      /*  At the end of the buffer then we may be finished */
+      if(adcp->current_index == adcp->number_of_samples) {
+	_adc_isr_full_code(&ADCD1);
+	adcp->current_index = 0;
+      }
+    
+      if( adcp->current_index == (adcp->number_of_samples / 2) ) {
+	_adc_isr_half_code(&ADCD1);
+      }
+    }
+  }
+#endif
+    
   OSAL_IRQ_EPILOGUE();
 }
 #endif /* OSAL_ST_MODE == OSAL_ST_MODE_PERIODIC */
