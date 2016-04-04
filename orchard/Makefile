@@ -5,7 +5,7 @@
 
 # Compiler options here.
 ifeq ($(USE_OPT),)
-  USE_OPT = -Os -ggdb -fomit-frame-pointer -falign-functions=16 -nostdlib -fstack-protector
+  USE_OPT = -O3 -ggdb -fomit-frame-pointer -falign-functions=16 -nostdlib -fstack-protector
 endif
 
 # C specific options here (added to USE_OPT).
@@ -54,7 +54,7 @@ endif
 # Stack size to be allocated to the Cortex-M process stack. This stack is
 # the stack used by the main() thread.
 ifeq ($(USE_PROCESS_STACKSIZE),)
-  USE_PROCESS_STACKSIZE = 0x300
+  USE_PROCESS_STACKSIZE = 0x200
 endif
 
 # Stack size to the allocated to the Cortex-M main/exceptions stack. This
@@ -101,6 +101,7 @@ CSRC = main.c \
        gitversion.c \
        accel.c \
        analog.c \
+       demod.c \
        $(STARTUPSRC) \
        $(PORTSRC) \
        $(KERNSRC) \
@@ -215,3 +216,7 @@ include $(RULESPATH)/rules.mk
 gitversion.c: $(CHIBIOS)/.git/HEAD $(CHIBIOS)/.git/index
 	echo "const char *gitversion = \"$(shell git rev-parse HEAD)\";" > $@
 
+dsptables: dsptable_gen.c demod.h
+	@echo
+	gcc -I. $(IINCDIR) -lm $< -o $@
+	./dsptables

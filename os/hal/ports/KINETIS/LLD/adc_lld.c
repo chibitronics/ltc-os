@@ -23,6 +23,7 @@
  */
 
 #include "hal.h"
+#include "demod.h"
 
 #if HAL_USE_ADC || defined(__DOXYGEN__)
 
@@ -90,10 +91,13 @@ static void calibrate(ADCDriver *adcp) {
  * @isr
  */
 OSAL_IRQ_HANDLER(KINETIS_ADC0_IRQ_VECTOR) {
+#if !DEMOD_DEBUG
   OSAL_IRQ_PROLOGUE();
+#endif
 
   ADCDriver *adcp = &ADCD1;
   
+  palWritePad(GPIOB, 6, PAL_HIGH);  // red
   /* Read the sample into the buffer */
   adcp->samples[adcp->current_index++] = adcp->adc->RA;
 
@@ -106,8 +110,11 @@ OSAL_IRQ_HANDLER(KINETIS_ADC0_IRQ_VECTOR) {
   if( adcp->current_index == (adcp->number_of_samples / 2) ) {
     _adc_isr_half_code(&ADCD1);
   }
+  palWritePad(GPIOB, 6, PAL_LOW);  // red
   
+#if !DEMOD_DEBUG
   OSAL_IRQ_EPILOGUE();
+#endif
 }
 #endif
 

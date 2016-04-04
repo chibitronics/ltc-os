@@ -59,12 +59,13 @@
  */
 OSAL_IRQ_HANDLER(SysTick_Handler) {
 
+#if 1
   OSAL_IRQ_PROLOGUE();
 
   osalSysLockFromISR();
   osalOsTimerHandlerI();
   osalSysUnlockFromISR();
-
+#endif
 #if 0
   ADCDriver *adcp = &ADCD1;
   if( adcp->grpp != NULL ) {
@@ -84,8 +85,10 @@ OSAL_IRQ_HANDLER(SysTick_Handler) {
     }
   }
 #endif
-    
+
+#if 1
   OSAL_IRQ_EPILOGUE();
+#endif
 }
 #endif /* OSAL_ST_MODE == OSAL_ST_MODE_PERIODIC */
 

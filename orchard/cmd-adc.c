@@ -21,6 +21,7 @@
 #include "orchard-shell.h"
 
 #include "analog.h"
+#include "demod.h"
 
 void cmd_celcius(BaseSequentialStream *chp, int argc, char *argv[])
 {
@@ -50,7 +51,7 @@ void cmd_adc(BaseSequentialStream *chp, int argc, char *argv[])
 
 orchard_command("adc", cmd_adc);
 
-
+#if 0
 void cmd_dump(BaseSequentialStream *chp, int argc, char *argv[])
 {
   uint32_t i;
@@ -74,4 +75,70 @@ void cmd_dump(BaseSequentialStream *chp, int argc, char *argv[])
 }
 
 orchard_command("dump", cmd_dump);
+#endif
+
+void cmd_demod(BaseSequentialStream *chp, int argc, char *argv[])
+{
+  uint32_t i;
+  (void)argv;
+  if (argc > 0) {
+    chprintf(chp, "Usage: demod\r\n");
+    return;
+  }
+
+  log_ptr = 0;
+  while( log_ptr < LOG_DEPTH ) {
+    //    chThdSleepMilliseconds(200);
+  }
+  
+  for( i = 0; i < LOG_DEPTH; i++ ) {
+    if( i % 16 == 0 )
+      chprintf(chp, "\n\r" );
+    chprintf(chp, "%2x ", log_buf[i] /* isprint(log_buf[i]) ? log_buf[i] : '.'*/ );
+  }
+  
+}
+
+orchard_command("demod", cmd_demod);
+
+
+void cmd_d(BaseSequentialStream *chp, int argc, char *argv[])
+{
+  uint32_t i;
+  (void)argv;
+  if (argc > 0) {
+    chprintf(chp, "Usage: d\r\n");
+    return;
+  }
+
+  log_ptr = 0;
+  while( log_ptr < LOG_DEPTH ) {
+    //    chThdSleepMilliseconds(200);
+  }
+  
+  for( i = 0; i < LOG_DEPTH; i++ ) {
+    if( i % 16 == 0 )
+      chprintf(chp, "\n\r" );
+    chprintf(chp, "%c", isprint(log_buf[i]) ? log_buf[i] : '.' );
+  }
+  
+}
+
+orchard_command("d", cmd_d);
+
+
+void cmd_kill(BaseSequentialStream *chp, int argc, char *argv[])
+{
+  (void)argv;
+  if (argc > 0) {
+    chprintf(chp, "Usage: demod\r\n");
+    return;
+  }
+
+  SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk;
+    
+  nvicDisableVector(HANDLER_SYSTICK);
+}
+
+orchard_command("kill", cmd_kill);
 

@@ -28,6 +28,8 @@
 #ifndef _CHCONF_H_
 #define _CHCONF_H_
 
+#define CORTEX_ALTERNATE_SWITCH  TRUE
+
 /*===========================================================================*/
 /**
  * @name System timers settings
@@ -46,7 +48,7 @@
  * @details Frequency of the system timer that drives the system ticks. This
  *          setting also defines the system tick time unit.
  */
-#define CH_CFG_ST_FREQUENCY                 1000
+#define CH_CFG_ST_FREQUENCY                 100
 
 /**
  * @brief   Time delta constant for the tick-less mode.

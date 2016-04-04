@@ -5,12 +5,11 @@
 #include "orchard.h"
 #include "orchard-events.h"
 #include "analog.h"
+#include "demod.h"
 
 #include "chbsem.h"
 
 static adcsample_t mic_sample[MIC_SAMPLE_DEPTH];
-uint16_t dm_buf[DMBUF_DEPTH];
-uint32_t dm_buf_ptr = 0;
 
 #define ADC_GRPCELCIUS_NUM_CHANNELS   2
 #define ADC_GRPCELCIUS_BUF_DEPTH      1
@@ -90,27 +89,34 @@ int32_t analogReadTemperature() {
   return celcius;
 }
 
+extern volatile uint8_t data_ready;
+extern volatile adcsample_t *bufloc;
+extern size_t buf_n;
 
 static void adc_mic_end_cb(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
   (void)adcp;
   (void)n;
 
-  uint8_t i;
+  uint16_t i;
 
-  // pulse once per quantum
-  palWritePad(GPIOB, 7, PAL_LOW);  // green
-  palWritePad(GPIOB, 7, PAL_HIGH);  // green
-
-  if( dm_buf_ptr < DMBUF_DEPTH ) {
-    for( i = 0 ; i < n; i++ ) { 
-      dm_buf[dm_buf_ptr++] = (uint16_t) buffer[i];
-    }
+#if 0  
+  for( i = 0 ; i < n; i++ ) { 
+    dm_buf[i] = (int16_t) (((int16_t) buffer[i]) - 2048);
   }
-  //dm_buf_ptr %= DMBUF_DEPTH;
+#else
+  // need to figure out how to make this memcopy happen not during interrupt context but out of context
+  // memcpy(dm_buf, buffer, n * sizeof(adcsample_t));
+#endif
 
-  //  chSysLockFromISR();
-  //  chEvtBroadcastI(&adc_mic_event);
-  //  chSysUnlockFromISR();
+#if !DEMOD_DEBUG  // select this path for "normal" orchard operation
+  chSysLockFromISR();
+  chEvtBroadcastI(&adc_mic_event);
+  chSysUnlockFromISR();
+#else  // single-thread operation
+  data_ready = 1;
+  bufloc = buffer;
+  buf_n = n;
+#endif
 }
 
 
