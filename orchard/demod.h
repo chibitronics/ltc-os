@@ -65,6 +65,6 @@ void demodInit(void);
 void FSKdemod(int16_t *samples, uint32_t nb, put_bit_func put_bit);
 
 
-#define LOG_DEPTH  64
+#define LOG_DEPTH  (256+4+2+1)  // 256 byte paylod, 4 byte hash, 2 byte sector offset, 1 byte version code
 extern volatile uint16_t log_ptr;
-extern uint16_t  log_buf[LOG_DEPTH];
+extern uint8_t  log_buf[LOG_DEPTH];

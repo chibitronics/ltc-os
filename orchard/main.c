@@ -33,7 +33,9 @@
 
 #include "kl02x.h"
 
-#define DEBUG_STREAMING  1
+#include "murmur3.h"
+
+#define DEBUG_STREAMING  0
 uint8_t screenpos = 0;
 
 struct evt_table orchard_app_events;
@@ -44,11 +46,6 @@ event_source_t adc_celcius_event;
 event_source_t adc_mic_event;
 
 char xp, yp, zp;
-
-volatile uint16_t log_ptr = 0;
-uint16_t  log_buf[LOG_DEPTH];
-static int g_bitpos = 9;
-static unsigned char g_curbyte = 0;
 
 volatile uint8_t data_ready = 0;
 volatile adcsample_t *bufloc;
@@ -122,6 +119,10 @@ static void print_mcu_info(void) {
                    pins[(sdid >> 0) & 15]);
 }
 
+volatile uint16_t log_ptr = 0;
+uint8_t  log_buf[LOG_DEPTH];
+static int g_bitpos = 9;
+static unsigned char g_curbyte = 0;
 static void put_bit(int bit)
 {
   g_curbyte >>= 1;
@@ -133,7 +134,6 @@ static void put_bit(int bit)
     if( log_ptr < LOG_DEPTH ) {
       log_buf[log_ptr++] = g_curbyte;
 #if DEBUG_STREAMING
-#if 1
       if( (screenpos % 16 == 0) ) {
 	chprintf(stream, "\n\r");
       }
@@ -141,13 +141,101 @@ static void put_bit(int bit)
       chprintf(stream, "%c", isprint(g_curbyte) ? g_curbyte : '.' );
       screenpos++;
 #endif
-#endif
     }
 
     g_bitpos = 8;
     g_curbyte = 0;
   }
 }
+
+typedef enum states {
+  MAC_IDLE = 0,
+  MAC_SYNC,
+  MAC_PACKET
+} mac_state;
+static mac_state mstate = MAC_IDLE;
+static uint8_t idle_zeros = 0;
+static uint8_t mac_temp[4] = {0,0,0,0};
+static uint8_t wordcnt = 0;
+// put_bit with a MAC layer on it
+static void put_bit_mac(int bit) {
+  
+  switch(mstate) {
+  case MAC_IDLE:
+    // search until at least 32 zeros are found, then next transition "might" be sync
+    if( idle_zeros > 32 ) {
+      if( bit != 0 ) {
+	mstate = MAC_SYNC;
+	g_bitpos = 6;
+	g_curbyte = 0x80;
+	wordcnt = 0;
+      } else {
+	if(idle_zeros < 255)
+	  idle_zeros++;
+      }
+    } else {
+      if( bit != 0 )
+	idle_zeros = 0;
+      else
+	idle_zeros++;
+    }
+    break;
+    
+  case MAC_SYNC:
+    // acculumate two bytes worth of temp data, then check to see if valid sync
+    g_curbyte >>= 1;
+    g_bitpos--;
+    if( bit )
+      g_curbyte |= 0x80;
+    
+    if( g_bitpos == 0 ) {
+      if( g_curbyte == 0x00 ) {  // false noise trigger, go back to idle
+	mstate = MAC_IDLE;
+	idle_zeros = 8; // we just saw 8 zeros, so count those
+	break;
+      }
+      // else, tally up the sync characters
+      mac_temp[wordcnt++] = g_curbyte;
+      g_bitpos = 8;
+      g_curbyte = 0;
+      if( wordcnt == 3 ) {
+	// test for sync sequence. It's one byte less than the # of leading zeros
+	// to allow for the idle escape trick above to work in case of zero-biased noise
+	if( (mac_temp[0] == 0xAA) && (mac_temp[1] == 0x55) && (mac_temp[2] = 0x42)) {
+	  // found the sync sequence, proceed to packet state
+	  mstate = MAC_PACKET;
+	  log_ptr = 0;
+	} else {
+	  mstate = MAC_IDLE;
+	  idle_zeros = 0;
+	}
+      }
+    }
+    break;
+    
+  case MAC_PACKET:
+    if( log_ptr < LOG_DEPTH ) {
+      g_curbyte >>= 1;
+      g_bitpos--;
+      if( bit )
+	g_curbyte |= 0x80;
+      
+      if(g_bitpos == 0) {
+	log_buf[log_ptr++] = g_curbyte;
+	g_bitpos = 8;
+	g_curbyte = 0;
+      }
+    } else {
+      mstate = MAC_IDLE;
+      idle_zeros = 0;
+    }
+    break;
+
+  default:
+    break;
+  }
+}
+
 
 static void adc_mic_handler(eventid_t id) {
   (void) id;
@@ -162,7 +250,7 @@ static void adc_mic_handler(eventid_t id) {
 #if 1
   // demodulation handler based on microphone data coming in
   for( frames = 0; frames < NB_FRAMES; frames++ ) {
-    FSKdemod(dm_buf + (frames * NB_SAMPLES), NB_SAMPLES, put_bit);
+    FSKdemod(dm_buf + (frames * NB_SAMPLES), NB_SAMPLES, put_bit_mac);
   }
 #endif
   data_ready = 0;
@@ -204,6 +292,8 @@ void init_update_events(void) {
 
 void demod_test(void) {
   uint32_t i;
+  uint32_t hash;
+  uint32_t txhash;
 
   // stop systick interrupts
   SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk;
@@ -214,9 +304,11 @@ void demod_test(void) {
     log_ptr = 0;
     while( log_ptr < LOG_DEPTH ) {
       if( data_ready ) {
+	// copy from the double-buffer into a demodulation buffer
 	for( i = 0 ; i < buf_n; i++ ) { 
 	  dm_buf[i] = (int16_t) (((int16_t) bufloc[i]) - 2048);
 	}
+	// call handler, which includes the demodulation routine
 	adc_mic_handler(0);
       }
     }
@@ -225,8 +317,23 @@ void demod_test(void) {
     for( i = 0; i < LOG_DEPTH; i++ ) {
       if( i % 16 == 0 )
 	chprintf(stream, "\n\r" );
-      chprintf(stream, "%2x ", log_buf[i] /* isprint(log_buf[i]) ? log_buf[i] : '.'*/ );
+      chprintf(stream, "%02x", log_buf[i] /* isprint(log_buf[i]) ? log_buf[i] : '.'*/ );
       //      chprintf(stream, "%c", isprint(log_buf[i]) ? log_buf[i] : '.' );
+    }
+
+    // check hash
+    MurmurHash3_x86_32(log_buf, LOG_DEPTH - 4 /* subtract hash itself from hash */, 0xdeadbeef, &hash);
+    //    chprintf(stream, " hash: %02x%02x%02x%02x\n\r",
+    //	     hash & 0xff, (hash >> 8) & 0xff, (hash >> 16) & 0xff, (hash >> 24) & 0xff);
+
+    txhash = (log_buf[LOG_DEPTH-4] & 0xFF) | (log_buf[LOG_DEPTH-3] & 0xff) << 8 |
+      (log_buf[LOG_DEPTH-2] & 0xFF) << 16 | (log_buf[LOG_DEPTH-1] & 0xff) << 24;
+
+    chprintf(stream, " txhash: %08x\n\r", txhash);
+    if( txhash != hash ) {
+      chprintf(stream, " hash fail\n\r" );
+    } else {
+      chprintf(stream, " hash pass\n\r" );
     }
 #endif
   }

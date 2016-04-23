@@ -102,6 +102,7 @@ CSRC = main.c \
        accel.c \
        analog.c \
        demod.c \
+       murmur3.c \
        $(STARTUPSRC) \
        $(PORTSRC) \
        $(KERNSRC) \
