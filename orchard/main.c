@@ -136,6 +136,7 @@ void demod_loop(void) {
   uint32_t i;
   uint32_t hash;
   uint32_t txhash;
+  uint16_t pkt_len;
 
   // stop systick interrupts
   SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk;
@@ -144,7 +145,7 @@ void demod_loop(void) {
   // infinite loops, prevents other system items from starting
   while(TRUE) {
     pktPtr = 0;
-    while( pktPtr < PKT_LEN ) {
+    while( !pktReady ) {
       if( dataReadyFlag ) {
 	// copy from the double-buffer into a demodulation buffer
 	for( i = 0 ; i < buf_n; i++ ) { 
@@ -157,27 +158,32 @@ void demod_loop(void) {
 
 #if !DEBUG_STREAMING
     // replace the code in this #if bracket with the storage flashing code
-    for( i = 0; i < PKT_LEN; i++ ) {
+    if( (pktBuf[0] & PKTTYPE_MASK) == PKTTYPE_DATA ) {
+      pkt_len = PKT_LEN;
+      chprintf(stream, "\n\r data packet:" );
+    } else {
+      chprintf(stream, "\n\r control packet:" );
+      pkt_len = CTRL_LEN;
+    }
+    for( i = 0; i < pkt_len; i++ ) {
       if( i % 16 == 0 )
 	chprintf(stream, "\n\r" );
       chprintf(stream, "%02x", pktBuf[i] /* isprint(pktBuf[i]) ? pktBuf[i] : '.'*/ );
-      //      chprintf(stream, "%c", isprint(pktBuf[i]) ? pktBuf[i] : '.' );
     }
-
     // check hash
-    MurmurHash3_x86_32(pktBuf, PKT_LEN - 4 /* subtract hash itself from hash */, 0xdeadbeef, &hash);
-    //    chprintf(stream, " hash: %02x%02x%02x%02x\n\r",
-    //	     hash & 0xff, (hash >> 8) & 0xff, (hash >> 16) & 0xff, (hash >> 24) & 0xff);
+    MurmurHash3_x86_32(pktBuf, pkt_len - 4 /* packet minus hash */, 0xdeadbeef, &hash);
 
-    txhash = (pktBuf[PKT_LEN-4] & 0xFF) | (pktBuf[PKT_LEN-3] & 0xff) << 8 |
-      (pktBuf[PKT_LEN-2] & 0xFF) << 16 | (pktBuf[PKT_LEN-1] & 0xff) << 24;
-
+    txhash = (pktBuf[pkt_len-4] & 0xFF) | (pktBuf[pkt_len-3] & 0xff) << 8 |
+      (pktBuf[pkt_len-2] & 0xFF) << 16 | (pktBuf[pkt_len-1] & 0xff) << 24;
+      
     chprintf(stream, " txhash: %08x rxhash: %08x\n\r", txhash, hash);
     if( txhash != hash ) {
       chprintf(stream, " hash fail\n\r" );
     } else {
       chprintf(stream, " hash pass\n\r" );
     }
+
+    pktReady = 0; // we've extracted packet data, so clear the buffer flag
 #endif
   }
   

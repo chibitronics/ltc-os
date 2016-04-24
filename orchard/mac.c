@@ -1,4 +1,5 @@
 #include "ch.h"
+#include "hal.h"
 #include "mac.h"
 
 // mac state is just local to mac
@@ -10,6 +11,7 @@ typedef enum states {
 
 volatile uint16_t pktPtr = 0;
 uint8_t  pktBuf[PKT_LEN];
+uint8_t  pktReady = 0;  // global flag to indicate packet done. needs mutex if threaded.
 
 static int g_bitpos = 9;
 static unsigned char g_curbyte = 0;
@@ -18,10 +20,11 @@ static mac_state mstate = MAC_IDLE;
 static uint8_t idle_zeros = 0;
 static uint8_t mac_sync[4] = {0,0,0,0};
 static uint8_t wordcnt = 0;
+static uint16_t pkt_len = PKT_LEN;  // we'll adjust this later
 
 // put_bit with a MAC layer on it
 void putBitMac(int bit) {
-  
+
   switch(mstate) {
   case MAC_IDLE:
     // search until at least 32 zeros are found, then next transition "might" be sync
@@ -65,8 +68,10 @@ void putBitMac(int bit) {
 	// to allow for the idle escape trick above to work in case of zero-biased noise
 	if( (mac_sync[0] == 0xAA) && (mac_sync[1] == 0x55) && (mac_sync[2] = 0x42)) {
 	  // found the sync sequence, proceed to packet state
+	  osalDbgAssert(pktReady == 0, "Packet buffer full flag still set while new packet incoming\n\r");
 	  mstate = MAC_PACKET;
 	  pktPtr = 0;
+	  pkt_len = PKT_LEN;
 	} else {
 	  mstate = MAC_IDLE;
 	  idle_zeros = 0;
@@ -76,7 +81,12 @@ void putBitMac(int bit) {
     break;
     
   case MAC_PACKET:
-    if( pktPtr < PKT_LEN ) {
+    if( pktPtr < pkt_len ) {
+      if( pktPtr == 1 ) { // first byte is always version/type code
+	if( (pktBuf[0] & PKTTYPE_MASK) == PKTTYPE_CTRL ) {
+	  pkt_len = CTRL_LEN;  // we're looking for a control packet this time
+	}
+      }
       g_curbyte >>= 1;
       g_bitpos--;
       if( bit )
@@ -89,6 +99,7 @@ void putBitMac(int bit) {
       }
     } else {
       mstate = MAC_IDLE;
+      pktReady = 1; // flag that the packet is ready
       idle_zeros = 0;
     }
     break;
