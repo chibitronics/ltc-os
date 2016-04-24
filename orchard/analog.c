@@ -89,7 +89,7 @@ int32_t analogReadTemperature() {
   return celcius;
 }
 
-extern volatile uint8_t data_ready;
+extern volatile uint8_t dataReadyFlag;
 extern volatile adcsample_t *bufloc;
 extern size_t buf_n;
 
@@ -99,21 +99,12 @@ static void adc_mic_end_cb(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
 
   uint16_t i;
 
-#if 0  
-  for( i = 0 ; i < n; i++ ) { 
-    dm_buf[i] = (int16_t) (((int16_t) buffer[i]) - 2048);
-  }
-#else
-  // need to figure out how to make this memcopy happen not during interrupt context but out of context
-  // memcpy(dm_buf, buffer, n * sizeof(adcsample_t));
-#endif
-
 #if !DEMOD_DEBUG  // select this path for "normal" orchard operation
   chSysLockFromISR();
   chEvtBroadcastI(&adc_mic_event);
   chSysUnlockFromISR();
 #else  // single-thread operation
-  data_ready = 1;
+  dataReadyFlag = 1;
   bufloc = buffer;
   buf_n = n;
 #endif

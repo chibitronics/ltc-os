@@ -1,4 +1,10 @@
-#define DEMOD_DEBUG 1
+#ifndef __ORCHARD_DEMOD__
+#define __ORCHARD_DEMOD__
+
+#define DEMOD_DEBUG 1  // for now, this is the only mode that works...
+// to turn off the debug flag, we have to figure out how to back multi-threading into
+// the code base. Proceed with caution. Note dataReadyFlag is unprotected but used
+// as a sync point, and also measure CPU overhead
 
 #define NB_SAMPLES 8   // number of samples per demod frame
 #define NB_FRAMES  32   // number of frames to process at once (trade memory off against OS overhead)
@@ -64,7 +70,4 @@ static inline int dsp_dot_prod(int16_t *tab1, const int16_t *tab2,
 void demodInit(void);
 void FSKdemod(int16_t *samples, uint32_t nb, put_bit_func put_bit);
 
-
-#define LOG_DEPTH  (256+4+2+1)  // 256 byte paylod, 4 byte hash, 2 byte sector offset, 1 byte version code
-extern volatile uint16_t log_ptr;
-extern uint8_t  log_buf[LOG_DEPTH];
+#endif

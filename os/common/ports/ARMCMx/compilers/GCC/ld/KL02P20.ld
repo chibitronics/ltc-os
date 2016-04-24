@@ -24,7 +24,8 @@ MEMORY
 {
     flash0   : org = 0x00000000, len = 0x100  /* only up to 0xc0 used, but padding will force linker to 0x100 */
     flashcfg : org = 0x00000400, len = 0x10
-    flash    : org = 0x00000410, len = 32k - 0x410
+    flash    : org = 0x00000410, len = 32k - 0x410 - 10k
+    storage  : org = 0x00005800, len = 10k
     ram0  : org = 0x1FFFFC00, len = 4k
     ram1  : org = 0x00000000, len = 0
     ram2  : org = 0x00000000, len = 0
@@ -34,6 +35,10 @@ MEMORY
     ram6  : org = 0x00000000, len = 0
     ram7  : org = 0x00000000, len = 0
 }
+
+__storage_start__       = ORIGIN(storage);
+__storage_size__        = LENGTH(storage);
+__storage_end__         = __storage_start__ + __storage_size__ - 1;
 
 REGION_ALIAS("MAIN_STACK_RAM", ram0);
 REGION_ALIAS("PROCESS_STACK_RAM", ram0);

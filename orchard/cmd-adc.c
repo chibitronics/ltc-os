@@ -22,6 +22,7 @@
 
 #include "analog.h"
 #include "demod.h"
+#include "mac.h"
 
 void cmd_celcius(BaseSequentialStream *chp, int argc, char *argv[])
 {
@@ -86,15 +87,15 @@ void cmd_demod(BaseSequentialStream *chp, int argc, char *argv[])
     return;
   }
 
-  log_ptr = 0;
-  while( log_ptr < LOG_DEPTH ) {
+  pktPtr = 0;
+  while( pktPtr < PKT_LEN ) {
     //    chThdSleepMilliseconds(200);
   }
   
-  for( i = 0; i < LOG_DEPTH; i++ ) {
+  for( i = 0; i < PKT_LEN; i++ ) {
     if( i % 16 == 0 )
       chprintf(chp, "\n\r" );
-    chprintf(chp, "%2x ", log_buf[i] /* isprint(log_buf[i]) ? log_buf[i] : '.'*/ );
+    chprintf(chp, "%2x ", pktBuf[i] /* isprint(pktBuf[i]) ? pktBuf[i] : '.'*/ );
   }
   
 }
@@ -111,15 +112,15 @@ void cmd_d(BaseSequentialStream *chp, int argc, char *argv[])
     return;
   }
 
-  log_ptr = 0;
-  while( log_ptr < LOG_DEPTH ) {
+  pktPtr = 0;
+  while( pktPtr < PKT_LEN ) {
     //    chThdSleepMilliseconds(200);
   }
   
-  for( i = 0; i < LOG_DEPTH; i++ ) {
+  for( i = 0; i < PKT_LEN; i++ ) {
     if( i % 16 == 0 )
       chprintf(chp, "\n\r" );
-    chprintf(chp, "%c", isprint(log_buf[i]) ? log_buf[i] : '.' );
+    chprintf(chp, "%c", isprint(pktBuf[i]) ? pktBuf[i] : '.' );
   }
   
 }
