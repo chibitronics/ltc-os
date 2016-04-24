@@ -132,7 +132,7 @@ void init_update_events(void) {
   evtTableHook(orchard_app_events, ta_update_event, update_handler);
 }
 
-void demod_test(void) {
+void demod_loop(void) {
   uint32_t i;
   uint32_t hash;
   uint32_t txhash;
@@ -255,8 +255,8 @@ int main(void)
   NVIC_DisableIRQ(PendSV_IRQn);
   NVIC_DisableIRQ(SysTick_IRQn);
   
-  analogUpdateMic();
-  demod_test();
+  analogUpdateMic();  // starts mic sampling loop (interrupt-driven and automatic)
+  demod_loop();
 #endif
 
   // the rest of this stuff we don't use -- why? because we aren't thread safe yet
