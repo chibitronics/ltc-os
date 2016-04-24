@@ -3,14 +3,17 @@
 
 #define PAYLOAD_LEN  256
 
-typedef struct {
+#define MURMUR_SEED_BLOCK  (0xdeadbeef)
+#define MURMUR_SEED_TOTAL  (0x032dbabe)
+
+typedef struct demod_dp {
   uint8_t  version;
-  uint8_t sector[2];  // can't do uint16_t because of struct alignment issues in C
+  uint8_t  block[2];  // can't do uint16_t because of struct alignment issues in C
   uint8_t  payload[PAYLOAD_LEN];
   uint8_t hash[4];    // again, can't do uint32_t due to struct alignment issues
 } demod_data_pkt;
 
-typedef struct {
+typedef struct demod_cp {
   uint8_t version;
   uint8_t length[4];    // total length of program in bytes (# blocks = ceil(length / blocksize)
   uint8_t fullhash[4];  // lightweight data integrity hash, computed across "length" of program given above
@@ -25,6 +28,10 @@ typedef struct {
 #define PKTTYPE_MASK  0x80
 #define PKTTYPE_CTRL  0x80
 #define PKTTYPE_DATA  0x00
+
+// version codes for mac control & data packets
+#define MAC_CTRL_VER  0x01
+#define MAC_DATA_VER  0x01
 
 extern volatile uint16_t pktPtr;
 extern uint8_t  pktBuf[PKT_LEN];

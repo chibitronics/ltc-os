@@ -4,7 +4,7 @@
 
 // mac state is just local to mac
 typedef enum states {
-  MAC_IDLE = 0,
+  MAC_IDLE = 0,  
   MAC_SYNC,
   MAC_PACKET
 } mac_state;
@@ -84,7 +84,21 @@ void putBitMac(int bit) {
     if( pktPtr < pkt_len ) {
       if( pktPtr == 1 ) { // first byte is always version/type code
 	if( (pktBuf[0] & PKTTYPE_MASK) == PKTTYPE_CTRL ) {
+	  if( (pktBuf[0] & ~PKTTYPE_MASK) != MAC_CTRL_VER ) {
+	    // version code doesn't match, abort
+	    mstate = MAC_IDLE;
+	    pktReady = 0;
+	    idle_zeros = 0;
+	  }
 	  pkt_len = CTRL_LEN;  // we're looking for a control packet this time
+	} else {
+	  // it's a data packet, check version
+	  if( (pktBuf[0] & ~PKTTYPE_MASK) != MAC_DATA_VER ) {
+	    // version code doesn't match, abort
+	    mstate = MAC_IDLE;
+	    pktReady = 0;
+	    idle_zeros = 0;
+	  }
 	}
       }
       g_curbyte >>= 1;

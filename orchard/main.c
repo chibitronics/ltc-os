@@ -31,6 +31,7 @@
 #include "analog.h"
 #include "demod.h"
 #include "mac.h"
+#include "updater.h"
 
 #include "kl02x.h"
 
@@ -134,9 +135,6 @@ void init_update_events(void) {
 
 void demod_loop(void) {
   uint32_t i;
-  uint32_t hash;
-  uint32_t txhash;
-  uint16_t pkt_len;
 
   // stop systick interrupts
   SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk;
@@ -156,7 +154,11 @@ void demod_loop(void) {
       }
     }
 
-#if !DEBUG_STREAMING
+#define RAWDATA_CHECK 0
+#if RAWDATA_CHECK
+    uint32_t hash;
+    uint32_t txhash;
+    uint16_t pkt_len;
     // replace the code in this #if bracket with the storage flashing code
     if( (pktBuf[0] & PKTTYPE_MASK) == PKTTYPE_DATA ) {
       pkt_len = PKT_LEN;
@@ -171,7 +173,7 @@ void demod_loop(void) {
       chprintf(stream, "%02x", pktBuf[i] /* isprint(pktBuf[i]) ? pktBuf[i] : '.'*/ );
     }
     // check hash
-    MurmurHash3_x86_32(pktBuf, pkt_len - 4 /* packet minus hash */, 0xdeadbeef, &hash);
+    MurmurHash3_x86_32(pktBuf, pkt_len - 4 /* packet minus hash */, MURMUR_SEED_BLOCK, &hash);
 
     txhash = (pktBuf[pkt_len-4] & 0xFF) | (pktBuf[pkt_len-3] & 0xff) << 8 |
       (pktBuf[pkt_len-2] & 0xFF) << 16 | (pktBuf[pkt_len-1] & 0xff) << 24;
@@ -184,6 +186,9 @@ void demod_loop(void) {
     }
 
     pktReady = 0; // we've extracted packet data, so clear the buffer flag
+#else
+    
+    updaterPacketProcess(pktBuf);
 #endif
   }
   
