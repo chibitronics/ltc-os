@@ -119,7 +119,7 @@ CSRC = main.c \
        $(CHIBIOS)/os/hal/lib/streams/chprintf.c \
        $(CHIBIOS)/os/hal/lib/streams/memstreams.c \
        $(CHIBIOS)/os/various/shell.c \
-
+       $(LIBC90TFSSRC) \
 #       orchard-events.c \
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
