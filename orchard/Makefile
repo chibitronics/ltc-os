@@ -89,6 +89,10 @@ include $(CHIBIOS)/os/rt/ports/ARMCMx/compilers/GCC/mk/port_v6m.mk
 # Other files (optional).
 include $(CHIBIOS)/test/rt/test.mk
 
+#C90TFS Freescale Flash drivers
+LIBC90TFS = $(CHIBIOS)/ext/C90TFS
+include $(LIBC90TFS)/build.mk
+
 # Define linker script file here
 LDSCRIPT= $(STARTUPLD)/KL02P20.ld
 
@@ -103,6 +107,8 @@ CSRC = main.c \
        analog.c \
        demod.c \
        murmur3.c \
+       updater.c \
+       flash.c \
        $(STARTUPSRC) \
        $(PORTSRC) \
        $(KERNSRC) \
@@ -144,6 +150,7 @@ TCPPSRC =
 ASMSRC = $(STARTUPASM) $(PORTASM) $(OSALASM)
 
 INCDIR = $(STARTUPINC) $(KERNINC) $(PORTINC) $(OSALINC) \
+	 $(LIBC90TFSINC) \
          $(HALINC) $(PLATFORMINC) $(BOARDINC) $(TESTINC) \
          $(CHIBIOS)/os/hal/lib/streams $(CHIBIOS)/os/various
 
