@@ -64,6 +64,18 @@
     - Upon receipt of unique md5, /all/ of program flash is erased
     - The blocks are written to flash based on received address until all expected blocks are received
     - System exits program mode once all blocks are received and starts running user code
+
+  New proposed programming method:
+  - Assume the presence of an external circuit which takes an external button, and provides two 
+    views on it: a pulsed version, and the current level
+    -- the pulsed version is wired to RESET
+    -- the current level is fed into a GPIO
+  - On boot or reset, check the current level of the external button. 
+    - If it's held down for more than 1s, go into programming mode, and stay there.
+    - Otherwise, go into application run mode and never come back
+
+  Thus, press-and-hold to program; tap to reset to app; and also, power cycle to reset to app.
+  Also, once program is successful, automatically start the app. woot!
  */
 
 typedef enum states {
@@ -201,11 +213,10 @@ int8_t updaterPacketProcess(uint8_t *pkt) {
     } else {
       chprintf( stream, "\n\r Transfer complete but corrupted. Erase & retry.\n\r" );
       chprintf( stream, "\n\r Source hash: %08x local hash: %08x\n\r", storageHdr->fullhash, hash );
+      
       // hash check failed. Something went wrong. Just nuke all of storage and bring us back to
       // a virgin state
-#if 0
       err = flashEraseSectors(SECTOR_MIN, SECTOR_COUNT);
-#endif
       astate = APP_IDLE;
     }
     break;
