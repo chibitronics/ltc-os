@@ -154,6 +154,16 @@ void demod_loop(void) {
       }
     }
 
+    // unstripe the transition xor's used to keep baud sync
+    if( (pktBuf[0] & PKTTYPE_MASK) == PKTTYPE_DATA ) {
+      for( i = 0; i < PKT_LEN - 4; i++ ) {
+	if( (i % 16) == 7 )
+	  pktBuf[i] ^= 0x55;
+	else if( (i % 16) == 15)
+	  pktBuf[i] ^= 0xAA;
+      }
+    }
+    
 #define RAWDATA_CHECK 0
 #if RAWDATA_CHECK
     uint32_t hash;
@@ -167,8 +177,9 @@ void demod_loop(void) {
       chprintf(stream, "\n\r control packet:" );
       pkt_len = CTRL_LEN;
     }
-    for( i = 0; i < pkt_len; i++ ) {
-      if( i % 16 == 0 )
+    
+    for( i = 0; i < pkt_len; i++ ) { // was pkt_len for whole buffer dump
+      if( i % 32 == 0 )
 	chprintf(stream, "\n\r" );
       chprintf(stream, "%02x", pktBuf[i] /* isprint(pktBuf[i]) ? pktBuf[i] : '.'*/ );
     }
@@ -178,11 +189,11 @@ void demod_loop(void) {
     txhash = (pktBuf[pkt_len-4] & 0xFF) | (pktBuf[pkt_len-3] & 0xff) << 8 |
       (pktBuf[pkt_len-2] & 0xFF) << 16 | (pktBuf[pkt_len-1] & 0xff) << 24;
       
-    chprintf(stream, " txhash: %08x rxhash: %08x\n\r", txhash, hash);
+    chprintf(stream, " tx: %08x rx: %08x\n\r", txhash, hash);
     if( txhash != hash ) {
-      chprintf(stream, " hash fail\n\r" );
+      chprintf(stream, " fail\n\r" );
     } else {
-      chprintf(stream, " hash pass\n\r" );
+      chprintf(stream, " pass\n\r" );
     }
 
     pktReady = 0; // we've extracted packet data, so clear the buffer flag
@@ -217,6 +228,7 @@ int main(void)
 
   orchardShellInit();
 
+  flashStart();
   /*
     clock rate: 0.020833us/clock, 13.3us/sample @ 75kHz
     jitter notes: 6.8us jitter on 1st cycle; out to 11.7us on last cycle
@@ -302,7 +314,7 @@ int main(void)
   // high is off
   palWritePad(GPIOB, 6, PAL_HIGH);  // red
   palWritePad(GPIOB, 7, PAL_LOW);  // green
-  palWritePad(GPIOB, 10, PAL_HIGH);  // blue
+  palWritePad(GPIOB, 10, PAL_LOW);  // blue
 
   while (TRUE) {
     chEvtDispatch(evtHandlers(orchard_app_events), chEvtWaitOne(ALL_EVENTS));

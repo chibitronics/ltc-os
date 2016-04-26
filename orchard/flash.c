@@ -55,7 +55,7 @@ int8_t flashEraseSectors(uint32_t offset, uint16_t sectorCount) {
     return retval;
   }
   
-  chprintf(stream, "Erasing sectors %d - %d\n\r", destination, end - 1);
+  chprintf(stream, "ES%d-%d\n\r", destination, end - 1);
   
   while (destination < end) {
     chSysLock();
@@ -82,10 +82,12 @@ int8_t flashEraseSectors(uint32_t offset, uint16_t sectorCount) {
       }
     }
 
-    chprintf(stream, "  Erased sector %d...\n\r", destination );
+    chprintf(stream, " e%d ", destination );
     destination++;
   }
 
+  chprintf(stream, "\n\r");
+  
   return retval;
 }
 

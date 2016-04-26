@@ -7,6 +7,9 @@
 #include "updater.h"
 #include "murmur3.h"
 
+#include "orchard.h"
+#include "chprintf.h"
+
 #include <string.h>
 
 /*
@@ -74,6 +77,8 @@ static app_state astate = APP_IDLE;
 const storage_header *storageHdr = (const storage_header *) STORAGE_START;
 
 void bootToUserApp(void) {
+  chprintf(stream, "\n\r Reached boot to user app!!!\n\r" );
+  palWritePad(GPIOB, 10, PAL_HIGH);  // blue off
   // placeholder for the routine to shut down the updater and transition into the user code
   /*
     todo:
@@ -110,7 +115,8 @@ int8_t updaterPacketProcess(uint8_t *pkt) {
   demod_ctrl_pkt *cpkt;
   uint32_t i;
   int8_t err = 0;
-  
+
+  chprintf( stream, "S%d ", (uint8_t) astate );
   switch(astate) {
   case APP_IDLE:
     cpkt = (demod_ctrl_pkt *) pkt; // expecting a control packet
@@ -159,10 +165,14 @@ int8_t updaterPacketProcess(uint8_t *pkt) {
       // blocks later on.....
       uint32_t dummy = 0;
       // clear the entry in the block map to record programming state
-      err = flashProgram((uint8_t *)(&(storageHdr->blockmap[block])), (uint8_t *)&dummy, sizeof(uint32_t));
+      err = flashProgram((uint8_t *)&dummy, (uint8_t *)(&(storageHdr->blockmap[block])), sizeof(uint32_t));
+      chprintf( stream, "\n\r P%d b%d", (uint8_t) block, err );
       
       // only program if the blockmap says it's not been programmed
       err = flashProgram(dpkt->payload, (uint8_t *) (STORAGE_PROGRAM_OFFSET + (block * BLOCK_SIZE)), BLOCK_SIZE);
+      chprintf( stream, " d%d", err );
+    } else {
+      chprintf( stream, " _%d", (uint8_t) block ); // redundant block received
     }
     
     // now check if the entire block map, within the range of the program length, has been programmed
@@ -172,7 +182,7 @@ int8_t updaterPacketProcess(uint8_t *pkt) {
     // in other words, don't make the below check an "else" clause of the previous "if" thinking it's
     // an optimization.
     uint8_t alldone = 1;
-    for( i = 0; i < (storageHdr->length / BLOCK_SIZE) + 1; i++ ) {
+    for( i = 0; i < ((storageHdr->length - 1) / BLOCK_SIZE) + 1; i++ ) {
       if( storageHdr->blockmap[i] == 0xFFFFFFFF )
 	alldone = 0;
     }
@@ -189,9 +199,13 @@ int8_t updaterPacketProcess(uint8_t *pkt) {
       astate = APP_UPDATED;
       bootToUserApp();
     } else {
+      chprintf( stream, "\n\r Transfer complete but corrupted. Erase & retry.\n\r" );
+      chprintf( stream, "\n\r Source hash: %08x local hash: %08x\n\r", storageHdr->fullhash, hash );
       // hash check failed. Something went wrong. Just nuke all of storage and bring us back to
       // a virgin state
+#if 0
       err = flashEraseSectors(SECTOR_MIN, SECTOR_COUNT);
+#endif
       astate = APP_IDLE;
     }
     break;

@@ -4,7 +4,7 @@
 #define PAYLOAD_LEN  256
 
 #define MURMUR_SEED_BLOCK  (0xdeadbeef)
-#define MURMUR_SEED_TOTAL  (0x032dbabe)
+#define MURMUR_SEED_TOTAL  (0x32d0babe)
 
 typedef struct demod_dp {
   uint8_t  version;
