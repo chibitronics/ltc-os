@@ -1,8 +1,8 @@
-#include "ch.h"
+#include "nil.h"
 #include "hal.h"
 
 #include "orchard.h"
-#include "chprintf.h"
+#include "printf.h"
 
 #include "flash.h"
 
@@ -44,18 +44,18 @@ int8_t flashEraseSectors(uint32_t offset, uint16_t sectorCount) {
   end = destination + (uint32_t) sectorCount;
 
   if( destination < F_USER_SECTOR_START ) {
-    chprintf(stream, "User sectors start at %d, aborting.\n\r", F_USER_SECTOR_START);
+    tfp_printf( "User sectors start at %d, aborting.\n\r", F_USER_SECTOR_START);
     retval = F_ERR_RANGE;
     return retval;
   }
   if( end > ((flashSSDConfig.PFlashBase + flashSSDConfig.PFlashSize) / FTFx_PSECTOR_SIZE) ) {
-    chprintf(stream, "Too many sectors requested, end at %d but we only have %d sectors.\n\r",
+    tfp_printf( "Too many sectors requested, end at %d but we only have %d sectors.\n\r",
 	     end, (flashSSDConfig.PFlashBase + flashSSDConfig.PFlashSize) / FTFx_PSECTOR_SIZE);
     retval = F_ERR_RANGE;
     return retval;
   }
   
-  chprintf(stream, "ES%d-%d\n\r", destination, end - 1);
+  tfp_printf( "ES%d-%d\n\r", destination, end - 1);
   
   while (destination < end) {
     chSysLock();
@@ -77,16 +77,16 @@ int8_t flashEraseSectors(uint32_t offset, uint16_t sectorCount) {
       ret = FlashVerifySection(&flashSSDConfig, destination * FTFx_PSECTOR_SIZE, number, margin_read_level, g_FlashLaunchCommand);
       chSysUnlock();
       if (FTFx_OK != ret) {
-	chprintf( stream, "Erase verify failed (%d), margin read level: %d\n\r", ret, margin_read_level );
+	tfp_printf( "Erase verify failed (%d), margin read level: %d\n\r", ret, margin_read_level );
 	retval = F_ERR_LOWLEVEL;
       }
     }
 
-    chprintf(stream, " e%d ", destination );
+    tfp_printf( " e%d ", destination );
     destination++;
   }
 
-  chprintf(stream, "\n\r");
+  tfp_printf( "\n\r");
   
   return retval;
 }
@@ -98,7 +98,7 @@ void flashStart(void) {
   
   ret = FlashInit(&flashSSDConfig);
   if (FTFx_OK != ret)  {
-    chprintf(stream, "Flash init failed\n\r");
+    tfp_printf( "Flash init failed\n\r");
   }
 
   // Set callbacks -- copy from FLASH to RAM (in case of programming sectors where code is located)
@@ -164,7 +164,7 @@ int8_t flashProgram(uint8_t *src, uint8_t *dest, uint32_t count) {
   chSysUnlock();
   
   if (FTFx_OK != ret) {
-    chprintf( stream, "Failed programming verification at USER margin levels: worry a little bit. Failure address: %08x\n\r", failaddr );
+    tfp_printf( "Failed programming verification at USER margin levels: worry a little bit. Failure address: %08x\n\r", failaddr );
     return F_ERR_U_MARGIN;
   }
 

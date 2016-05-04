@@ -54,12 +54,13 @@
 *
 *************************************************************************/
 
+#if  0
 /* Enable size optimization */
 #if(ARM_CORTEX_M != CPU_CORE)
 #pragma optimize_for_size on
 #pragma optimization_level 4
 #endif /* End of CPU_CORE */
-
+ 
 uint32_t SIZE_OPTIMIZATION FlashInit (PFLASH_SSD_CONFIG pSSDConfig)
 {
 #if (DEBLOCK_SIZE != 0x0U)
@@ -168,3 +169,12 @@ uint32_t SIZE_OPTIMIZATION FlashInit (PFLASH_SSD_CONFIG pSSDConfig)
     return(FTFx_OK);
 }
 /* End of file */
+#endif
+
+uint32_t FlashInit (PFLASH_SSD_CONFIG pSSDConfig)
+{
+    pSSDConfig->DFlashSize = 0x0U;
+    pSSDConfig->EEESize = 0x0U;
+    
+    return(0x0000U);
+}

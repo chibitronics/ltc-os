@@ -1,5 +1,6 @@
 #include <string.h>
-#include "ch.h"
+#include "nil.h"
+//#include "ch.h"
 
 #include "hal.h"
 #include "pal.h"
@@ -70,7 +71,7 @@ void FSKdemod(int16_t *samples, uint32_t nb, put_bit_func put_bit)
   int16_t *b;
   //  int16_t tempo;
 
-  //  palWritePad(GPIOB, 6, PAL_HIGH);  // red
+  //    GPIOB->PSOR |= (1 << 6);   // red
   // measure time to complete: 133.2us
   // number of samples processed: 8 -> needs to get to 106us, ideally 100us for OS overhead
   
@@ -114,7 +115,7 @@ void FSKdemod(int16_t *samples, uint32_t nb, put_bit_func put_bit)
     }
   }
   
-  //  palWritePad(GPIOB, 6, PAL_LOW);  // red
+  //    GPIOB->PCOR |= (1 << 6);   // red
 }
 
 void demodInit(void) {

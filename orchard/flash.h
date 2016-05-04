@@ -31,7 +31,7 @@
 #ifndef _FLASH_H_
 #define _FLASH_H_
 
-#include "board.h"
+//#include "board.h"
 #include "SSD_FTFx.h"
 /* size of array to copy__Launch_Command function to.*/
 /* It should be at least equal to actual size of __Launch_Command func */

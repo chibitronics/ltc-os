@@ -3,9 +3,14 @@
 # NOTE: Can be overridden externally.
 #
 
+CH_USE_RT = no
+ifeq ($(CH_USE_RT),)
+	CH_USE_RT=FALSE
+endif
+
 # Compiler options here.
 ifeq ($(USE_OPT),)
-  USE_OPT = -O3 -ggdb -fomit-frame-pointer -falign-functions=16 -nostdlib -fstack-protector
+  USE_OPT = -O3 -ggdb -fomit-frame-pointer -falign-functions=16 -nostdlib -mfloat-abi=soft -mfp16-format=none
 endif
 
 # C specific options here (added to USE_OPT).
@@ -39,8 +44,15 @@ ifeq ($(USE_THUMB),)
 endif
 
 # Enable this if you want to see the full log while compiling.
+USE_VERBOSE_COMPILE = no
 ifeq ($(USE_VERBOSE_COMPILE),)
   USE_VERBOSE_COMPILE = no
+endif
+
+# If enabled, this option makes the build process faster by not compiling
+# modules not used in the current configuration.
+ifeq ($(USE_SMART_BUILD),)
+  USE_SMART_BUILD = yes
 endif
 
 #
@@ -54,7 +66,7 @@ endif
 # Stack size to be allocated to the Cortex-M process stack. This stack is
 # the stack used by the main() thread.
 ifeq ($(USE_PROCESS_STACKSIZE),)
-  USE_PROCESS_STACKSIZE = 0x200
+  USE_PROCESS_STACKSIZE = 0x100
 endif
 
 # Stack size to the allocated to the Cortex-M main/exceptions stack. This
@@ -82,12 +94,12 @@ include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/startup_kl02x.mk
 include $(CHIBIOS)/os/hal/hal.mk
 include $(CHIBIOS)/os/hal/ports/KINETIS/KL02x/platform.mk
 include $(CHIBIOS)/os/hal/boards/CHIBITRONICS_ESPLANADE/board.mk 
-include $(CHIBIOS)/os/hal/osal/rt/osal.mk
+include $(CHIBIOS)/os/hal/osal/nil/osal.mk
 # RTOS files (optional).
-include $(CHIBIOS)/os/rt/rt.mk
-include $(CHIBIOS)/os/rt/ports/ARMCMx/compilers/GCC/mk/port_v6m.mk
+include $(CHIBIOS)/os/nil/nil.mk
+include $(CHIBIOS)/os/nil/ports/ARMCMx/compilers/GCC/mk/port_v6m.mk
 # Other files (optional).
-include $(CHIBIOS)/test/rt/test.mk
+#include $(CHIBIOS)/test/nil/test.mk
 
 #C90TFS Freescale Flash drivers
 LIBC90TFS = $(CHIBIOS)/ext/C90TFS
@@ -99,15 +111,13 @@ LDSCRIPT= $(STARTUPLD)/KL02P20.ld
 # C sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
 CSRC = main.c \
-       orchard-shell.c \
        orchard-vectors.c \
-       $(wildcard cmd-*.c) \
        gitversion.c \
-       accel.c \
        analog.c \
        demod.c \
        murmur3.c \
        updater.c \
+       mac.c \
        flash.c \
        $(STARTUPSRC) \
        $(PORTSRC) \
@@ -116,15 +126,23 @@ CSRC = main.c \
        $(OSALSRC) \
        $(PLATFORMSRC) \
        $(BOARDSRC) \
+       printf.c \
        $(CHIBIOS)/os/hal/lib/streams/chprintf.c \
-       $(CHIBIOS)/os/hal/lib/streams/memstreams.c \
-       $(CHIBIOS)/os/various/shell.c \
        $(LIBC90TFSSRC) \
-#       orchard-events.c \
+#       adc.c \
+#       adc_lld.c \
+#       serial_lld.c \
+
+# Include the shell, and commands, for full OS.
+ifeq ($(CH_USE_RT),TRUE)
+CSRC += $(CHIBIOS)/os/various/shell.c \
+        $(wildcard cmd-*.c) \
+        $(wildcard prot-*.c)
+endif
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
-CPPSRC =
+CPPSRC = 
 
 # C sources to be compiled in ARM mode regardless of the global setting.
 # NOTE: Mixing ARM and THUMB mode enables the -mthumb-interwork compiler
@@ -150,10 +168,10 @@ TCPPSRC =
 ASMSRC = $(STARTUPASM) $(PORTASM) $(OSALASM)
 
 INCDIR = $(STARTUPINC) $(KERNINC) $(PORTINC) $(OSALINC) \
-	 $(LIBC90TFSINC) \
          $(HALINC) $(PLATFORMINC) $(BOARDINC) $(TESTINC) \
-         $(CHIBIOS)/os/hal/lib/streams $(CHIBIOS)/os/various
-
+         $(CHIBIOS)/os/various \
+	 $(CHIBIOS)/os/hal/lib/streams \
+	 $(LIBC90TFSINC)
 
 #
 # Project, sources and paths
@@ -176,11 +194,11 @@ LD   = $(TRGT)gcc
 #LD   = $(TRGT)g++
 CP   = $(TRGT)objcopy
 AS   = $(TRGT)gcc -x assembler-with-cpp
+AR   = $(TRGT)ar
 OD   = $(TRGT)objdump
 SZ   = $(TRGT)size
 HEX  = $(CP) -O ihex
 BIN  = $(CP) -O binary
-SREC = $(CP) -O srec
 
 # ARM-specific options here
 AOPT =
@@ -189,10 +207,10 @@ AOPT =
 TOPT = -mthumb -DTHUMB -msoft-float
 
 # Define C warning options here
-CWARN = -Wall -Wextra -Wstrict-prototypes
+CWARN = -Wall -Wextra -Wstrict-prototypes # -Wundef 
 
 # Define C++ warning options here
-CPPWARN = -Wall -Wextra
+CPPWARN = -Wall -Wextra # -Wundef
 
 #
 # Compiler settings
@@ -201,6 +219,9 @@ CPPWARN = -Wall -Wextra
 ##############################################################################
 # Start of user section
 #
+
+# List all user C define here, like -D_DEBUG=1
+UDEFS =
 
 # Define ASM defines here
 UADEFS =
@@ -220,6 +241,12 @@ ULIBS = lib/armv6-m-libgcc.a lib/libc-nano-armv6-m.a
 
 RULESPATH = $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC
 include $(RULESPATH)/rules.mk
+
+##############################################################################
+# MISRA check rule, requires PCLint and the setup files, not provided.
+#
+#misra:
+#	@lint-nt -v -w3 $(DEFS) pclint/co-gcc.lnt pclint/au-misra3.lnt pclint/waivers.lnt $(IINCDIR) $(CSRC) &> misra.txt
 
 gitversion.c: $(CHIBIOS)/.git/HEAD $(CHIBIOS)/.git/index
 	echo "const char *gitversion = \"$(shell git rev-parse HEAD)\";" > $@

@@ -14,48 +14,45 @@
     limitations under the License.
 */
 
-#include "ch.h"
-#include "hal.h"
-#include "i2c.h"
-#include "pal.h"
-#include "adc.h"
+#include "nil.h"
 
-#include "shell.h"
+#include "kl02x.h"
+//#include "ch.h"
+#include "hal.h"
+//#include "pal.h"
+//#include "nvic.h"
+
+//#include "halconf.h"
+//#include "adc.h"
+
+//#include "serial_lld.h"
 #include "chprintf.h"
+#include "memstreams.h"
+#include "printf.h"
 
 #include "orchard.h"
-#include "orchard-shell.h"
-#include "orchard-events.h"
 
-#include "accel.h"
 #include "analog.h"
 #include "demod.h"
 #include "mac.h"
 #include "updater.h"
 
-#include "kl02x.h"
-
 #include "murmur3.h"
+
+#include <string.h>
+
+void *stream;
 
 #define DEBUG_STREAMING  0
 #define OSCOPE_PROFILING 0
 uint8_t screenpos = 0;
 
-struct evt_table orchard_app_events;
-event_source_t accel_event;
-event_source_t accel_test_event;
-event_source_t ta_update_event;
-event_source_t adc_celcius_event;
-event_source_t adc_mic_event;
-
-char xp, yp, zp;
-
 volatile uint8_t dataReadyFlag = 0; // global flag, careful of sync issues when multi-threaded...
 volatile adcsample_t *bufloc;
 size_t buf_n;
 
-static const I2CConfig i2c_config = {
-  100000
+static const SerialConfig serialConfig = {
+  115200,
 };
 
 static const ADCConfig adccfg1 = {
@@ -63,33 +60,13 @@ static const ADCConfig adccfg1 = {
   true
 };
 
-static void accel_cb(EXTDriver *extp, expchannel_t channel) {
-  (void)extp;
-  (void)channel;
-
-  chSysLockFromISR();
-  chEvtBroadcastI(&accel_event);
-  chSysUnlockFromISR();
-}
-
-static const EXTConfig ext_config = {
-  {
-    {EXT_CH_MODE_FALLING_EDGE | EXT_CH_MODE_AUTOSTART, accel_cb, PORTA, 10},
-  }
-};
-
-static void adc_mic_handler(eventid_t id) {
-  (void) id;
-  // for now, just a placeholder
-  return;
-}
-
 static void phy_demodulate(void) {
   int frames;
 
 #if OSCOPE_PROFILING // pulse a gpio to easily measure CPU load of demodulation
-  palWritePad(GPIOB, 6, PAL_HIGH); 
-  palWritePad(GPIOB, 6, PAL_LOW);
+  GPIOB->PSOR |= (1 << 6);   // sets to high
+  GPIOB->PCOR |= (1 << 6);   // clears to low
+  
   // this is happening once every 1.748ms with NB_FRAMES = 16, NB_SAMPLES = 8
   // computed about 0.0413ms -> 41.3us per call overhead for OS required ~2.5% overhead
 #endif
@@ -98,39 +75,6 @@ static void phy_demodulate(void) {
     FSKdemod(dm_buf + (frames * NB_SAMPLES), NB_SAMPLES, putBitMac); // putBitMac is callback to MAC layer
   }
   dataReadyFlag = 0;
-}
-
-static void adc_celcius_handler(eventid_t id) {
-  (void) id;
-  chprintf(stream, "celcius: %d\n\r", analogReadTemperature());
-}
-
-static void accel_pulse_handler(eventid_t id) {
-  (void) id;
-
-  if(pulse_axis & PULSE_AXIS_X) {
-    //chprintf(stream, "x");
-    xp = 'x';
-  }
-  if( pulse_axis & PULSE_AXIS_Y) {
-    //chprintf(stream, "y");
-    yp = 'y';
-  }
-  if( pulse_axis & PULSE_AXIS_Z) {
-    //chprintf(stream, "z");
-    zp = 'z';
-  }
-  chEvtBroadcast(&ta_update_event);
-}
-
-static void update_handler(eventid_t id) {
-  (void) id;
-
-}
-
-void init_update_events(void) {
-  chEvtObjectInit(&ta_update_event);
-  evtTableHook(orchard_app_events, ta_update_event, update_handler);
 }
 
 void demod_loop(void) {
@@ -172,16 +116,18 @@ void demod_loop(void) {
     // replace the code in this #if bracket with the storage flashing code
     if( (pktBuf[0] & PKTTYPE_MASK) == PKTTYPE_DATA ) {
       pkt_len = PKT_LEN;
-      chprintf(stream, "\n\r data packet:" );
+      tfp_printf( "\n\r data packet:" );
     } else {
-      chprintf(stream, "\n\r control packet:" );
+      tfp_printf( "\n\r control packet:" );
       pkt_len = CTRL_LEN;
     }
     
-    for( i = 0; i < pkt_len; i++ ) { // was pkt_len for whole buffer dump
-      if( i % 32 == 0 )
-	chprintf(stream, "\n\r" );
-      chprintf(stream, "%02x", pktBuf[i] /* isprint(pktBuf[i]) ? pktBuf[i] : '.'*/ );
+    //    for( i = 0; i < pkt_len; i++ ) { // use pkt_len for whole buffer dump
+    for( i = 0; i < 16; i++ ) { // abridged dump
+      if( i % 32 == 0 ) {
+	tfp_printf( "\n\r" );
+      }
+      tfp_printf( "%02x", pktBuf[i] /* isprint(pktBuf[i]) ? pktBuf[i] : '.'*/ );
     }
     // check hash
     MurmurHash3_x86_32(pktBuf, pkt_len - 4 /* packet minus hash */, MURMUR_SEED_BLOCK, &hash);
@@ -189,11 +135,11 @@ void demod_loop(void) {
     txhash = (pktBuf[pkt_len-4] & 0xFF) | (pktBuf[pkt_len-3] & 0xff) << 8 |
       (pktBuf[pkt_len-2] & 0xFF) << 16 | (pktBuf[pkt_len-1] & 0xff) << 24;
       
-    chprintf(stream, " tx: %08x rx: %08x\n\r", txhash, hash);
+    tfp_printf( " tx: %08x rx: %08x\n\r", txhash, hash);
     if( txhash != hash ) {
-      chprintf(stream, " fail\n\r" );
+      tfp_printf( " fail\n\r" );
     } else {
-      chprintf(stream, " pass\n\r" );
+      tfp_printf( " pass\n\r" );
     }
 
     pktReady = 0; // we've extracted packet data, so clear the buffer flag
@@ -205,30 +151,91 @@ void demod_loop(void) {
   
 }
 
-/*
- * Application entry point.
+/**
+ * @name    Alignment support macros
  */
-int main(void)
-{
-  /*
-   * System initializations.
-   * - HAL initialization, this also initializes the configured device drivers
-   *   and performs the board-specific initializations.
-   * - Kernel initialization, the main() function becomes a thread and the
-   *   RTOS is active.
-   */
-  halInit();
-  chSysInit();
+/**
+ * @brief   Alignment size constant.
+ */
+#define MEM_ALIGN_SIZE      sizeof(stkalign_t)
 
+/**
+ * @brief   Alignment mask constant.
+ */
+#define MEM_ALIGN_MASK      (MEM_ALIGN_SIZE - 1U)
+
+/**
+ * @brief   Alignment helper macro.
+ */
+#define MEM_ALIGN_PREV(p)   ((size_t)(p) & ~MEM_ALIGN_MASK)
+
+/**
+ * @brief   Alignment helper macro.
+ */
+#define MEM_ALIGN_NEXT(p)   MEM_ALIGN_PREV((size_t)(p) + MEM_ALIGN_MASK)
+
+/**
+ * @brief   Core memory status.
+ *
+ * @return              The size, in bytes, of the free core memory.
+ *
+ * @xclass
+ */
+static size_t chCoreGetStatusX(void) {
+  uint8_t *nextmem;
+  uint8_t *endmem;
+  extern uint8_t __heap_base__[];
+  extern uint8_t __heap_end__[];
+
+  /*lint -save -e9033 [10.8] Required cast operations.*/
+  nextmem = (uint8_t *)MEM_ALIGN_NEXT(__heap_base__);
+  endmem = (uint8_t *)MEM_ALIGN_PREV(__heap_end__);
+  /*lint restore*/
+
+  /*lint -save -e9033 [10.8] The cast is safe.*/
+  return (size_t)(endmem - nextmem);
+  /*lint -restore*/
+}
+
+static void putc_x(void *storage, char c) {
+  (void) storage;
+
+  chnWrite(&SD1, (const uint8_t *) &c, 1);
+}
+  
+
+/*
+ * "main" thread, separate from idle thread
+ */
+static THD_WORKING_AREA(waThread1, 512);
+static THD_FUNCTION(Thread1, arg) {
+  (void)arg;
+
+  GPIOB->PSOR |= (1 << 6);   // red off
+  GPIOB->PCOR |= (1 << 7);   // green on
+  GPIOB->PSOR |= (1 << 10);  // blue off
+
+  // init the serial interface
+  sdStart(&SD1, &serialConfig);
+  //  sd_lld_init();
+  //  sd_lld_start((&SD1), &serialConfig);
+  init_printf(NULL,putc_x);
+  stream = stream_driver;
+
+  //chnWrite( &SD1, (const uint8_t *) "\r\n\r\nOrchard audio wtf loader.\r\n", 32);
+  //chThdSleepMilliseconds(1000);
+  tfp_printf( "\r\n\r\nOrchard audio bootloader.  Based on build %s\r\n", gitversion);
+  tfp_printf( "core free memory : %d bytes\r\n", chCoreGetStatusX());
+  chThdSleepMilliseconds(100); // give a little time for the status message to appear
+  
   //i2cStart(i2cDriver, &i2c_config);
   adcStart(&ADCD1, &adccfg1);
   analogStart();
   
   demodInit();
 
-  orchardShellInit();
-
   flashStart();
+
   /*
     clock rate: 0.020833us/clock, 13.3us/sample @ 75kHz
     jitter notes: 6.8us jitter on 1st cycle; out to 11.7us on last cycle
@@ -258,7 +265,6 @@ int main(void)
       - processing start determinism is improved by putting constant data in
       - we've counted 32 frames being processed during the processing times
    */
-#if DEMOD_DEBUG
   //(gdb) x 0xe000e180   // shows the interrupts that are enabled
   //0xe000e180:0x00009000
   // x/32x 0xe000e400
@@ -280,45 +286,36 @@ int main(void)
   
   analogUpdateMic();  // starts mic sampling loop (interrupt-driven and automatic)
   demod_loop();
-#endif
-
-  // the rest of this stuff we don't use -- why? because we aren't thread safe yet
-  // either eliminate this code, or figure out how to back threads into the system without
-  // impacting reliable demodulation
   
-  chprintf(stream, "\r\n\r\nOrchard shell.  Based on build %s\r\n", gitversion);
+}
 
-  orchardShellRestart();
 
-  evtTableInit(orchard_app_events, 9);
-
-  init_update_events();
-
-  chEvtObjectInit(&adc_celcius_event);
-  chEvtObjectInit(&adc_mic_event);
-  evtTableHook(orchard_app_events, adc_celcius_event, adc_celcius_handler);
-  evtTableHook(orchard_app_events, adc_mic_event, adc_mic_handler);
+/*
+ * Threads static table, one entry per thread. The number of entries must
+ * match NIL_CFG_NUM_THREADS.
+ */
+THD_TABLE_BEGIN
+  THD_TABLE_ENTRY(waThread1, "demod", Thread1, NULL)
+THD_TABLE_END
   
-  //  chEvtObjectInit(&accel_event);
-  //  evtTableHook(orchard_app_events, accel_event, accel_irq);
-  //  accelStart(i2cDriver);
 
-  //  chEvtObjectInit(&accel_test_event);
-  //  evtTableHook(orchard_app_events, accel_test_event, accel_test);
+/*
+ * Application entry point.
+ */
+int main(void)
+{
+  /*
+   * System initializations.
+   * - HAL initialization, this also initializes the configured device drivers
+   *   and performs the board-specific initializations.
+   * - Kernel initialization, the main() function becomes a thread and the
+   *   RTOS is active.
+   */
+  halInit();
+  chSysInit();
 
-  //  evtTableHook(orchard_app_events, accel_pulse, accel_pulse_handler);
-  xp = ' '; yp = ' '; zp = ' ';
-  
-  extStart(&EXTD1, &ext_config); // enables interrupts on gpios
-
-  // high is off
-  palWritePad(GPIOB, 6, PAL_HIGH);  // red
-  palWritePad(GPIOB, 7, PAL_LOW);  // green
-  palWritePad(GPIOB, 10, PAL_LOW);  // blue
-
-  while (TRUE) {
-    chEvtDispatch(evtHandlers(orchard_app_events), chEvtWaitOne(ALL_EVENTS));
-  }
+  while(1)  /// this is now the "idle" thread
+    ;
 
 }
 
