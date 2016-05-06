@@ -1,4 +1,3 @@
-#include "nil.h"
 #include "hal.h"
 
 #include "demod.h"
@@ -8,7 +7,9 @@
 #include "murmur3.h"
 
 #include "orchard.h"
-#include "chprintf.h"
+#include "printf.h"
+
+#include "app.h"
 
 #include <string.h>
 
@@ -81,18 +82,17 @@
 typedef enum states {
   APP_IDLE = 0,
   APP_GOT_ID,
-  APP_UPDATING,  // keep circulating here until all blocks received
-  APP_UPDATED    // check if all blocks are good in this state
+  APP_UPDATING,   // keep circulating here until all blocks received
+  APP_UPDATED,    // check if all blocks are good in this state
+  APP_FAIL,       // app failed to boot
 } app_state;
 static app_state astate = APP_IDLE;
 
 const storage_header *storageHdr = (const storage_header *) STORAGE_START;
 
-__attribute__((noreturn))
 void bootToUserApp(void) {
   tfp_printf( "\n\r Reached boot to user app!!!\n\r" );
   GPIOB->PCOR |= (1 << 6);   // blue on
-  // placeholder for the routine to shut down the updater and transition into the user code
   /*
     todo:
       -- reset ADC subsystem to prevent samples from triggering interrupts
@@ -100,6 +100,11 @@ void bootToUserApp(void) {
       -- set VTOR
       -- soft reset
    */
+
+  struct app_header *app = (struct app_header *)0x5900;
+
+  if ((app->magic == APP_MAGIC) && (app->version == APP_VERSION))
+    Run_App(app);
 }
 
 void init_storage_header(demod_ctrl_pkt *cpkt) {
@@ -140,11 +145,11 @@ int8_t updaterPacketProcess(uint8_t *pkt) {
     // we don't check the magic #, just guid because chance of collision is remote
     if( memcmp( storageHdr->guid, cpkt->guid, 16 ) == 0 ) {
       if( storageHdr->complete == 0xFFFFFFFF ) {
-	// we're getting a resend of an incomplete transmission, move to the updating state
-	astate = APP_UPDATING;
-	break;
+        // we're getting a resend of an incomplete transmission, move to the updating state
+        astate = APP_UPDATING;
+        break;
       } else {
-	break; // attempt to program the sticker with the same program, just abort & ignore
+        break; // attempt to program the sticker with the same program, just abort & ignore
       }
     }
 
@@ -197,7 +202,7 @@ int8_t updaterPacketProcess(uint8_t *pkt) {
     uint8_t alldone = 1;
     for( i = 0; i < ((storageHdr->length - 1) / BLOCK_SIZE) + 1; i++ ) {
       if( storageHdr->blockmap[i] == 0xFFFFFFFF )
-	alldone = 0;
+        alldone = 0;
     }
     if(!alldone)
       break;  // stay in app-updating state
@@ -211,6 +216,7 @@ int8_t updaterPacketProcess(uint8_t *pkt) {
       err = flashProgram((uint8_t *)(&(storageHdr->complete)), (uint8_t *)&dummy, sizeof(uint32_t));
       astate = APP_UPDATED;
       bootToUserApp();
+      astate = APP_FAIL;
     } else {
       tfp_printf( "\n\r Transfer complete but corrupted. Erase & retry.\n\r" );
       tfp_printf( "\n\r Source hash: %08x local hash: %08x\n\r", storageHdr->fullhash, hash );
@@ -224,6 +230,7 @@ int8_t updaterPacketProcess(uint8_t *pkt) {
 
   case APP_UPDATED:
     bootToUserApp();
+    astate = APP_FAIL;
     break;
     
   default:
