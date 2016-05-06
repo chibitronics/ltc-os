@@ -103,9 +103,9 @@ void FSKdemod(int16_t *samples, uint32_t nb, put_bit_func put_bit)
       fsk_state.lastsample = newsample;
       //            printf("pll=%0.3f (%d)\n", fsk_state.baud_pll / 65536.0, newsample);
       if (fsk_state.baud_pll < 0x8000)
-	fsk_state.baud_pll += fsk_state.baud_pll_adj;
+        fsk_state.baud_pll += fsk_state.baud_pll_adj;
       else
-	fsk_state.baud_pll -= fsk_state.baud_pll_adj;
+        fsk_state.baud_pll -= fsk_state.baud_pll_adj;
     }
         
     fsk_state.baud_pll += fsk_state.baud_incr;
