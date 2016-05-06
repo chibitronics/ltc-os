@@ -1,3 +1,5 @@
+#pragma GCC optimize ("O3")
+
 #include <string.h>
 #include "nil.h"
 //#include "ch.h"
