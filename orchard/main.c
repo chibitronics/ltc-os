@@ -14,20 +14,8 @@
     limitations under the License.
 */
 
-#include "nil.h"
-
-#include "kl02x.h"
-//#include "ch.h"
 #include "hal.h"
-//#include "pal.h"
-//#include "nvic.h"
 
-//#include "halconf.h"
-//#include "adc.h"
-
-//#include "serial_lld.h"
-#include "chprintf.h"
-#include "memstreams.h"
 #include "printf.h"
 
 #include "orchard.h"
@@ -77,6 +65,7 @@ static void phy_demodulate(void) {
   dataReadyFlag = 0;
 }
 
+__attribute__((noreturn))
 void demod_loop(void) {
   uint32_t i;
 
@@ -89,22 +78,22 @@ void demod_loop(void) {
     pktPtr = 0;
     while( !pktReady ) {
       if( dataReadyFlag ) {
-	// copy from the double-buffer into a demodulation buffer
-	for( i = 0 ; i < buf_n; i++ ) { 
-	  dm_buf[i] = (int16_t) (((int16_t) bufloc[i]) - 2048);
-	}
-	// call handler, which includes the demodulation routine
-	phy_demodulate();
+        // copy from the double-buffer into a demodulation buffer
+        for( i = 0 ; i < buf_n; i++ ) { 
+          dm_buf[i] = (int16_t) (((int16_t) bufloc[i]) - 2048);
+        }
+        // call handler, which includes the demodulation routine
+        phy_demodulate();
       }
     }
 
     // unstripe the transition xor's used to keep baud sync
     if( (pktBuf[0] & PKTTYPE_MASK) == PKTTYPE_DATA ) {
       for( i = 0; i < PKT_LEN - 4; i++ ) {
-	if( (i % 16) == 7 )
-	  pktBuf[i] ^= 0x55;
-	else if( (i % 16) == 15)
-	  pktBuf[i] ^= 0xAA;
+        if( (i % 16) == 7 )
+          pktBuf[i] ^= 0x55;
+        else if( (i % 16) == 15)
+          pktBuf[i] ^= 0xAA;
       }
     }
     
@@ -122,7 +111,6 @@ void demod_loop(void) {
       pkt_len = CTRL_LEN;
     }
     
-    //    for( i = 0; i < pkt_len; i++ ) { // use pkt_len for whole buffer dump
     for( i = 0; i < 16; i++ ) { // abridged dump
       if( i % 32 == 0 ) {
 	tfp_printf( "\n\r" );
@@ -148,7 +136,6 @@ void demod_loop(void) {
     updaterPacketProcess(pktBuf);
 #endif
   }
-  
 }
 
 /**
@@ -286,7 +273,6 @@ static THD_FUNCTION(Thread1, arg) {
   
   analogUpdateMic();  // starts mic sampling loop (interrupt-driven and automatic)
   demod_loop();
-  
 }
 
 
