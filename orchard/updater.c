@@ -88,6 +88,7 @@ static app_state astate = APP_IDLE;
 
 const storage_header *storageHdr = (const storage_header *) STORAGE_START;
 
+__attribute__((noreturn))
 void bootToUserApp(void) {
   tfp_printf( "\n\r Reached boot to user app!!!\n\r" );
   GPIOB->PCOR |= (1 << 6);   // blue on
