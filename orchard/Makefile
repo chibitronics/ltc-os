@@ -10,7 +10,7 @@ endif
 
 # Compiler options here.
 ifeq ($(USE_OPT),)
-  USE_OPT = -Os -ggdb -fomit-frame-pointer -falign-functions=16 -nostdlib -mfloat-abi=soft -mfp16-format=none
+  USE_OPT = -O3 -ggdb -fomit-frame-pointer -falign-functions=16 -nostdlib -mfloat-abi=soft -mfp16-format=none
 endif
 
 # C specific options here (added to USE_OPT).
@@ -129,9 +129,7 @@ CSRC = main.c \
        printf.c \
        $(CHIBIOS)/os/hal/lib/streams/chprintf.c \
        $(LIBC90TFSSRC) \
-#       adc.c \
-#       adc_lld.c \
-#       serial_lld.c \
+       __aeabi.c \
 
 # Include the shell, and commands, for full OS.
 ifeq ($(CH_USE_RT),TRUE)
@@ -142,7 +140,8 @@ endif
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
-CPPSRC = 
+CPPSRC = syscalls.cpp \
+         $(wildcard arduino-*.cpp)
 
 # C sources to be compiled in ARM mode regardless of the global setting.
 # NOTE: Mixing ARM and THUMB mode enables the -mthumb-interwork compiler
@@ -165,7 +164,8 @@ TCSRC =
 TCPPSRC =
 
 # List ASM source files here
-ASMSRC = $(STARTUPASM) $(PORTASM) $(OSALASM)
+ASMSRC = $(STARTUPASM) $(PORTASM) $(OSALASM) \
+         run_app.s svc_handler.s
 
 INCDIR = $(STARTUPINC) $(KERNINC) $(PORTINC) $(OSALINC) \
          $(HALINC) $(PLATFORMINC) $(BOARDINC) $(TESTINC) \
