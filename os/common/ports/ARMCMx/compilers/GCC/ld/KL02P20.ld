@@ -391,16 +391,16 @@ SECTIONS
         __ram7_free__ = .;
     } > ram7
 
-  .note.gnu.build-id :
-  {
-    . = ALIGN(4);
-    PROVIDE( _note = .);
-    *(.note.gnu.build-id)
-    . = ALIGN(4);
-    *(.note.gnu.build-id.*);
-    . = ALIGN(4);
-    PROVIDE( _enote = .);
-  }  > flash
+    .note.gnu.build-id :
+    {
+        . = ALIGN(4);
+        PROVIDE( _note = .);
+        *(.note.gnu.build-id)
+        . = ALIGN(4);
+        *(.note.gnu.build-id.*);
+        . = ALIGN(4);
+        PROVIDE( _enote = .);
+    }  > flash
 
     /* The default heap uses the (statically) unused part of a RAM section.*/
     .heap (NOLOAD) :
