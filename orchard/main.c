@@ -194,7 +194,8 @@ static void putc_x(void *storage, char c) {
 /*
  * "main" thread, separate from idle thread
  */
-static THD_WORKING_AREA(waThread1, 512);
+#include "esplanade_os.h"
+bl_symbol(static THD_WORKING_AREA(waThread1, 512));
 static THD_FUNCTION(Thread1, arg) {
   (void)arg;
 
