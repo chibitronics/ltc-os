@@ -2,12 +2,13 @@
 //#include "ch.h"
 #include "hal.h"
 #include "adc.h"
+#include "esplanade_os.h"
 
 #include "orchard.h"
 #include "analog.h"
 #include "demod.h"
 
-static adcsample_t mic_sample[MIC_SAMPLE_DEPTH];
+bl_symbol(static adcsample_t mic_sample[MIC_SAMPLE_DEPTH]);
 
 extern volatile uint8_t dataReadyFlag;
 extern volatile adcsample_t *bufloc;
