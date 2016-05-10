@@ -90,6 +90,7 @@ static app_state astate = APP_IDLE;
 
 const storage_header *storageHdr = (const storage_header *) STORAGE_START;
 
+extern struct app_header *_app_header;
 void bootToUserApp(void) {
   tfp_printf( "\n\r Reached boot to user app!!!\n\r" );
   GPIOB->PCOR |= (1 << 6);   // blue on
@@ -101,10 +102,9 @@ void bootToUserApp(void) {
       -- soft reset
    */
 
-  struct app_header *app = (struct app_header *)0x5900;
-
-  if ((app->magic == APP_MAGIC) && (app->version == APP_VERSION))
-    Run_App(app);
+  if ((_app_header->magic == APP_MAGIC)
+  && (_app_header->version == APP_VERSION))
+    Run_App(_app_header);
 }
 
 void init_storage_header(demod_ctrl_pkt *cpkt) {
