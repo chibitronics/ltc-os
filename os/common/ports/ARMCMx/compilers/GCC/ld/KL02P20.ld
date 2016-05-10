@@ -26,7 +26,8 @@ MEMORY
     flashcfg : org = 0x00000400, len = 0x10
     flash    : org = 0x00000410, len = 32k - 0x410 - 10k
     storage  : org = 0x00005800, len = 10k
-    ram0  : org = 0x1FFFFC00, len = 4k
+    osram    : org = 0x1FFFFC00, len = 256
+    ram0  : org = 0x1FFFFC00 + LENGTH(osram), len = 4k - LENGTH(osram)
     ram1  : org = 0x00000000, len = 0
     ram2  : org = 0x00000000, len = 0
     ram3  : org = 0x00000000, len = 0
@@ -46,6 +47,7 @@ REGION_ALIAS("PROCESS_STACK_RAM", ram0);
 REGION_ALIAS("DATA_RAM", ram0);
 REGION_ALIAS("BSS_RAM", ram0);
 REGION_ALIAS("HEAP_RAM", ram0);
+REGION_ALIAS("OS_RAM", osram)
 
 __ram0_start__          = ORIGIN(ram0);
 __ram0_size__           = LENGTH(ram0);
@@ -187,6 +189,33 @@ SECTIONS
         PROVIDE(_edata = .);
         _data_end = .;
     } > DATA_RAM AT > flash
+
+    .osdata : ALIGN(4)
+    {
+        . = ALIGN(4);
+        PROVIDE(_textosdata = LOADADDR(.osdata));
+        PROVIDE(_osdata = .);
+        _textosdata_start = LOADADDR(.osdata);
+        _osdata_start = .;
+        *(.osdata)
+        *(.osdata.*)
+        *(.ramostext)
+        . = ALIGN(4);
+        PROVIDE(_eosdata = .);
+        _osdata_end = .;
+    } > OS_RAM AT > flash
+
+    .osbss (NOLOAD) : ALIGN(4)
+    {
+        . = ALIGN(4);
+        _osbss_start = .;
+        *(.osbss)
+        *(.osbss.*)
+        *(OSCOMMON)
+        . = ALIGN(4);
+        _osbss_end = .;
+        PROVIDE(osend = .);
+    } > OS_RAM
 
     .bss (NOLOAD) : ALIGN(4)
     {
