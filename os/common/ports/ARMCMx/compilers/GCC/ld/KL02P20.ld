@@ -26,9 +26,8 @@ MEMORY
     flashcfg : org = 0x00000400, len = 0x10
     flash    : org = 0x00000410, len = 32k - 0x410 - 10k
     storage  : org = 0x00005800, len = 10k
-    osram    : org = 0x1FFFFC00, len = 256
-    ram0  : org = 0x1FFFFC00 + LENGTH(osram), len = 4k - LENGTH(osram)
-    ram1  : org = 0x00000000, len = 0
+    ram0  : org = 0x1FFFFC00, len = 768
+    ram1  : org = 0x1FFFFC00 + LENGTH(ram0), len = 4k - LENGTH(ram0)
     ram2  : org = 0x00000000, len = 0
     ram3  : org = 0x00000000, len = 0
     ram4  : org = 0x00000000, len = 0
@@ -42,12 +41,12 @@ __storage_size__        = LENGTH(storage);
 __storage_end__         = __storage_start__ + __storage_size__ - 1;
 _app_header             = ORIGIN(storage) + 256;
 
-REGION_ALIAS("MAIN_STACK_RAM", ram0);
+REGION_ALIAS("MAIN_STACK_RAM", ram1);
 REGION_ALIAS("PROCESS_STACK_RAM", ram0);
 REGION_ALIAS("DATA_RAM", ram0);
 REGION_ALIAS("BSS_RAM", ram0);
-REGION_ALIAS("HEAP_RAM", ram0);
-REGION_ALIAS("OS_RAM", osram)
+REGION_ALIAS("HEAP_RAM", ram1);
+REGION_ALIAS("BL_RAM", ram1)
 
 __ram0_start__          = ORIGIN(ram0);
 __ram0_size__           = LENGTH(ram0);
@@ -190,33 +189,6 @@ SECTIONS
         _data_end = .;
     } > DATA_RAM AT > flash
 
-    .osdata : ALIGN(4)
-    {
-        . = ALIGN(4);
-        PROVIDE(_textosdata = LOADADDR(.osdata));
-        PROVIDE(_osdata = .);
-        _textosdata_start = LOADADDR(.osdata);
-        _osdata_start = .;
-        *(.osdata)
-        *(.osdata.*)
-        *(.ramostext)
-        . = ALIGN(4);
-        PROVIDE(_eosdata = .);
-        _osdata_end = .;
-    } > OS_RAM AT > flash
-
-    .osbss (NOLOAD) : ALIGN(4)
-    {
-        . = ALIGN(4);
-        _osbss_start = .;
-        *(.osbss)
-        *(.osbss.*)
-        *(OSCOMMON)
-        . = ALIGN(4);
-        _osbss_end = .;
-        PROVIDE(osend = .);
-    } > OS_RAM
-
     .bss (NOLOAD) : ALIGN(4)
     {
         . = ALIGN(4);
@@ -228,6 +200,33 @@ SECTIONS
         _bss_end = .;
         PROVIDE(end = .);
     } > BSS_RAM
+
+    .bldata : ALIGN(4)
+    {
+        . = ALIGN(4);
+        PROVIDE(_textbldata = LOADADDR(.bldata));
+        PROVIDE(_bldata = .);
+        _textbldata_start = LOADADDR(.bldata);
+        _bldata_start = .;
+        *(.bldata)
+        *(.bldata.*)
+        *(.rambltext)
+        . = ALIGN(4);
+        PROVIDE(_ebldata = .);
+        _bldata_end = .;
+    } > BL_RAM AT > flash
+
+    .blbss (NOLOAD) : ALIGN(4)
+    {
+        . = ALIGN(4);
+        _blbss_start = .;
+        *(.blbss)
+        *(.blbss.*)
+        *(BLCOMMON)
+        . = ALIGN(4);
+        _blbss_end = .;
+        PROVIDE(blend = .);
+    } > BL_RAM
 
     .ram0_init : ALIGN(4)
     {
