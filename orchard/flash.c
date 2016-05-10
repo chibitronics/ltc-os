@@ -5,19 +5,20 @@
 #include "printf.h"
 
 #include "flash.h"
+#include "esplanade_os.h"
 
 uint32_t gCallBackCnt; /* global counter in callback(). */
 pFLASHCOMMANDSEQUENCE g_FlashLaunchCommand = (pFLASHCOMMANDSEQUENCE)0xFFFFFFFF;
 
 /* array to copy __Launch_Command func to RAM */
-uint16_t __ram_func[LAUNCH_CMD_SIZE/2];
-uint16_t __ram_for_callback[CALLBACK_SIZE/2]; /* length of this array depends on total size of the functions need to be copied to RAM*/
+bl_symbol_bss(uint16_t __ram_func[LAUNCH_CMD_SIZE/2]);
+bl_symbol_bss(uint16_t __ram_for_callback[CALLBACK_SIZE/2]); /* length of this array depends on total size of the functions need to be copied to RAM*/
 
 static void callback(void);
 extern uint32_t RelocateFunction(uint32_t dest, uint32_t size, uint32_t src);
 
 // Freescale's Flash Standard Software Driver Structure
-FLASH_SSD_CONFIG flashSSDConfig =
+bl_symbol(FLASH_SSD_CONFIG flashSSDConfig) =
 {
     FTFx_REG_BASE,          /* FTFx control register base */
     P_FLASH_BASE,           /* base address of PFlash block */
