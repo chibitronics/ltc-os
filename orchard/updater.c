@@ -10,6 +10,7 @@
 #include "printf.h"
 
 #include "app.h"
+#include "esplanade_os.h"
 
 #include <string.h>
 
@@ -79,6 +80,8 @@
   Also, once program is successful, automatically start the app. woot!
  */
 
+extern struct app_header *_app_header;
+
 typedef enum states {
   APP_IDLE = 0,
   APP_GOT_ID,
@@ -88,9 +91,9 @@ typedef enum states {
 } app_state;
 static app_state astate = APP_IDLE;
 
-const storage_header *storageHdr = (const storage_header *) STORAGE_START;
+bl_symbol(static const storage_header *storageHdr) =
+    (const storage_header *) STORAGE_START;
 
-extern struct app_header *_app_header;
 void bootToUserApp(void) {
   tfp_printf( "\n\r Reached boot to user app!!!\n\r" );
   GPIOB->PCOR |= (1 << 6);   // blue on
