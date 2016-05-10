@@ -39,6 +39,7 @@ MEMORY
 __storage_start__       = ORIGIN(storage);
 __storage_size__        = LENGTH(storage);
 __storage_end__         = __storage_start__ + __storage_size__ - 1;
+_app_header             = ORIGIN(storage) + 256;
 
 REGION_ALIAS("MAIN_STACK_RAM", ram0);
 REGION_ALIAS("PROCESS_STACK_RAM", ram0);
