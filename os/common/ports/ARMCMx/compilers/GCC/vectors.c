@@ -438,7 +438,7 @@ __attribute__ ((used, aligned(128), section(VECTORS_SECTION)))
 #endif
 #endif
 /*lint -save -e9075 [8.4] All symbols are invoked from asm context.*/
-vectors_t _vectors = {
+const vectors_t _vectors = {
 /*lint -restore*/
   &__main_stack_end__,Reset_Handler,      NMI_Handler,        HardFault_Handler,
   MemManage_Handler,  BusFault_Handler,   UsageFault_Handler, Vector1C,

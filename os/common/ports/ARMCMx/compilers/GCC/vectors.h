@@ -82,7 +82,7 @@ typedef struct {
 /*===========================================================================*/
 
 #if !defined(_FROM_ASM_)
-extern vectors_t _vectors;
+extern const vectors_t _vectors;
 #endif
 
 #ifdef __cplusplus
