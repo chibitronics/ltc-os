@@ -1,6 +1,7 @@
 #include "nil.h"
 #include "hal.h"
 #include "mac.h"
+#include "esplanade_os.h"
 
 // mac state is just local to mac
 typedef enum states {
@@ -9,18 +10,20 @@ typedef enum states {
   MAC_PACKET
 } mac_state;
 
-volatile uint16_t pktPtr = 0;
-uint8_t  pktBuf[PKT_LEN];
-uint8_t  pktReady = 0;  // global flag to indicate packet done. needs mutex if threaded.
+bl_symbol_bss(volatile uint16_t pktPtr);
+bl_symbol_bss(uint8_t  pktBuf[PKT_LEN]);
 
-static int g_bitpos = 9;
-static unsigned char g_curbyte = 0;
+// global flag to indicate packet done. needs mutex if threaded.
+bl_symbol_bss(uint8_t  pktReady);
 
-static mac_state mstate = MAC_IDLE;
-static uint8_t idle_zeros = 0;
-static uint8_t mac_sync[4] = {0,0,0,0};
-static uint8_t wordcnt = 0;
-static uint16_t pkt_len = PKT_LEN;  // we'll adjust this later
+bl_symbol(static int g_bitpos = 9);
+bl_symbol_bss(static unsigned char g_curbyte);
+
+bl_symbol(static mac_state mstate = MAC_IDLE);
+bl_symbol_bss(static uint8_t idle_zeros);
+bl_symbol_bss(static uint8_t mac_sync[4]);
+bl_symbol_bss(static uint8_t wordcnt);
+bl_symbol(static uint16_t pkt_len = PKT_LEN);  // we'll adjust this later
 
 // put_bit with a MAC layer on it
 void putBitMac(int bit) {
