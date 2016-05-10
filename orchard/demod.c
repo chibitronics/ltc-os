@@ -3,6 +3,7 @@
 #include <string.h>
 #include "nil.h"
 //#include "ch.h"
+#include "esplanade_os.h"
 
 #include "hal.h"
 #include "pal.h"
@@ -11,9 +12,8 @@
 #include "demod.h"
 #include "dsptables.h"
 
-int16_t dm_buf[DMBUF_DEPTH];
-
-static FSK_demod_state fsk_state;
+bl_symbol_bss(int16_t dm_buf[DMBUF_DEPTH]);
+bl_symbol_bss(static FSK_demod_state fsk_state);
 
 int32_t FSK_core(int16_t *b) {
   int32_t j;
