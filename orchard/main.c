@@ -65,6 +65,11 @@ static void phy_demodulate(void) {
   dataReadyFlag = 0;
 }
 
+
+int userAppIsValid(void);
+void bootToUserApp(void);
+static int app_is_running;
+
 __attribute__((noreturn))
 void demod_loop(void) {
   uint32_t i;
@@ -74,6 +79,7 @@ void demod_loop(void) {
   nvicDisableVector(HANDLER_SYSTICK);
   
   // infinite loops, prevents other system items from starting
+  int counter = 0;
   while(TRUE) {
     pktPtr = 0;
     while( !pktReady ) {
@@ -84,6 +90,16 @@ void demod_loop(void) {
         }
         // call handler, which includes the demodulation routine
         phy_demodulate();
+      }
+
+      if (! (++counter & 0xffff)) {
+        if (userAppIsValid()) {
+          printf("User app is valid, booting\r\n");
+          app_is_running = 1;
+
+          adcStop(&ADCD1);
+          bootToUserApp();
+        }
       }
     }
 
@@ -190,12 +206,24 @@ static void putc_x(void *storage, char c) {
   chnWrite(&SD1, (const uint8_t *) &c, 1);
 }
   
+/* Initialize the bootloader setup */
+static void blcrt_init(void) {
+  /* Variables defined by the linker */
+  extern uint32_t _textbldata_start;
+  extern uint32_t _bldata_start;
+  extern uint32_t _bldata_end;
+  extern uint32_t _blbss_start;
+  extern uint32_t _blbss_end;
+
+  memset(&_blbss_start, 0, &_blbss_end - &_blbss_start);
+  memcpy(&_bldata_start, &_textbldata_start, &_bldata_end - &_bldata_start);
+}
 
 /*
  * "main" thread, separate from idle thread
  */
 #include "esplanade_os.h"
-bl_symbol(static THD_WORKING_AREA(waThread1, 512));
+static THD_WORKING_AREA(waThread1, 256);
 static THD_FUNCTION(Thread1, arg) {
   (void)arg;
 
@@ -272,7 +300,8 @@ static THD_FUNCTION(Thread1, arg) {
   NVIC_DisableIRQ(PendSV_IRQn);
   NVIC_DisableIRQ(SysTick_IRQn);
   
-  analogUpdateMic();  // starts mic sampling loop (interrupt-driven and automatic)
+  if (!app_is_running)
+    analogUpdateMic();  // starts mic sampling loop (interrupt-driven and automatic)
   demod_loop();
 }
 
@@ -291,6 +320,7 @@ THD_TABLE_END
  */
 int main(void)
 {
+  blcrt_init();
   /*
    * System initializations.
    * - HAL initialization, this also initializes the configured device drivers
@@ -298,6 +328,7 @@ int main(void)
    * - Kernel initialization, the main() function becomes a thread and the
    *   RTOS is active.
    */
+
   halInit();
   chSysInit();
 
@@ -305,4 +336,3 @@ int main(void)
     ;
 
 }
-
