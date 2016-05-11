@@ -299,7 +299,7 @@
  *
  * @note    The default is @p TRUE.
  */
-#define CH_CFG_USE_MEMPOOLS                 TRUE
+#define CH_CFG_USE_MEMPOOLS                 FALSE
 
 /**
  * @brief   Dynamic Threads APIs.
@@ -310,7 +310,7 @@
  * @note    Requires @p CH_CFG_USE_WAITEXIT.
  * @note    Requires @p CH_CFG_USE_HEAP and/or @p CH_CFG_USE_MEMPOOLS.
  */
-#define CH_CFG_USE_DYNAMIC                  FALSE
+#define CH_CFG_USE_DYNAMIC                  TRUE
 
 /** @} */
 
@@ -335,7 +335,7 @@
  *
  * @note    The default is @p FALSE.
  */
-#define CH_DBG_SYSTEM_STATE_CHECK           TRUE
+#define CH_DBG_SYSTEM_STATE_CHECK           FALSE
 
 /**
  * @brief   Debug option, parameters checks.
@@ -344,7 +344,7 @@
  *
  * @note    The default is @p FALSE.
  */
-#define CH_DBG_ENABLE_CHECKS                TRUE
+#define CH_DBG_ENABLE_CHECKS                FALSE
 
 /**
  * @brief   Debug option, consistency checks.
@@ -354,7 +354,7 @@
  *
  * @note    The default is @p FALSE.
  */
-#define CH_DBG_ENABLE_ASSERTS               TRUE
+#define CH_DBG_ENABLE_ASSERTS               FALSE
 
 /**
  * @brief   Debug option, trace buffer.
@@ -385,7 +385,7 @@
  *
  * @note    The default is @p FALSE.
  */
-#define CH_DBG_FILL_THREADS                 TRUE
+#define CH_DBG_FILL_THREADS                 FALSE
 
 /**
  * @brief   Debug option, threads profiling.
