@@ -183,8 +183,14 @@ static void blcrt_init(void) {
  * "main" thread, separate from idle thread
  */
 #include "esplanade_os.h"
-static THD_WORKING_AREA(waThread1, 256);
-static THD_FUNCTION(Thread1, arg) {
+#if defined(_CHIBIOS_RT_) /* Put this in bootloader area for Rt */
+bl_symbol_bss(
+#endif
+    static THD_WORKING_AREA(waDemodThread, 256)
+#if defined(_CHIBIOS_RT_)
+    );
+#endif
+static THD_FUNCTION(demod_thread, arg) {
   (void)arg;
 
   GPIOB->PSOR |= (1 << 6);   // red off
@@ -270,10 +276,11 @@ static THD_FUNCTION(Thread1, arg) {
  * Threads static table, one entry per thread. The number of entries must
  * match NIL_CFG_NUM_THREADS.
  */
+#if defined(_CHIBIOS_NIL_)
 THD_TABLE_BEGIN
-  THD_TABLE_ENTRY(waThread1, "demod", Thread1, NULL)
+  THD_TABLE_ENTRY(waDemodThread, "demod", demod_thread, NULL)
 THD_TABLE_END
-  
+#endif /* defined(_CHIBIOS_NIL_) */ 
 
 /*
  * Application entry point.
@@ -291,6 +298,12 @@ int main(void)
 
   halInit();
   chSysInit();
+
+#if defined(_CHIBIOS_RT_)
+  chThdCreateStatic(waDemodThread, sizeof(waDemodThread),
+                    HIGHPRIO, demod_thread, NULL);
+#endif
+
 
   while(1)  /// this is now the "idle" thread
     ;

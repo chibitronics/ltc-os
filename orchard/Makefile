@@ -10,7 +10,7 @@ endif
 
 # Compiler options here.
 ifeq ($(USE_OPT),)
-  USE_OPT = -O3 -ggdb -fomit-frame-pointer -falign-functions=16 -nostdlib -mfloat-abi=soft -mfp16-format=none
+  USE_OPT = -O3 -ggdb -fomit-frame-pointer -falign-functions=16 -nostdlib -mfloat-abi=soft -mfp16-format=none -fsingle-precision-constant
 endif
 
 # C specific options here (added to USE_OPT).
@@ -94,12 +94,10 @@ include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/startup_kl02x.mk
 include $(CHIBIOS)/os/hal/hal.mk
 include $(CHIBIOS)/os/hal/ports/KINETIS/KL02x/platform.mk
 include $(CHIBIOS)/os/hal/boards/CHIBITRONICS_ESPLANADE/board.mk 
-include $(CHIBIOS)/os/hal/osal/nil/osal.mk
+include $(CHIBIOS)/os/hal/osal/rt/osal.mk
 # RTOS files (optional).
-include $(CHIBIOS)/os/nil/nil.mk
-include $(CHIBIOS)/os/nil/ports/ARMCMx/compilers/GCC/mk/port_v6m.mk
-# Other files (optional).
-#include $(CHIBIOS)/test/nil/test.mk
+include $(CHIBIOS)/os/rt/rt.mk
+include $(CHIBIOS)/os/rt/ports/ARMCMx/compilers/GCC/mk/port_v6m.mk
 
 #C90TFS Freescale Flash drivers
 LIBC90TFS = $(CHIBIOS)/ext/C90TFS
@@ -128,7 +126,6 @@ CSRC = main.c \
        $(BOARDSRC) \
        printf.c \
        ws2812b.c \
-       $(CHIBIOS)/os/hal/lib/streams/chprintf.c \
        $(LIBC90TFSSRC) \
        __aeabi.c \
 
