@@ -98,7 +98,7 @@ Run_App:
                 /* PSP stack pointers initialization.*/
                 ldr     r1, =__ram0_end__
                 sub     r1, #4
-                msr     PSP, r1
+                msr     MSP, r1
 
                 /* CPU mode initialization as configured.*/
                 movs    r1, #CRT0_CONTROL_INIT
@@ -157,9 +157,6 @@ initloop:
                 add     r4, r4, #4
                 b       initloop
 endinitloop:
-
-                /* Interrupts must be enabled for SVC to work */
-                cpsie i
 
                 /* Main program invocation, r0 contains the returned value.*/
                 ldr     r0, [r0, #entry]
