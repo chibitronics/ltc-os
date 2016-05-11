@@ -34,7 +34,15 @@
 #endif
 #include <stddef.h>
 #include <string.h>
-extern int __cxa_atexit(void (*)(void*), void*, void*);
+#include <stdint.h>
+//extern int __cxa_atexit(void (*)(void*), void*, void*);
+int __cxa_atexit(void (*destructor)(void*), void *object, void *dso_handle) {
+  (void)destructor;
+  (void)object;
+  (void)dso_handle;
+  return 0;
+}
+
 // All of these are weak symbols to avoid multiple definition errors when
 // linking with libstdc++-v3 or compiler-rt.
 /* The "C++ ABI for ARM" document states that static C++ constructors,
@@ -145,3 +153,38 @@ __AEABI_SYMVERS(__aeabi_memclr8);
 __AEABI_SYMVERS(__aeabi_memclr4);
 __AEABI_SYMVERS(__aeabi_memclr);
 #undef __AEABI_SYMVERS
+
+typedef uint64_t stkalign_t;
+uint8_t *os_heap_start = 0;
+uint8_t *os_heap_end = 0;
+
+#define MEM_ALIGN_SIZE      sizeof(stkalign_t)
+#define MEM_ALIGN_MASK      (MEM_ALIGN_SIZE - 1U)
+#define MEM_ALIGN_PREV(p)   ((size_t)(p) & ~MEM_ALIGN_MASK)
+#define MEM_ALIGN_NEXT(p)   MEM_ALIGN_PREV((size_t)(p) + MEM_ALIGN_MASK)
+void *_sbrk(size_t increment) {
+  void *p;
+  if (!os_heap_start && !os_heap_end)
+    return NULL;
+
+  increment = MEM_ALIGN_NEXT(increment);
+  /*lint -save -e9033 [10.8] The cast is safe.*/
+  if ((size_t)(os_heap_end - os_heap_start) < increment) {
+    /*lint -restore*/
+    return NULL;
+  }
+  p = os_heap_start;
+  os_heap_start += increment;
+
+  return p;
+}
+
+char * itoa (int val, char *s, int radix);
+char * ltoa (long val, char *s, int radix) {
+  return itoa(val, s, radix);
+}
+
+char * utoa (unsigned int val, char *s, int radix);
+char * ultoa (unsigned long val, char *s, int radix) {
+  return utoa(val, s, radix);
+}
