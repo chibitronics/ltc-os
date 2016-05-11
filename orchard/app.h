@@ -20,8 +20,8 @@ struct app_header {
   /* 0x30 */
   uint32_t *const_start;      /* Start of C++ constructors */
   uint32_t *const_end;        /* Start of C++ constructors */
-  uint32_t reserved2;
-  uint32_t reserved3;
+  uint32_t *heap_start;       /* Start of heap */
+  uint32_t *heap_end;         /* End of heap */
 } __attribute__((__packed__));
 
 #define APP_MAGIC 0xd3fbf67a
