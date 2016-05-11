@@ -26,7 +26,7 @@ MEMORY
     flashcfg : org = 0x00000400, len = 0x10
     flash    : org = 0x00000410, len = 32k - 0x410 - 10k
     storage  : org = 0x00005800, len = 10k
-    ram0  : org = 0x1FFFFC00, len = 768
+    ram0  : org = 0x1FFFFC00, len = 1152
     ram1  : org = 0x1FFFFC00 + LENGTH(ram0), len = 4k - LENGTH(ram0)
     ram2  : org = 0x00000000, len = 0
     ram3  : org = 0x00000000, len = 0
