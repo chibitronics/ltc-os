@@ -166,7 +166,9 @@ TCPPSRC =
 
 # List ASM source files here
 ASMSRC = $(STARTUPASM) $(PORTASM) $(OSALASM) \
-         run_app.s svc_handler.s ws2812b_ll.s hardfault_handler.s
+         run_app.s svc_handler.s ws2812b_ll.s \
+         hardfault_handler.s memmanage_handler.s \
+         usagefault_handler.s busfault_handler.s
 
 INCDIR = $(STARTUPINC) $(KERNINC) $(PORTINC) $(OSALINC) \
          $(HALINC) $(PLATFORMINC) $(BOARDINC) $(TESTINC) \
