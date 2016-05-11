@@ -20,7 +20,7 @@ endif
 
 # C++ specific options here (added to USE_OPT).
 ifeq ($(USE_CPPOPT),)
-  USE_CPPOPT = -fno-rtti
+  USE_CPPOPT = -fno-rtti -fno-exceptions
 endif
 
 # Enable this if you want the linker to remove unused code and data
@@ -127,6 +127,7 @@ CSRC = main.c \
        $(PLATFORMSRC) \
        $(BOARDSRC) \
        printf.c \
+       ws2812b.c \
        $(CHIBIOS)/os/hal/lib/streams/chprintf.c \
        $(LIBC90TFSSRC) \
        __aeabi.c \
@@ -165,13 +166,13 @@ TCPPSRC =
 
 # List ASM source files here
 ASMSRC = $(STARTUPASM) $(PORTASM) $(OSALASM) \
-         run_app.s svc_handler.s
+         run_app.s svc_handler.s ws2812b_ll.s hardfault_handler.s
 
 INCDIR = $(STARTUPINC) $(KERNINC) $(PORTINC) $(OSALINC) \
          $(HALINC) $(PLATFORMINC) $(BOARDINC) $(TESTINC) \
          $(CHIBIOS)/os/various \
-	 $(CHIBIOS)/os/hal/lib/streams \
-	 $(LIBC90TFSINC)
+         $(CHIBIOS)/os/hal/lib/streams \
+         $(LIBC90TFSINC)
 
 #
 # Project, sources and paths
@@ -255,7 +256,35 @@ include $(RULESPATH)/rules.mk
 gitversion.c: $(CHIBIOS)/.git/HEAD $(CHIBIOS)/.git/index
 	echo "const char *gitversion = \"$(shell git rev-parse HEAD)\";" > $@
 
-dsptables: dsptable_gen.c demod.h
-	@echo
-	gcc -I. $(IINCDIR) -lm $< -o $@
+dsptables.h: dsptables
+ifeq ($(USE_VERBOSE_COMPILE),yes)
 	./dsptables
+else
+	@echo Generating DSP tables $@
+	@./dsptables
+endif
+
+dsptables: dsptable_gen.c
+ifeq ($(USE_VERBOSE_COMPILE),yes)
+	gcc -I. $(IINCDIR) -lm $< -o $@
+else
+	@echo Building DSP table generator $@
+	@gcc -I. $(IINCDIR) -lm $< -o $@
+endif
+
+# Build a .symbol file, to enable OS/App debugging
+POST_MAKE_ALL_RULE_HOOK: $(BUILDDIR)/$(PROJECT).symbol
+
+# Suppress a cryptic, harmless warning about copying mstack
+%.symbol: %.elf
+ifeq ($(USE_VERBOSE_COMPILE),yes)
+	$(CP) --only-keep-debug $< $@ 2> /dev/null
+else
+	@echo Creating $@
+	@$(CP) --only-keep-debug $< $@ 2> /dev/null
+endif
+
+# Debug hook - enable printing Makefile variables
+# by running e.g. "make print-OUTFILES"
+print-%:
+	@echo '$*=$($*)'
