@@ -35,7 +35,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdint.h>
-//extern int __cxa_atexit(void (*)(void*), void*, void*);
+
 int __cxa_atexit(void (*destructor)(void*), void *object, void *dso_handle) {
   (void)destructor;
   (void)object;
@@ -43,23 +43,13 @@ int __cxa_atexit(void (*destructor)(void*), void *object, void *dso_handle) {
   return 0;
 }
 
-// All of these are weak symbols to avoid multiple definition errors when
-// linking with libstdc++-v3 or compiler-rt.
-/* The "C++ ABI for ARM" document states that static C++ constructors,
- * which are called from the .init_array, should manually call
- * __aeabi_atexit() to register static destructors explicitly.
- *
- * Note that 'dso_handle' is the address of a magic linker-generate
- * variable from the shared object that contains the constructor/destructor
- */
-int __attribute__((weak))
-__aeabi_atexit_impl(void *object, void (*destructor) (void *), void *dso_handle) {
-    return __cxa_atexit(destructor, object, dso_handle);
+int __aeabi_atexit (void *arg, void (*func) (void *), void *d) {
+  (void)arg;
+  (void)func;
+  (void)d;
+  return 0;
 }
-int __attribute__((weak))
-__aeabi_atexit_impl2(void *object, void (*destructor) (void *), void *dso_handle) {
-    return __cxa_atexit(destructor, object, dso_handle);
-}
+
 void __attribute__((weak)) __aeabi_memcpy8_impl(void *dest, const void *src, size_t n) {
     memcpy(dest, src, n);
 }
@@ -139,7 +129,6 @@ void __attribute__((weak)) __aeabi_memclr_impl2(void *dest, size_t n) {
 #define __AEABI_SYMVERS(fn_name) \
 __asm__(".symver " #fn_name "_impl, " #fn_name "@@LIBC_N"); \
 __asm__(".symver " #fn_name "_impl2, " #fn_name "@LIBC_PRIVATE")
-__AEABI_SYMVERS(__aeabi_atexit);
 __AEABI_SYMVERS(__aeabi_memcpy8);
 __AEABI_SYMVERS(__aeabi_memcpy4);
 __AEABI_SYMVERS(__aeabi_memcpy);
