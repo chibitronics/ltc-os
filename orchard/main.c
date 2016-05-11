@@ -154,50 +154,10 @@ void demod_loop(void) {
   }
 }
 
-/**
- * @name    Alignment support macros
- */
-/**
- * @brief   Alignment size constant.
- */
-#define MEM_ALIGN_SIZE      sizeof(stkalign_t)
-
-/**
- * @brief   Alignment mask constant.
- */
-#define MEM_ALIGN_MASK      (MEM_ALIGN_SIZE - 1U)
-
-/**
- * @brief   Alignment helper macro.
- */
-#define MEM_ALIGN_PREV(p)   ((size_t)(p) & ~MEM_ALIGN_MASK)
-
-/**
- * @brief   Alignment helper macro.
- */
-#define MEM_ALIGN_NEXT(p)   MEM_ALIGN_PREV((size_t)(p) + MEM_ALIGN_MASK)
-
-/**
- * @brief   Core memory status.
- *
- * @return              The size, in bytes, of the free core memory.
- *
- * @xclass
- */
-static size_t chCoreGetStatusX(void) {
-  uint8_t *nextmem;
-  uint8_t *endmem;
-  extern uint8_t __heap_base__[];
-  extern uint8_t __heap_end__[];
-
-  /*lint -save -e9033 [10.8] Required cast operations.*/
-  nextmem = (uint8_t *)MEM_ALIGN_NEXT(__heap_base__);
-  endmem = (uint8_t *)MEM_ALIGN_PREV(__heap_end__);
-  /*lint restore*/
-
-  /*lint -save -e9033 [10.8] The cast is safe.*/
-  return (size_t)(endmem - nextmem);
-  /*lint -restore*/
+static size_t heap_size(void) {
+  extern uint32_t __heap_base__;
+  extern uint32_t __heap_end__;
+  return (size_t) (&__heap_end__ - &__heap_base__);
 }
 
 static void putc_x(void *storage, char c) {
@@ -241,7 +201,7 @@ static THD_FUNCTION(Thread1, arg) {
   //chnWrite( &SD1, (const uint8_t *) "\r\n\r\nOrchard audio wtf loader.\r\n", 32);
   //chThdSleepMilliseconds(1000);
   tfp_printf( "\r\n\r\nOrchard audio bootloader.  Based on build %s\r\n", gitversion);
-  tfp_printf( "core free memory : %d bytes\r\n", chCoreGetStatusX());
+  tfp_printf( "core free memory : %d bytes\r\n", heap_size());
   chThdSleepMilliseconds(100); // give a little time for the status message to appear
   
   //i2cStart(i2cDriver, &i2c_config);
