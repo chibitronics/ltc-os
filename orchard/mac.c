@@ -1,4 +1,3 @@
-#include "nil.h"
 #include "hal.h"
 #include "mac.h"
 #include "esplanade_os.h"
