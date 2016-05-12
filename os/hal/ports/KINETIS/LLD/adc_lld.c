@@ -172,16 +172,16 @@ void adc_lld_start(ADCDriver *adcp) {
  */
 void adc_lld_stop(ADCDriver *adcp) {
 
-  /* If in ready state then disables the ADC clock.*/
   if (adcp->state == ADC_READY) {
-    SIM->SCGC6 &= ~SIM_SCGC6_ADC0;
-
 #if KINETIS_ADC_USE_ADC0
     if (&ADCD1 == adcp) {
       /* Disable Interrupt, Disable Channel */
       adcp->adc->SC1A = ADCx_SC1n_ADCH(ADCx_SC1n_ADCH_DISABLED);
     }
 #endif
+
+    /* If in ready state then disables the ADC clock.*/
+    SIM->SCGC6 &= ~SIM_SCGC6_ADC0;
   }
 }
 
