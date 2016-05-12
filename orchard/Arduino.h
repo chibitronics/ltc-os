@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "kl02.h"
 
 enum analog_reference_type {
   DEFAULT = 0,
@@ -26,6 +27,9 @@ enum pin_mode {
   INPUT_PULLUP = 2,
   INPUT_PULLDOWN = 3,
 };
+
+#define digitalPinToPort(x) ((x < 32) ? FGPIOA_BASE : FGPIOB_BASE)
+#define digitalPinToBitMask(x) (1 << (x & 0x1f))
 
 /* Program lifetime */
 #if !defined(ARDUINO_OS) /* These are not syscalls */
