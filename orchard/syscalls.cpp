@@ -35,6 +35,21 @@ extern "C" {
     extern uint32_t __aeabi_llsl;
     extern uint32_t __aeabi_llsr;
     extern uint32_t __aeabi_lmul;
+    extern uint32_t strcpy;
+    extern uint32_t strlen;
+    extern uint32_t free;
+    extern uint32_t malloc;
+    extern uint32_t realloc;
+    extern uint32_t __dso_handle;
+    extern uint32_t __aeabi_atexit;
+    extern uint32_t __cxa_atexit;
+    extern uint32_t memset;
+    extern uint32_t ltoa;
+    extern uint32_t utoa;
+    extern uint32_t ultoa;
+    extern uint32_t itoa;
+    extern uint32_t ledShow;
+    extern uint32_t tfp_printf;
 };
 extern void pinMode(int pin, enum pin_mode mode);
 extern void digitalWrite(int pin, int value);
@@ -62,6 +77,7 @@ extern "C" {
   extern const uint32_t * const SysCall_Table[];
 };
 
+__attribute__((section(".rodata")))
 const uint32_t * const SysCall_Table[] = {
     (const uint32_t *)&__aeabi_memcpy8,
     (const uint32_t *)&__aeabi_memcpy4,
@@ -97,6 +113,21 @@ const uint32_t * const SysCall_Table[] = {
     (const uint32_t *)&__aeabi_llsl,
     (const uint32_t *)&__aeabi_llsr,
     (const uint32_t *)&__aeabi_lmul,
+    (const uint32_t *)&strcpy,
+    (const uint32_t *)&strlen,
+    (const uint32_t *)&free,
+    (const uint32_t *)&malloc,
+    (const uint32_t *)&realloc,
+    (const uint32_t *)&__dso_handle,
+    (const uint32_t *)&__aeabi_atexit,
+    (const uint32_t *)&__cxa_atexit,
+    (const uint32_t *)&memset,
+    (const uint32_t *)&ltoa,
+    (const uint32_t *)&utoa,
+    (const uint32_t *)&ultoa,
+    (const uint32_t *)&itoa,
+    (const uint32_t *)&ledShow,
+    (const uint32_t *)&tfp_printf,
     (const uint32_t *)static_cast<void (*)(int pin, enum pin_mode mode)>(&pinMode),
     (const uint32_t *)static_cast<void (*)(int pin, int value)>(&digitalWrite),
     (const uint32_t *)static_cast<int (*)(int pin)>(&digitalRead),
