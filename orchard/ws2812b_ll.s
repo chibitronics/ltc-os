@@ -1,5 +1,7 @@
 .text
 
+#include "kl02.h"
+
   /***
     WS2812B Low-Level code
       WS2812B timing requirements:
@@ -17,6 +19,9 @@
 
       Data passed in shall be an array of bytes, GRB ordered, of length N specified as a parameter
 
+      extern void ledUpdate(uint32_t num_leds, void *pixels, uint32_t mask,
+                            uint32_t set_addr, uint32_t clr_addr);
+
    ***/
 
 .global ledUpdate
@@ -24,14 +29,14 @@
 .equ  mainled_bit0, 0x0
 .equ  mainled_bit1, 0x1
 
-eclr    .req r0  // register for clearing a bit
-eset    .req r1  // register for setting a bit
-bitmask .req r5  // mask to jam into register
+eclr    .req r4  // register for clearing a bit
+eset    .req r3  // register for setting a bit
+bitmask .req r2  // mask to jam into register
 
-stop    .req r3  // stop value for fbptr
-curpix  .req r4  // current pixel value
+curpix  .req r5  // current pixel value
+stop    .req r0  // stop value for fbptr
 bit     .req r6  // bit counter (shift loop per color)
-fbptr   .req r7  // frame buffer pointer
+fbptr   .req r1  // frame buffer pointer
 
 	// r2 is GPIO dest location
 	// r0 is "0" bit number code
@@ -45,19 +50,12 @@ fbptr   .req r7  // frame buffer pointer
 ledUpdate:	
 	// r0  uint8_t *fb
 	// r1  uint32_t	len
-	push {r4,r5,r6,r7}
-
-	mov fbptr, r0        // r7 gets to be the pointer to the pixel array
-
-	mov stop, r1         // r3 gets number of pixels to go through
-	mov r0, #3           // r0 already saved, use as temp for multiply
-	mul stop, stop, r0   // mult by 3 for RGB
-	add stop, stop, fbptr // add in the fptr to finalize stop computation value
+	push {r4-r7,lr}     // Save the other parameters we'll use
+  ldr eclr, [sp, #20] // Get eclr from the stack, as argument #5
+	mov bit, #3         // use bit temp for multiply
+	mul stop, bit       // mult by 3 for RGB
+	add stop, fbptr     // add in the fptr to finalize stop computation value
 	
-	ldr eset, PORTESET
-	ldr eclr, PORTECLR
-	ldr bitmask, LEDBIT
-
 	///////////////////////
 looptop:
 	str bitmask, [eset]   // start with bit set
@@ -199,16 +197,15 @@ pixEpilogue:
 	
 exit:	
 	
-	pop {r4,r5,r6,r7}
-	bx lr
+	pop {r4-r7,pc}
 	
 .balign 4
 PORTESET:	
-.word 0xF8000104
+.word FGPIOA_PSOR
 PORTECLR:	
-.word 0xF8000108
+.word FGPIOA_PCOR
 LEDBIT:	
-.word 0x20000
+.word (1<<3)
 
 .end
 	
