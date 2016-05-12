@@ -26,7 +26,7 @@ MEMORY
     flashcfg : org = 0x00000400, len = 0x10
     flash    : org = 0x00000410, len = 32k - 0x410 - 10k
     storage  : org = 0x00005800, len = 10k
-    ram0  : org = 0x1FFFFC00, len = 1152
+    ram0  : org = 0x1FFFFC00, len = 1024
     ram1  : org = 0x1FFFFC00 + LENGTH(ram0), len = 4k - LENGTH(ram0)
     ram2  : org = 0x00000000, len = 0
     ram3  : org = 0x00000000, len = 0
@@ -41,12 +41,12 @@ __storage_size__        = LENGTH(storage);
 __storage_end__         = __storage_start__ + __storage_size__ - 1;
 _app_header             = ORIGIN(storage) + 256;
 
-REGION_ALIAS("MAIN_STACK_RAM", ram1);
+REGION_ALIAS("MAIN_STACK_RAM", ram0);
 REGION_ALIAS("PROCESS_STACK_RAM", ram0);
 REGION_ALIAS("DATA_RAM", ram0);
 REGION_ALIAS("BSS_RAM", ram0);
-REGION_ALIAS("HEAP_RAM", ram1);
 REGION_ALIAS("BL_RAM", ram1)
+REGION_ALIAS("HEAP_RAM", ram1);
 
 __ram0_start__          = ORIGIN(ram0);
 __ram0_size__           = LENGTH(ram0);
@@ -163,17 +163,6 @@ SECTIONS
         __main_stack_end__ = .;
     } > MAIN_STACK_RAM
 
-    /* Special section for process stack.*/
-    .pstack :
-    {
-        __process_stack_base__ = .;
-        __main_thread_stack_base__ = .;
-        . += __process_stack_size__;
-        . = ALIGN(8);
-        __process_stack_end__ = .;
-        __main_thread_stack_end__ = .;
-    } > PROCESS_STACK_RAM
-
     .data : ALIGN(4)
     {
         . = ALIGN(4);
@@ -200,6 +189,41 @@ SECTIONS
         _bss_end = .;
         PROVIDE(end = .);
     } > BSS_RAM
+
+    .ram0_init : ALIGN(4)
+    {
+        . = ALIGN(4);
+        __ram0_init_text__ = LOADADDR(.ram0_init);
+        __ram0_init__ = .;
+        *(.ram0_init)
+        *(.ram0_init.*)
+        . = ALIGN(4);
+    } > ram0 AT > flash
+
+    .ram0 (NOLOAD) : ALIGN(4)
+    {
+        . = ALIGN(4);
+        __ram0_clear__ = .;
+        *(.ram0_clear)
+        *(.ram0_clear.*)
+        . = ALIGN(4);
+        __ram0_noinit__ = .;
+        *(.ram0)
+        *(.ram0.*)
+        . = ALIGN(4);
+        __ram0_free__ = .;
+    } > ram0
+
+    /* Special section for process stack.*/
+    .pstack :
+    {
+        __process_stack_base__ = .;
+        __main_thread_stack_base__ = .;
+        . += __process_stack_size__;
+        . = ALIGN(8);
+        __process_stack_end__ = .;
+        __main_thread_stack_end__ = .;
+    } > PROCESS_STACK_RAM
 
     .bldata : ALIGN(4)
     {
@@ -228,29 +252,14 @@ SECTIONS
         PROVIDE(blend = .);
     } > BL_RAM
 
-    .ram0_init : ALIGN(4)
+    /* The default heap uses the (statically) unused part of a RAM section.*/
+    .heap (NOLOAD) :
     {
-        . = ALIGN(4);
-        __ram0_init_text__ = LOADADDR(.ram0_init);
-        __ram0_init__ = .;
-        *(.ram0_init)
-        *(.ram0_init.*)
-        . = ALIGN(4);
-    } > ram0 AT > flash
-
-    .ram0 (NOLOAD) : ALIGN(4)
-    {
-        . = ALIGN(4);
-        __ram0_clear__ = .;
-        *(.ram0_clear)
-        *(.ram0_clear.*)
-        . = ALIGN(4);
-        __ram0_noinit__ = .;
-        *(.ram0)
-        *(.ram0.*)
-        . = ALIGN(4);
-        __ram0_free__ = .;
-    } > ram0
+        . = ALIGN(8);
+        __heap_base__ = .;
+        . = ORIGIN(HEAP_RAM) + LENGTH(HEAP_RAM);
+        __heap_end__ = .;
+    } > HEAP_RAM
 
     .ram1_init : ALIGN(4)
     {
@@ -420,7 +429,7 @@ SECTIONS
         __ram7_free__ = .;
     } > ram7
 
-    .note.gnu.build-id :
+    .note.gnu.build-id /*(NOLOAD)*/ :
     {
         . = ALIGN(4);
         PROVIDE( _note = .);
@@ -430,13 +439,4 @@ SECTIONS
         . = ALIGN(4);
         PROVIDE( _enote = .);
     }  > flash
-
-    /* The default heap uses the (statically) unused part of a RAM section.*/
-    .heap (NOLOAD) :
-    {
-        . = ALIGN(8);
-        __heap_base__ = .;
-        . = ORIGIN(HEAP_RAM) + LENGTH(HEAP_RAM);
-        __heap_end__ = .;
-    } > HEAP_RAM
 }
