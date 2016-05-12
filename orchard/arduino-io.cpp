@@ -3,7 +3,7 @@
 #include "memio.h"
 
 #define PIN_NUMBER(x) (x & 0x1f)
-#define BANK_NUMBER(x) ((x & 0xe0) >> 5)
+#define BANK_NUMBER(x) ((x & ~0x1f) >> 5)
 
 static int pin_to_hwpin(int pin) {
   return pin;
