@@ -1,33 +1,71 @@
 #ifndef __KL02_H__
 #define __KL02_H__
 
-#include <stdint.h>
-
 /* Base peripheral offsets */
-#define FLASH_BASE              ((uint32_t)0x40020000)
-#define TPM0_BASE               ((uint32_t)0x40038000)
-#define TPM1_BASE               ((uint32_t)0x40039000)
-#define ADC0_BASE               ((uint32_t)0x4003B000)
-#define LPTMR0_BASE             ((uint32_t)0x40040000)
-#define SIM_BASE                ((uint32_t)0x40047000)
-#define PORTA_BASE              ((uint32_t)0x40049000)
-#define PORTB_BASE              ((uint32_t)0x4004A000)
-#define MCG_BASE                ((uint32_t)0x40064000)
-#define OSC0_BASE               ((uint32_t)0x40065000)
-#define I2C0_BASE               ((uint32_t)0x40066000)
-#define I2C1_BASE               ((uint32_t)0x40067000)
-#define UART0_BASE              ((uint32_t)0x4006A000)
-#define DAC0_BASE               ((uint32_t)0x40073000)
-#define SPI0_BASE               ((uint32_t)0x40076000)
-#define PMC_BASE                ((uint32_t)0x4007D000)
-#define SMC_BASE                ((uint32_t)0x4007E000)
-#define RCM_BASE                ((uint32_t)0x4007F000)
-#define GPIOA_BASE              ((uint32_t)0x400FF000)
-#define GPIOB_BASE              ((uint32_t)0x400FF040)
-#define FGPIOA_BASE             ((uint32_t)0xF8000000)
-#define FGPIOB_BASE             ((uint32_t)0xF8000040)
+#if !defined(FLASH_BASE) /* Don't re-define these from another implementation */
+#define FLASH_BASE              ((unsigned long)0x40020000)
+#endif
+
+#if !defined(TPM0_BASE) /* Don't re-define these from another implementation */
+#define TPM0_BASE               ((unsigned long)0x40038000)
+#endif
+
+#if !defined(TPM1_BASE) /* Don't re-define these from another implementation */
+#define TPM1_BASE               ((unsigned long)0x40039000)
+#endif
+
+#if !defined(ADC0_BASE) /* Don't re-define these from another implementation */
+#define ADC0_BASE               ((unsigned long)0x4003B000)
+#endif
+
+#if !defined(LPTMR0_BASE) /* Don't re-define these from another implementation */
+#define LPTMR0_BASE             ((unsigned long)0x40040000)
+#endif
+
+#if !defined(MCG_BASE) /* Don't re-define these from another implementation */
+#define MCG_BASE                ((unsigned long)0x40064000)
+#endif
+
+#if !defined(OSC0_BASE) /* Don't re-define these from another implementation */
+#define OSC0_BASE               ((unsigned long)0x40065000)
+#endif
+
+#if !defined(I2C0_BASE) /* Don't re-define these from another implementation */
+#define I2C0_BASE               ((unsigned long)0x40066000)
+#endif
+
+#if !defined(I2C1_BASE) /* Don't re-define these from another implementation */
+#define I2C1_BASE               ((unsigned long)0x40067000)
+#endif
+
+#if !defined(UART0_BASE) /* Don't re-define these from another implementation */
+#define UART0_BASE              ((unsigned long)0x4006A000)
+#endif
+
+#if !defined(DAC0_BASE) /* Don't re-define these from another implementation */
+#define DAC0_BASE               ((unsigned long)0x40073000)
+#endif
+
+#if !defined(SPI0_BASE) /* Don't re-define these from another implementation */
+#define SPI0_BASE               ((unsigned long)0x40076000)
+#endif
+
+#if !defined(PMC_BASE) /* Don't re-define these from another implementation */
+#define PMC_BASE                ((unsigned long)0x4007D000)
+#endif
+
+#if !defined(SMC_BASE) /* Don't re-define these from another implementation */
+#define SMC_BASE                ((unsigned long)0x4007E000)
+#endif
+
+#if !defined(RCM_BASE) /* Don't re-define these from another implementation */
+#define RCM_BASE                ((unsigned long)0x4007F000)
+#endif
 
 /* System Integration Module */
+#if !defined(SIM_BASE)
+#define SIM_BASE                ((unsigned long)0x40047000)
+#endif /* !defined(SIM_BASE) */
 #define SIM_SOPT2   0x40048004 /* System Options Register 2 */
 #define SIM_SOPT4   0x4004800C /* System Options Register 4 */
 #define SIM_SOPT5   0x40048010 /* System Options Register 5 */
@@ -46,6 +84,9 @@
 #define SIM_SRVCOP  0x40048104 /* Service COP Register */
 
 /* Pin mux offsets */
+#if !defined(PORTA_BASE) /* Don't re-define these from another implementation */
+#define PORTA_BASE              ((unsigned long)0x40049000)
+#endif
 #define PORTA_PCR(x) (PORTA_PCR0 + (x * 4))
 #define PORTA_PCR0 0x40049000 /* Pin Control Register n */
 #define PORTA_PCR1 0x40049004 /* Pin Control Register n */
@@ -82,6 +123,9 @@
 #define PORTA_GPCLR 0x40049080 /* Global Pin Control Low Register */
 #define PORTA_GPCHR 0x40049084 /* Global Pin Control High Register */
 #define PORTA_ISFR 0x400490A0 /* Interrupt Status Flag Register */
+#if !defined(PORTB_BASE) /* Don't re-define these from another implementation */
+#define PORTB_BASE              ((unsigned long)0x4004A000)
+#endif
 #define PORTB_PCR(x) (PORTB_PCR0 + (x * 4))
 #define PORTB_PCR0 0x4004A000 /* Pin Control Register n */
 #define PORTB_PCR1 0x4004A004 /* Pin Control Register n */
@@ -120,12 +164,26 @@
 #define PORTB_ISFR 0x4004A0A0 /* Interrupt Status Flag Register */
 
 /* GPIO */
+#define GPIO_PDOR  0x00       /* Port Data Output Register offset */
+#define GPIO_PSOR  0x04       /* Port Set Output Register offset */
+#define GPIO_PCOR  0x08       /* Port Clear Output Register offset */
+#define GPIO_PTOR  0x0C       /* Port Toggle Output Register offset */
+#define GPIO_PDIR  0x10       /* Port Data Input Register offset */
+#define GPIO_PDDR  0x14       /* Port Data Direction Register offset */
+
+#if !defined(GPIOA_BASE) /* Don't re-define these from another implementation */
+#define GPIOA_BASE              ((unsigned long)0x400FF000)
+#endif
 #define GPIOA_PDOR 0x400FF000 /* Port Data Output Register */
 #define GPIOA_PSOR 0x400FF004 /* Port Set Output Register */
 #define GPIOA_PCOR 0x400FF008 /* Port Clear Output Register */
 #define GPIOA_PTOR 0x400FF00C /* Port Toggle Output Register */
 #define GPIOA_PDIR 0x400FF010 /* Port Data Input Register */
 #define GPIOA_PDDR 0x400FF014 /* Port Data Direction Register */
+
+#if !defined(GPIOB_BASE) /* Don't re-define these from another implementation */
+#define GPIOB_BASE              ((unsigned long)0x400FF040)
+#endif
 #define GPIOB_PDOR 0x400FF040 /* Port Data Output Register */
 #define GPIOB_PSOR 0x400FF044 /* Port Set Output Register */
 #define GPIOB_PCOR 0x400FF048 /* Port Clear Output Register */
@@ -134,12 +192,19 @@
 #define GPIOB_PDDR 0x400FF054 /* Port Data Direction Register */
 
 /* FGPIO */
+#if !defined(FGPIOA_BASE) /* Don't re-define these from another implementation */
+#define FGPIOA_BASE             ((unsigned long)0xF8000000)
+#endif
 #define FGPIOA_PDOR 0xF8000000 /* Port Data Output Register */
 #define FGPIOA_PSOR 0xF8000004 /* Port Set Output Register */
 #define FGPIOA_PCOR 0xF8000008 /* Port Clear Output Register */
 #define FGPIOA_PTOR 0xF800000C /* Port Toggle Output Register */
 #define FGPIOA_PDIR 0xF8000010 /* Port Data Input Register */
 #define FGPIOA_PDDR 0xF8000014 /* Port Data Direction Register */
+
+#if !defined(FGPIOB_BASE) /* Don't re-define these from another implementation */
+#define FGPIOB_BASE             ((unsigned long)0xF8000040)
+#endif
 #define FGPIOB_PDOR 0xF8000040 /* Port Data Output Register */
 #define FGPIOB_PSOR 0xF8000044 /* Port Set Output Register */
 #define FGPIOB_PCOR 0xF8000048 /* Port Clear Output Register */
