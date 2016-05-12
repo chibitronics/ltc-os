@@ -102,7 +102,7 @@
  *          does not spawn the idle thread. The application @p main()
  *          function becomes the idle thread and must implement an
  *          infinite loop. */
-#define CH_CFG_NO_IDLE_THREAD               FALSE
+#define CH_CFG_NO_IDLE_THREAD               TRUE
 
 /** @} */
 
