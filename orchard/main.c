@@ -54,7 +54,7 @@ static void phy_demodulate(void) {
 #if OSCOPE_PROFILING // pulse a gpio to easily measure CPU load of demodulation
   GPIOB->PSOR |= (1 << 6);   // sets to high
   GPIOB->PCOR |= (1 << 6);   // clears to low
-  
+
   // this is happening once every 1.748ms with NB_FRAMES = 16, NB_SAMPLES = 8
   // computed about 0.0413ms -> 41.3us per call overhead for OS required ~2.5% overhead
 #endif
@@ -65,19 +65,16 @@ static void phy_demodulate(void) {
   dataReadyFlag = 0;
 }
 
-
 int userAppIsValid(void);
 void bootToUserApp(void);
-static int app_is_running;
 
-__attribute__((noreturn))
 void demod_loop(void) {
   uint32_t i;
 
   // stop systick interrupts
-  SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk;
-  nvicDisableVector(HANDLER_SYSTICK);
-  
+  NVIC_DisableIRQ(PendSV_IRQn);
+  NVIC_DisableIRQ(SysTick_IRQn);
+
   // infinite loops, prevents other system items from starting
   int counter = 0;
   while(TRUE) {
@@ -85,7 +82,7 @@ void demod_loop(void) {
     while( !pktReady ) {
       if( dataReadyFlag ) {
         // copy from the double-buffer into a demodulation buffer
-        for( i = 0 ; i < buf_n; i++ ) { 
+        for( i = 0 ; i < buf_n; i++ ) {
           dm_buf[i] = (int16_t) (((int16_t) bufloc[i]) - 2048);
         }
         // call handler, which includes the demodulation routine
@@ -95,10 +92,10 @@ void demod_loop(void) {
       if (! (++counter & 0xffff)) {
         if (userAppIsValid()) {
           printf("User app is valid, booting\r\n");
-          app_is_running = 1;
-
+          adcStopConversion(&ADCD1);
           adcStop(&ADCD1);
-          bootToUserApp();
+          chThdExit(0);
+          printf("Shouldn't make it here\r\n");
         }
       }
     }
@@ -112,7 +109,7 @@ void demod_loop(void) {
           pktBuf[i] ^= 0xAA;
       }
     }
-    
+
 #define RAWDATA_CHECK 0
 #if RAWDATA_CHECK
     uint32_t hash;
@@ -126,7 +123,7 @@ void demod_loop(void) {
       tfp_printf( "\n\r control packet:" );
       pkt_len = CTRL_LEN;
     }
-    
+
     for( i = 0; i < 16; i++ ) { // abridged dump
       if( i % 32 == 0 ) {
 	tfp_printf( "\n\r" );
@@ -138,7 +135,7 @@ void demod_loop(void) {
 
     txhash = (pktBuf[pkt_len-4] & 0xFF) | (pktBuf[pkt_len-3] & 0xff) << 8 |
       (pktBuf[pkt_len-2] & 0xFF) << 16 | (pktBuf[pkt_len-1] & 0xff) << 24;
-      
+
     tfp_printf( " tx: %08x rx: %08x\n\r", txhash, hash);
     if( txhash != hash ) {
       tfp_printf( " fail\n\r" );
@@ -148,7 +145,7 @@ void demod_loop(void) {
 
     pktReady = 0; // we've extracted packet data, so clear the buffer flag
 #else
-    
+
     updaterPacketProcess(pktBuf);
 #endif
   }
@@ -165,7 +162,7 @@ static void putc_x(void *storage, char c) {
 
   chnWrite(&SD1, (const uint8_t *) &c, 1);
 }
-  
+
 /* Initialize the bootloader setup */
 static void blcrt_init(void) {
   /* Variables defined by the linker */
@@ -209,11 +206,11 @@ static THD_FUNCTION(demod_thread, arg) {
   tfp_printf( "\r\n\r\nOrchard audio bootloader.  Based on build %s\r\n", gitversion);
   tfp_printf( "core free memory : %d bytes\r\n", heap_size());
   chThdSleepMilliseconds(100); // give a little time for the status message to appear
-  
+
   //i2cStart(i2cDriver, &i2c_config);
   adcStart(&ADCD1, &adccfg1);
   analogStart();
-  
+
   demodInit();
 
   flashStart();
@@ -223,26 +220,26 @@ static THD_FUNCTION(demod_thread, arg) {
     jitter notes: 6.8us jitter on 1st cycle; out to 11.7us on last cycle
     each frame of 8 samples (call to FSKdemod() takes ~56.3us to process, with a ~2.5us gap between calls to FSKdemod()
     a total of 32 frames is taking:
-       1.867-1.878ms (1.872ms mean) to process (random noise), 
+       1.867-1.878ms (1.872ms mean) to process (random noise),
        1.859-1.866ms (1.863ms mean) to process (0 tone),
        1.862-1.868ms (1.865ms mean) to process (1 tone),
-       ** jitter seems to be data-dependent differences in code path length 
-    every 3.480ms +/- 2us -> 261 samples. 
+       ** jitter seems to be data-dependent differences in code path length
+    every 3.480ms +/- 2us -> 261 samples.
       +/-2us jitter due to ~when we catch 13.3us/sample edge vs system state (within synchronizing tolerance)
     **should be 3.413ms -> 256 samples, 67 microseconds are "extra" -> 5.025 -> 5 samples per 256 samples
 
     hypotheses:
       - actual effective sample rate is not 75kHz, it's 76.464kHz
         * measured rate = 13.34us(13.25-13.43us jitter spread) => 74.962kHz (within 500ppm correct)
-        ** however! every 3.481ms (287Hz) we have an extra-wide gap at 87.76us (4.21k cycles), with a fast 
-           second sample time of ~5.329us - 5.607us later (e.g., the natural next point to grab a sample). 
+        ** however! every 3.481ms (287Hz) we have an extra-wide gap at 87.76us (4.21k cycles), with a fast
+           second sample time of ~5.329us - 5.607us later (e.g., the natural next point to grab a sample).
         ** this happens in the middle of the IRQ handler. the gap is actually from 87.07us-87.56us long.
         ** fwiw the actual ADC handler completes in 752ns fairly deterministically
       - we're deterministically missing 5 interrupts every cycle
       - there's a coding bug causing us to mis-count # samples
-     
+
     other notes:
-      - adding print's during runtime adds jitter to the processing time, 
+      - adding print's during runtime adds jitter to the processing time,
         but the processing start is deterministic to within 1.8us
       - processing start determinism is improved by putting constant data in
       - we've counted 32 frames being processed during the processing times
@@ -255,23 +252,55 @@ static THD_FUNCTION(demod_thread, arg) {
 
   while( !(((volatile SysTick_Type *)SysTick)->CTRL & SysTick_CTRL_COUNTFLAG_Msk) )
     ;
-  SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
-  
-  NVIC_DisableIRQ(PendSV_IRQn);
-  NVIC_DisableIRQ(SysTick_IRQn);
   //x/2x 0xe000ed1c
   NVIC_SetPriority(SVCall_IRQn, 3);
   NVIC_SetPriority(PendSV_IRQn, 3);
   NVIC_SetPriority(SysTick_IRQn, 3);
   NVIC_DisableIRQ(PendSV_IRQn);
   NVIC_DisableIRQ(SysTick_IRQn);
-  
-  if (!app_is_running)
-    analogUpdateMic();  // starts mic sampling loop (interrupt-driven and automatic)
+
+  analogUpdateMic();  // starts mic sampling loop (interrupt-driven and automatic)
   demod_loop();
 }
 
+#include "app.h"
+extern struct app_header _app_header;
 
+static THD_FUNCTION(app_thread, arg) {
+
+  (void)arg;
+  void (**func)(void);
+
+  chRegSetThreadName("user code");
+
+  func = _app_header.const_start;
+  while (func != _app_header.const_end) {
+    (*func)();
+    func++;
+  }
+
+  _app_header.entry();
+}
+
+thread_t *chBootToApp(void) {
+
+  extern void *os_heap_start;
+  extern void *os_heap_end;
+
+  memset(_app_header.bss_start, 0,
+         _app_header.bss_end - _app_header.bss_start);
+  memcpy(_app_header.data_start, _app_header.data_load_start,
+         _app_header.data_end - _app_header.data_start);
+
+  os_heap_start = _app_header.heap_start + sizeof(thread_t);
+  os_heap_end   = _app_header.heap_end - PORT_WA_SIZE(0);
+
+  return chThdCreateStatic(_app_header.heap_start,
+                       (_app_header.heap_end + 1 - _app_header.heap_start) & ~3,
+                       HIGHPRIO,
+                       app_thread,
+                       NULL);
+}
 /*
  * Threads static table, one entry per thread. The number of entries must
  * match NIL_CFG_NUM_THREADS.
@@ -280,7 +309,7 @@ static THD_FUNCTION(demod_thread, arg) {
 THD_TABLE_BEGIN
   THD_TABLE_ENTRY(waDemodThread, "demod", demod_thread, NULL)
 THD_TABLE_END
-#endif /* defined(_CHIBIOS_NIL_) */ 
+#endif /* defined(_CHIBIOS_NIL_) */
 
 /*
  * Application entry point.
@@ -300,10 +329,15 @@ int main(void)
   chSysInit();
 
 #if defined(_CHIBIOS_RT_)
-  chThdCreateStatic(waDemodThread, sizeof(waDemodThread),
-                    HIGHPRIO, demod_thread, NULL);
+  volatile thread_t *demod_thread_p;
+  demod_thread_p = chThdCreateStatic(waDemodThread, sizeof(waDemodThread),
+                                     HIGHPRIO, demod_thread, NULL);
+  /* Wait for thread to exit */
+  while (demod_thread_p->p_state != CH_STATE_FINAL);
+  NVIC_EnableIRQ(PendSV_IRQn);
+  NVIC_EnableIRQ(SysTick_IRQn);
+  chBootToApp();
 #endif
-
 
   while(1)  /// this is now the "idle" thread
     ;
