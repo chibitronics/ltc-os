@@ -133,7 +133,6 @@ CSRC = main.c \
        $(LIBC90TFSSRC) \
        __aeabi.c \
        math.c \
-       qfp_compat.c \
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
