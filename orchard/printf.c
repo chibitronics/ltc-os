@@ -20,6 +20,31 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
 #include "hal.h"
+
+#if 1
+#include "chprintf.h"
+#include "memstreams.h"
+
+void init_printf(void* putp,void (*putf) (void*,char)) {
+  (void)putp;
+  (void)putf;
+
+  return;
+}
+
+int tfp_printf(const char *fmt, ...) {
+  va_list ap;
+  int formatted_bytes;
+  extern void *stream;
+
+  va_start(ap, fmt);
+  formatted_bytes = chvprintf(stream, fmt, ap);
+  va_end(ap);
+
+  return formatted_bytes;
+}
+
+#else
 #include "printf.h"
 
 typedef void (*putcf) (void*,char);
@@ -231,3 +256,4 @@ void tfp_sprintf(char* s,char *fmt, ...)
   putcp(&s,0);
   va_end(va);
 }
+#endif
