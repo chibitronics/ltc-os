@@ -3,7 +3,7 @@
 # NOTE: Can be overridden externally.
 #
 
-CH_USE_RT = no
+CH_USE_RT = TRUE
 ifeq ($(CH_USE_RT),)
 	CH_USE_RT=FALSE
 endif
@@ -103,6 +103,9 @@ include $(CHIBIOS)/os/rt/ports/ARMCMx/compilers/GCC/mk/port_v6m.mk
 LIBC90TFS = $(CHIBIOS)/ext/C90TFS
 include $(LIBC90TFS)/build.mk
 
+QFPLIB = $(CHIBIOS)/ext/qfplib-20160419
+include $(QFPLIB)/build.mk
+
 # Define linker script file here
 LDSCRIPT= $(STARTUPLD)/KL02P20.ld
 
@@ -126,15 +129,11 @@ CSRC = main.c \
        $(BOARDSRC) \
        printf.c \
        ws2812b.c \
+       $(CHIBIOS)/os/hal/lib/streams/chprintf.c \
        $(LIBC90TFSSRC) \
        __aeabi.c \
-
-# Include the shell, and commands, for full OS.
-ifeq ($(CH_USE_RT),TRUE)
-CSRC += $(CHIBIOS)/os/various/shell.c \
-        $(wildcard cmd-*.c) \
-        $(wildcard prot-*.c)
-endif
+       math.c \
+       qfp_compat.c \
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -162,10 +161,10 @@ TCSRC =
 TCPPSRC =
 
 # List ASM source files here
-ASMSRC = $(STARTUPASM) $(PORTASM) $(OSALASM) \
-         run_app.s svc_handler.s ws2812b_ll.s \
-         hardfault_handler.s memmanage_handler.s \
-         usagefault_handler.s busfault_handler.s
+ASMSRC += $(STARTUPASM) $(PORTASM) $(OSALASM) \
+          run_app.s svc_handler.s ws2812b_ll.s \
+          hardfault_handler.s memmanage_handler.s \
+          usagefault_handler.s busfault_handler.s
 
 INCDIR = $(STARTUPINC) $(KERNINC) $(PORTINC) $(OSALINC) \
          $(HALINC) $(PLATFORMINC) $(BOARDINC) $(TESTINC) \
@@ -233,11 +232,12 @@ UINCDIR =
 ULIBDIR =
 
 # List all user libraries here
-ULIBS = lib/libc-nano-armv6-m.a \
-        lib/libgcc-armv6-m.a \
-        lib/libstdc++-armv6-m.a \
+ULIBS = lib/libstdc++-armv6-m.a \
+        lib/libaeabi-cortexm0.a \
+        lib/libunaligned-funcs.a \
+        lib/libmemmove.a \
+        lib/libmemcpy.a \
         lib/libcrtbegin.a \
-        lib/libm-armv6-m.a \
 
 #
 # End of user defines
