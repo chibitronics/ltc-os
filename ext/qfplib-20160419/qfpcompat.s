@@ -145,7 +145,8 @@ qfp_uint2double:
 qfp_double2str:
   mov r1, r2
   mov r2, r3
-  b qfp_float2str
+  ldr r4, =qfp_float2str
+  mov pc, r4
 
 EXPORT qfp_str2double
   b qfp_str2double
