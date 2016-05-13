@@ -28,6 +28,9 @@ enum pin_mode {
   INPUT_PULLDOWN = 3,
 };
 
+#define LSBFIRST 0
+#define MSBFIRST 1
+
 #define digitalPinToPort(x) ((x < 32) ? FGPIOA_BASE : FGPIOB_BASE)
 #define digitalPinToBitMask(x) (1 << (x & 0x1f))
 
