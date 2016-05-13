@@ -98,17 +98,57 @@ void noTone(int pin) {
 
 /* Simple communication protocols */
 void shiftOut(int dataPin, int clockPin, int bitOrder, uint8_t val) {
-  return;
+  uint8_t i;
+
+  for (i = 0; i < 8; i++)  {
+    if (bitOrder == LSBFIRST)
+      digitalWrite(dataPin, !!(val & (1 << i)));
+    else
+      digitalWrite(dataPin, !!(val & (1 << (7 - i))));
+
+    digitalWrite(clockPin, HIGH);
+    digitalWrite(clockPin, LOW);
+  }
+
 }
 
 uint8_t shiftIn(int dataPin, int clockPin, int bitOrder) {
-  return 0;
+  uint8_t value = 0;
+  uint8_t i;
+
+  for (i = 0; i < 8; ++i) {
+    digitalWrite(clockPin, HIGH);
+    if (bitOrder == LSBFIRST)
+      value |= digitalRead(dataPin) << i;
+    else
+      value |= digitalRead(dataPin) << (7 - i);
+    digitalWrite(clockPin, LOW);
+  }
+  return value;
 }
 
 unsigned long pulseIn(int pin, uint8_t state, unsigned long timeout) {
-  return 0;
+  uint32_t startMicros = micros();
+  state = !!state;
+
+  /* Wait for previous pulse to end */
+  while (digitalRead(pin) == state)
+    if (micros() - startMicros > timeout)
+      return 0;
+
+  /* Wait for the pulse to start */
+  while (digitalRead(pin) != state)
+    if (micros() - startMicros > timeout)
+      return 0;
+
+  /* Wait for the pulse to end */
+  while (digitalRead(pin) == state)
+    if (micros() - startMicros > timeout)
+      return 0;
+
+  return micros() - startMicros;
 }
 
 unsigned long pulseInLong(int pin, uint8_t state, unsigned long timeout) {
-  return 0;
+  return pulseIn(pin, state, timeout);
 }
