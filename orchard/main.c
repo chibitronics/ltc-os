@@ -172,8 +172,8 @@ static void blcrt_init(void) {
   extern uint32_t _blbss_start;
   extern uint32_t _blbss_end;
 
-  memset(&_blbss_start, 0, &_blbss_end - &_blbss_start);
-  memcpy(&_bldata_start, &_textbldata_start, &_bldata_end - &_bldata_start);
+  memset(&_blbss_start, 0, ((uint32_t)&_blbss_end) - ((uint32_t)&_blbss_start) - 1);
+  memcpy(&_bldata_start, &_textbldata_start, ((uint32_t)&_bldata_end) - ((uint32_t)&_bldata_start) - 1);
 }
 
 /*
@@ -265,6 +265,7 @@ static THD_FUNCTION(demod_thread, arg) {
 
 #include "app.h"
 extern struct app_header _app_header;
+static memory_heap_t app_heap;
 
 static THD_FUNCTION(app_thread, arg) {
 
@@ -272,6 +273,9 @@ static THD_FUNCTION(app_thread, arg) {
   void (**func)(void);
 
   chRegSetThreadName("user code");
+
+  chHeapObjectInit(&app_heap, _app_header.heap_start + sizeof(thread_t),
+      _app_header.heap_end - _app_header.heap_start - sizeof(thread_t));
 
   func = _app_header.const_start;
   while (func != _app_header.const_end) {
@@ -282,18 +286,60 @@ static THD_FUNCTION(app_thread, arg) {
   _app_header.entry();
 }
 
-thread_t *chBootToApp(void) {
+void *malloc(size_t size) {
+  return chHeapAlloc(&app_heap, size);
+}
 
-  extern void *os_heap_start;
-  extern void *os_heap_end;
+void free(void *ptr) {
+  chHeapFree(ptr);
+}
+
+/* http://www.chibios.com/forum/viewtopic.php?t=1314&p=22848#p22848 */
+void *realloc (void *addr, size_t size)
+{
+   union heap_header *hp;
+   size_t prev_size, new_size;
+
+   void *ptr;
+
+   if(addr == NULL) {
+      return chHeapAlloc(&app_heap, size);
+   }
+
+   /* previous allocated segment is preceded by an heap_header */
+   hp = addr - sizeof(union heap_header);
+   prev_size = hp->h.size; /* size is always multiple of 8 */
+
+   /* check new size memory alignment */
+   if(size % 8 == 0) {
+      new_size = size;
+   }
+   else {
+      new_size = ((int) (size / 8)) * 8 + 8;
+   }
+
+   if(prev_size >= new_size) {
+      return addr;
+   }
+
+   ptr = chHeapAlloc(&app_heap, size);
+   if(ptr == NULL) {
+      return NULL;
+   }
+
+   memcpy(ptr, addr, prev_size);
+
+   chHeapFree(addr);
+
+   return ptr;
+} /* realloc */
+
+thread_t *chBootToApp(void) {
 
   memset(_app_header.bss_start, 0,
          _app_header.bss_end - _app_header.bss_start);
   memcpy(_app_header.data_start, _app_header.data_load_start,
          _app_header.data_end - _app_header.data_start);
-
-  os_heap_start = _app_header.heap_start + sizeof(thread_t);
-  os_heap_end   = _app_header.heap_end - PORT_WA_SIZE(0);
 
   return chThdCreateStatic(_app_header.heap_start,
                        (_app_header.heap_end + 1 - _app_header.heap_start) & ~3,
