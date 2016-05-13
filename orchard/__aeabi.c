@@ -1,30 +1,3 @@
-/*
- * Copyright (C) 2008 The Android Open Source Project
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *  * Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *  * Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- */
 #if defined(__clang__)
 // clang interprets -fno-builtin more loosely than you might expect,
 // and thinks it's okay to still substitute builtins as long as they're
@@ -32,116 +5,14 @@
 // recursion if we have the fortified memcpy visible in this file.
 #undef _FORTIFY_SOURCE
 #endif
-#include <stddef.h>
+
 #include <string.h>
 #include <stdint.h>
+#include <stdarg.h>
 
-int __cxa_atexit(void (*destructor)(void*), void *object, void *dso_handle) {
-  (void)destructor;
-  (void)object;
-  (void)dso_handle;
-  return 0;
+void do_nothing(void) {
+  return;
 }
-
-int __aeabi_atexit (void *arg, void (*func) (void *), void *d) {
-  (void)arg;
-  (void)func;
-  (void)d;
-  return 0;
-}
-
-void __attribute__((weak)) __aeabi_memcpy8_impl(void *dest, const void *src, size_t n) {
-    memcpy(dest, src, n);
-}
-void __attribute__((weak)) __aeabi_memcpy4_impl(void *dest, const void *src, size_t n) {
-    memcpy(dest, src, n);
-}
-void __attribute__((weak)) __aeabi_memcpy_impl(void *dest, const void *src, size_t n) {
-    memcpy(dest, src, n);
-}
-void __attribute__((weak)) __aeabi_memcpy8_impl2(void *dest, const void *src, size_t n) {
-    memcpy(dest, src, n);
-}
-void __attribute__((weak)) __aeabi_memcpy4_impl2(void *dest, const void *src, size_t n) {
-    memcpy(dest, src, n);
-}
-void __attribute__((weak)) __aeabi_memcpy_impl2(void *dest, const void *src, size_t n) {
-    memcpy(dest, src, n);
-}
-void __attribute__((weak)) __aeabi_memmove8_impl(void *dest, const void *src, size_t n) {
-    memmove(dest, src, n);
-}
-void __attribute__((weak)) __aeabi_memmove4_impl(void *dest, const void *src, size_t n) {
-    memmove(dest, src, n);
-}
-void __attribute__((weak)) __aeabi_memmove_impl(void *dest, const void *src, size_t n) {
-    memmove(dest, src, n);
-}
-void __attribute__((weak)) __aeabi_memmove8_impl2(void *dest, const void *src, size_t n) {
-    memmove(dest, src, n);
-}
-void __attribute__((weak)) __aeabi_memmove4_impl2(void *dest, const void *src, size_t n) {
-    memmove(dest, src, n);
-}
-void __attribute__((weak)) __aeabi_memmove_impl2(void *dest, const void *src, size_t n) {
-    memmove(dest, src, n);
-}
-/*
- * __aeabi_memset has the order of its second and third arguments reversed.
- *  This allows __aeabi_memclr to tail-call __aeabi_memset
- */
-void __attribute__((weak)) __aeabi_memset8_impl(void *dest, size_t n, int c) {
-    memset(dest, c, n);
-}
-void __attribute__((weak)) __aeabi_memset4_impl(void *dest, size_t n, int c) {
-    memset(dest, c, n);
-}
-void __attribute__((weak)) __aeabi_memset_impl(void *dest, size_t n, int c) {
-    memset(dest, c, n);
-}
-void __attribute__((weak)) __aeabi_memset8_impl2(void *dest, size_t n, int c) {
-    memset(dest, c, n);
-}
-void __attribute__((weak)) __aeabi_memset4_impl2(void *dest, size_t n, int c) {
-    memset(dest, c, n);
-}
-void __attribute__((weak)) __aeabi_memset_impl2(void *dest, size_t n, int c) {
-    memset(dest, c, n);
-}
-void __attribute__((weak)) __aeabi_memclr8_impl(void *dest, size_t n) {
-    __aeabi_memset8_impl(dest, n, 0);
-}
-void __attribute__((weak)) __aeabi_memclr4_impl(void *dest, size_t n) {
-    __aeabi_memset4_impl(dest, n, 0);
-}
-void __attribute__((weak)) __aeabi_memclr_impl(void *dest, size_t n) {
-    __aeabi_memset_impl(dest, n, 0);
-}
-void __attribute__((weak)) __aeabi_memclr8_impl2(void *dest, size_t n) {
-    __aeabi_memset8_impl(dest, n, 0);
-}
-void __attribute__((weak)) __aeabi_memclr4_impl2(void *dest, size_t n) {
-    __aeabi_memset4_impl(dest, n, 0);
-}
-void __attribute__((weak)) __aeabi_memclr_impl2(void *dest, size_t n) {
-    __aeabi_memset_impl(dest, n, 0);
-}
-#define __AEABI_SYMVERS(fn_name) \
-__asm__(".symver " #fn_name "_impl, " #fn_name "@@LIBC_N"); \
-__asm__(".symver " #fn_name "_impl2, " #fn_name "@LIBC_PRIVATE")
-__AEABI_SYMVERS(__aeabi_memcpy8);
-__AEABI_SYMVERS(__aeabi_memcpy4);
-__AEABI_SYMVERS(__aeabi_memcpy);
-__AEABI_SYMVERS(__aeabi_memmove8);
-__AEABI_SYMVERS(__aeabi_memmove4);
-__AEABI_SYMVERS(__aeabi_memmove);
-__AEABI_SYMVERS(__aeabi_memset8);
-__AEABI_SYMVERS(__aeabi_memset4);
-__AEABI_SYMVERS(__aeabi_memset);
-__AEABI_SYMVERS(__aeabi_memclr8);
-__AEABI_SYMVERS(__aeabi_memclr4);
-__AEABI_SYMVERS(__aeabi_memclr);
-#undef __AEABI_SYMVERS
 
 typedef uint64_t stkalign_t;
 uint8_t *os_heap_start = 0;
@@ -168,12 +39,92 @@ void *_sbrk(size_t increment) {
   return p;
 }
 
-char * itoa (int val, char *s, int radix);
-char * ltoa (long val, char *s, int radix) {
-  return itoa(val, s, radix);
+extern char *ch_ltoa(char *p, long num, unsigned radix);
+
+char *itoa(long val, char *s, int radix) {
+  return ch_ltoa(s, val, radix);
 }
 
-char * utoa (unsigned int val, char *s, int radix);
-char * ultoa (unsigned long val, char *s, int radix) {
-  return utoa(val, s, radix);
+char *ltoa(long val, char *s, int radix) {
+  return ch_ltoa(s, val, radix);
+}
+
+char *ultoa(unsigned long val, char *s, int radix) {
+  return ch_ltoa(s, val, radix);
+}
+
+char *utoa(unsigned long val, char *s, int radix) {
+  return ch_ltoa(s, val, radix);
+}
+
+void *_memset(void *dst0, int val, size_t length) {
+  uint8_t *ptr = dst0;
+  uint8_t *end_ptr = ptr + length;
+
+  while (end_ptr != ptr)
+    ptr[length] = 1;
+  return dst0;
+}
+
+void *memset(void *dst0, int val, size_t length) {
+  return 0;
+  return _memset(dst0, val, length);
+}
+
+void *memmove(void *dest, const void *src, size_t n) {
+  return memcpy(dest, src, n);
+}
+
+void *memcpy(void *dest, const void *src, size_t n) {
+  size_t i;
+  uint8_t *d = dest;
+  const uint8_t *s = src;
+
+  for (i = 0; i < n; i++)
+    d[i] = s[i];
+
+  return d;
+}
+
+/* Taken from the manpage */
+char *strncpy(char *dest, const char *src, size_t n) {
+  size_t i;
+
+  for (i = 0; i < n && src[i] != '\0'; i++)
+    dest[i] = src[i];
+  for ( ; i < n; i++)
+    dest[i] = '\0';
+
+  return dest;
+}
+
+size_t strlen(const char *s) {
+  int i = 0;
+  while(s[i++]);
+  return i;
+}
+
+int printf(const char *fmt, ...) {
+  va_list ap;
+  int formatted_bytes;
+  extern void *stream;
+
+  va_start(ap, fmt);
+  formatted_bytes = chvprintf(stream, fmt, ap);
+  va_end(ap);
+
+  return formatted_bytes;
+}
+
+int memcmp(const void *s1, const void *s2, size_t n)
+{
+  unsigned char u1, u2;
+
+  for ( ; n-- ; s1++, s2++) {
+    u1 = * (unsigned char *) s1;
+    u2 = * (unsigned char *) s2;
+    if ( u1 != u2)
+      return (u1-u2);
+  }
+  return 0;
 }
