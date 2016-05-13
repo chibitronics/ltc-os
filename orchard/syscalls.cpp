@@ -1,56 +1,83 @@
 #include <stdint.h>
 #include "Arduino.h"
+
 extern "C" {
-    extern uint32_t __aeabi_memcpy8;
-    extern uint32_t __aeabi_memcpy4;
-    extern uint32_t __aeabi_memcpy;
-    extern uint32_t __aeabi_memmove8;
-    extern uint32_t __aeabi_memmove4;
-    extern uint32_t __aeabi_memmove;
-    extern uint32_t __aeabi_memset8;
-    extern uint32_t __aeabi_memset4;
-    extern uint32_t __aeabi_memset;
-    extern uint32_t __aeabi_memclr8;
-    extern uint32_t __aeabi_memclr4;
-    extern uint32_t __aeabi_memclr;
-    extern uint32_t __eqdf2;
-    extern uint32_t __gedf2;
-    extern uint32_t __gtdf2;
-    extern uint32_t __ledf2;
-    extern uint32_t __ltdf2;
-    extern uint32_t __nedf2;
-    extern uint32_t __popcount_tab;
-    extern uint32_t __popcountsi2;
-    extern uint32_t __aeabi_cdcmpeq;
-    extern uint32_t __aeabi_cdcmple;
-    extern uint32_t __aeabi_cdrcmple;
-    extern uint32_t __muldi3;
-    extern uint32_t __aeabi_uidiv;
-    extern uint32_t __aeabi_uidivmod;
-    extern uint32_t __aeabi_uldivmod;
-    extern uint32_t __aeabi_idiv;
-    extern uint32_t __aeabi_idivmod;
-    extern uint32_t __aeabi_lasr;
-    extern uint32_t __aeabi_ldivmod;
-    extern uint32_t __aeabi_llsl;
-    extern uint32_t __aeabi_llsr;
-    extern uint32_t __aeabi_lmul;
-    extern uint32_t strcpy;
-    extern uint32_t strlen;
-    extern uint32_t free;
-    extern uint32_t malloc;
-    extern uint32_t realloc;
-    extern uint32_t __dso_handle;
-    extern uint32_t __aeabi_atexit;
-    extern uint32_t __cxa_atexit;
-    extern uint32_t memset;
-    extern uint32_t ltoa;
-    extern uint32_t utoa;
-    extern uint32_t ultoa;
-    extern uint32_t itoa;
-    extern uint32_t ledShow;
-    extern uint32_t tfp_printf;
+  extern const uint32_t * const SysCall_Table[];
+  extern uint32_t do_nothing;
+  extern uint32_t __aeabi_memcpy;
+  extern uint32_t __aeabi_memmove;
+  extern uint32_t __aeabi_memset;
+  extern uint32_t __aeabi_memclr;
+  extern uint32_t __aeabi_uread4;
+  extern uint32_t __aeabi_uwrite4;
+  extern uint32_t __aeabi_uread8;
+  extern uint32_t __aeabi_idiv;
+  extern uint32_t __aeabi_uidiv;
+  extern uint32_t __aeabi_idivmod;
+  extern uint32_t __aeabi_uidivmod;
+  extern uint32_t __aeabi_lmul;
+  extern uint32_t __aeabi_ldivmod;
+  extern uint32_t __aeabi_uldivmod;
+  extern uint32_t __aeabi_llsl;
+  extern uint32_t __aeabi_llsr;
+  extern uint32_t __aeabi_lasr;
+  extern uint32_t __aeabi_lcmp;
+  extern uint32_t __aeabi_ulcmp;
+  extern uint32_t qfp_int2float;
+  extern uint32_t qfp_int2double;
+  extern uint32_t qfp_uint2float;
+  extern uint32_t qfp_uint2double;
+  extern uint32_t qfp_float2int;
+  extern uint32_t qfp_double2int;
+  extern uint32_t qfp_float2uint;
+  extern uint32_t qfp_double2uint;
+  extern uint32_t qfp_cfcmpeq;
+  extern uint32_t qfp_cdcmpeq;
+  extern uint32_t qfp_cfcmple;
+  extern uint32_t qfp_cdcmple;
+  extern uint32_t qfp_cfrcmple;
+  extern uint32_t qfp_cdrcmple;
+  extern uint32_t qfp_cmpeq;
+  extern uint32_t qfp_cmpeqd;
+  extern uint32_t qfp_cmplt;
+  extern uint32_t qfp_cmpltd;
+  extern uint32_t qfp_cmple;
+  extern uint32_t qfp_cmpled;
+  extern uint32_t qfp_cmpge;
+  extern uint32_t qfp_cmpged;
+  extern uint32_t qfp_cmpgt;
+  extern uint32_t qfp_cmpgtd;
+  extern uint32_t qfp_cmpun;
+  extern uint32_t qfp_cmpund;
+  extern uint32_t qfp_fadd;
+  extern uint32_t qfp_dadd;
+  extern uint32_t qfp_fdiv_fast;
+  extern uint32_t qfp_ddiv_fast;
+  extern uint32_t qfp_fmul;
+  extern uint32_t qfp_dmul;
+  extern uint32_t qfp_frsub;
+  extern uint32_t qfp_drsub;
+  extern uint32_t qfp_fsub;
+  extern uint32_t qfp_dsub;
+  extern uint32_t qfp_fcos;
+  extern uint32_t qfp_fsin;
+  extern uint32_t qfp_ftan;
+  extern uint32_t qfp_fatan2;
+  extern uint32_t qfp_fexp;
+  extern uint32_t qfp_fln;
+  extern uint32_t qfp_fsqrt_fast;
+  extern uint32_t free;
+  extern uint32_t malloc;
+  extern uint32_t realloc;
+  extern uint32_t __dso_handle;
+  extern uint32_t ltoa;
+  extern uint32_t utoa;
+  extern uint32_t ultoa;
+  extern uint32_t itoa;
+  extern uint32_t ledShow;
+  extern uint32_t printf;
 };
+
 extern void pinMode(int pin, enum pin_mode mode);
 extern void digitalWrite(int pin, int value);
 extern int digitalRead(int pin);
@@ -73,61 +100,81 @@ extern long map(long value, long fromLow, long fromHigh, long toLow, long toHigh
 extern long random(long min, long max);
 extern long randomSeed(unsigned long seed);
 
-extern "C" {
-  extern const uint32_t * const SysCall_Table[];
-};
-
 __attribute__((section(".rodata")))
 const uint32_t * const SysCall_Table[] = {
-    (const uint32_t *)&__aeabi_memcpy8,
-    (const uint32_t *)&__aeabi_memcpy4,
+    (const uint32_t *)&do_nothing,
     (const uint32_t *)&__aeabi_memcpy,
-    (const uint32_t *)&__aeabi_memmove8,
-    (const uint32_t *)&__aeabi_memmove4,
     (const uint32_t *)&__aeabi_memmove,
-    (const uint32_t *)&__aeabi_memset8,
-    (const uint32_t *)&__aeabi_memset4,
     (const uint32_t *)&__aeabi_memset,
-    (const uint32_t *)&__aeabi_memclr8,
-    (const uint32_t *)&__aeabi_memclr4,
     (const uint32_t *)&__aeabi_memclr,
-    (const uint32_t *)&__eqdf2,
-    (const uint32_t *)&__gedf2,
-    (const uint32_t *)&__gtdf2,
-    (const uint32_t *)&__ledf2,
-    (const uint32_t *)&__ltdf2,
-    (const uint32_t *)&__nedf2,
-    (const uint32_t *)&__popcount_tab,
-    (const uint32_t *)&__popcountsi2,
-    (const uint32_t *)&__aeabi_cdcmpeq,
-    (const uint32_t *)&__aeabi_cdcmple,
-    (const uint32_t *)&__aeabi_cdrcmple,
-    (const uint32_t *)&__muldi3,
-    (const uint32_t *)&__aeabi_uidiv,
-    (const uint32_t *)&__aeabi_uidivmod,
-    (const uint32_t *)&__aeabi_uldivmod,
+    (const uint32_t *)&__aeabi_uread4,
+    (const uint32_t *)&__aeabi_uwrite4,
+    (const uint32_t *)&__aeabi_uread8,
     (const uint32_t *)&__aeabi_idiv,
+    (const uint32_t *)&__aeabi_uidiv,
     (const uint32_t *)&__aeabi_idivmod,
-    (const uint32_t *)&__aeabi_lasr,
+    (const uint32_t *)&__aeabi_uidivmod,
+    (const uint32_t *)&__aeabi_lmul,
     (const uint32_t *)&__aeabi_ldivmod,
+    (const uint32_t *)&__aeabi_uldivmod,
     (const uint32_t *)&__aeabi_llsl,
     (const uint32_t *)&__aeabi_llsr,
-    (const uint32_t *)&__aeabi_lmul,
-    (const uint32_t *)&strcpy,
-    (const uint32_t *)&strlen,
+    (const uint32_t *)&__aeabi_lasr,
+    (const uint32_t *)&__aeabi_lcmp,
+    (const uint32_t *)&__aeabi_ulcmp,
+    (const uint32_t *)&qfp_int2float,
+    (const uint32_t *)&qfp_int2double,
+    (const uint32_t *)&qfp_uint2float,
+    (const uint32_t *)&qfp_uint2double,
+    (const uint32_t *)&qfp_float2int,
+    (const uint32_t *)&qfp_double2int,
+    (const uint32_t *)&qfp_float2uint,
+    (const uint32_t *)&qfp_double2uint,
+    (const uint32_t *)&qfp_cfcmpeq,
+    (const uint32_t *)&qfp_cdcmpeq,
+    (const uint32_t *)&qfp_cfcmple,
+    (const uint32_t *)&qfp_cdcmple,
+    (const uint32_t *)&qfp_cfrcmple,
+    (const uint32_t *)&qfp_cdrcmple,
+    (const uint32_t *)&qfp_cmpeq,
+    (const uint32_t *)&qfp_cmpeqd,
+    (const uint32_t *)&qfp_cmplt,
+    (const uint32_t *)&qfp_cmpltd,
+    (const uint32_t *)&qfp_cmple,
+    (const uint32_t *)&qfp_cmpled,
+    (const uint32_t *)&qfp_cmpge,
+    (const uint32_t *)&qfp_cmpged,
+    (const uint32_t *)&qfp_cmpgt,
+    (const uint32_t *)&qfp_cmpgtd,
+    (const uint32_t *)&qfp_cmpun,
+    (const uint32_t *)&qfp_cmpund,
+    (const uint32_t *)&qfp_fadd,
+    (const uint32_t *)&qfp_dadd,
+    (const uint32_t *)&qfp_fdiv_fast,
+    (const uint32_t *)&qfp_ddiv_fast,
+    (const uint32_t *)&qfp_fmul,
+    (const uint32_t *)&qfp_dmul,
+    (const uint32_t *)&qfp_frsub,
+    (const uint32_t *)&qfp_drsub,
+    (const uint32_t *)&qfp_fsub,
+    (const uint32_t *)&qfp_dsub,
+    (const uint32_t *)&qfp_fcos,
+    (const uint32_t *)&qfp_fsin,
+    (const uint32_t *)&qfp_ftan,
+    (const uint32_t *)&qfp_fatan2,
+    (const uint32_t *)&qfp_fexp,
+    (const uint32_t *)&qfp_fln,
+    (const uint32_t *)&qfp_fsqrt_fast,
     (const uint32_t *)&free,
     (const uint32_t *)&malloc,
     (const uint32_t *)&realloc,
     (const uint32_t *)&__dso_handle,
-    (const uint32_t *)&__aeabi_atexit,
-    (const uint32_t *)&__cxa_atexit,
-    (const uint32_t *)&memset,
     (const uint32_t *)&ltoa,
     (const uint32_t *)&utoa,
     (const uint32_t *)&ultoa,
     (const uint32_t *)&itoa,
     (const uint32_t *)&ledShow,
-    (const uint32_t *)&tfp_printf,
+    (const uint32_t *)&printf,
     (const uint32_t *)static_cast<void (*)(int pin, enum pin_mode mode)>(&pinMode),
     (const uint32_t *)static_cast<void (*)(int pin, int value)>(&digitalWrite),
     (const uint32_t *)static_cast<int (*)(int pin)>(&digitalRead),
