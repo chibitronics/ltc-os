@@ -67,7 +67,7 @@ static char *long_to_string_with_divisor(char *p,
   return p;
 }
 
-static char *ch_ltoa(char *p, long num, unsigned radix) {
+char *ch_ltoa(char *p, long num, unsigned radix) {
 
   return long_to_string_with_divisor(p, num, radix, 0);
 }
