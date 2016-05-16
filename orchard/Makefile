@@ -99,10 +99,6 @@ include $(CHIBIOS)/os/hal/osal/rt/osal.mk
 include $(CHIBIOS)/os/rt/rt.mk
 include $(CHIBIOS)/os/rt/ports/ARMCMx/compilers/GCC/mk/port_v6m.mk
 
-#C90TFS Freescale Flash drivers
-LIBC90TFS = $(CHIBIOS)/ext/C90TFS
-include $(LIBC90TFS)/build.mk
-
 QFPLIB = $(CHIBIOS)/ext/qfplib-20160419
 include $(QFPLIB)/build.mk
 
@@ -130,7 +126,6 @@ CSRC = main.c \
        printf.c \
        ws2812b.c \
        $(CHIBIOS)/os/hal/lib/streams/chprintf.c \
-       $(LIBC90TFSSRC) \
        __aeabi.c \
        math.c \
 
@@ -170,7 +165,6 @@ INCDIR = $(STARTUPINC) $(KERNINC) $(PORTINC) $(OSALINC) \
          $(HALINC) $(PLATFORMINC) $(BOARDINC) $(TESTINC) \
          $(CHIBIOS)/os/various \
          $(CHIBIOS)/os/hal/lib/streams \
-         $(LIBC90TFSINC)
 
 #
 # Project, sources and paths
