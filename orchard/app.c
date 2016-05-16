@@ -102,7 +102,7 @@ static THD_FUNCTION(app_thread, arg) {
   _app_header.entry();
 }
 
-int userAppIsValid(void) {
+int appIsValid(void) {
   if ((_app_header.magic == APP_MAGIC)
    && (_app_header.version == APP_VERSION))
     return 1;
