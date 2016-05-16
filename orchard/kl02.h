@@ -66,6 +66,7 @@
 #if !defined(SIM_BASE)
 #define SIM_BASE                ((unsigned long)0x40047000)
 #endif /* !defined(SIM_BASE) */
+#define SIM_SOPT1   0x40047000 /* System Options Register 1 */
 #define SIM_SOPT2   0x40048004 /* System Options Register 2 */
 #define SIM_SOPT4   0x4004800C /* System Options Register 4 */
 #define SIM_SOPT5   0x40048010 /* System Options Register 5 */
@@ -231,5 +232,33 @@
 #define TPM1_C1V 0x40039018 /* Channel Value */
 #define TPM1_STATUS 0x40039050 /* Capture and Compare Status */
 #define TPM1_CONF 0x40039084 /* Configuration */
+
+/* Flash Translation (Layer|Engine) */
+#define FMC_PFB01CR 0x4001f004
+#define FTFx_FSTAT  0x40020000
+#define FTFx_FCNFG  0x40020001
+#define FTFx_FSEC   0x40020002
+#define FTFx_FOPT   0x40020003
+#define FTFx_FCCOB3 0x40020004
+#define FTFx_FCCOB2 0x40020005
+#define FTFx_FCCOB1 0x40020006
+#define FTFx_FCCOB0 0x40020007
+#define FTFx_FCCOB7 0x40020008
+#define FTFx_FCCOB6 0x40020009
+#define FTFx_FCCOB5 0x4002000A
+#define FTFx_FCCOB4 0x4002000B
+#define FTFx_FCCOBB 0x4002000C
+#define FTFx_FCCOBA 0x4002000D
+#define FTFx_FCCOB9 0x4002000E
+#define FTFx_FCCOB8 0x4002000F
+#define FTFx_FPROT3 0x40020010
+#define FTFx_FDPROT 0x40020017
+
+/* System Management Controller */
+#define SMC_PMCTRL  0x4007E001
+#define SMC_PMSTAT  0x4007E003
+
+/* Watchdog */
+#define WDOG_STCTRH 0x40052000
 
 #endif /* __KL02_H__ */
