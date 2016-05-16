@@ -80,8 +80,6 @@
   Also, once program is successful, automatically start the app. woot!
  */
 
-extern struct app_header _app_header;
-
 typedef enum states {
   APP_IDLE = 0,
   APP_GOT_ID,
@@ -94,13 +92,6 @@ static app_state astate = APP_IDLE;
 bl_symbol(static const storage_header *storageHdr) =
     (const storage_header *) STORAGE_START;
 
-int userAppIsValid(void) {
-  if ((_app_header.magic == APP_MAGIC)
-  && (_app_header.version == APP_VERSION))
-    return 1;
-  return 0;
-}
-
 void bootToUserApp(void) {
   tfp_printf( "\n\r Reached boot to user app!!!\n\r" );
   GPIOB->PCOR |= (1 << 6);   // blue on
@@ -111,8 +102,8 @@ void bootToUserApp(void) {
       -- set VTOR
       -- soft reset
    */
-  if (userAppIsValid())
-    Run_App(&_app_header);
+  if (appIsValid())
+    chThdExit(0);
 }
 
 void init_storage_header(demod_ctrl_pkt *cpkt) {
