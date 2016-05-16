@@ -24,10 +24,15 @@
 #include "demod.h"
 #include "mac.h"
 #include "updater.h"
+#include "app.h"
 
 #include "murmur3.h"
 
 #include <string.h>
+
+static const I2CConfig i2c_config = {
+  100000
+};
 
 void *stream;
 
@@ -65,9 +70,6 @@ static void phy_demodulate(void) {
   dataReadyFlag = 0;
 }
 
-int userAppIsValid(void);
-void bootToUserApp(void);
-
 void demod_loop(void) {
   uint32_t i;
 
@@ -77,7 +79,7 @@ void demod_loop(void) {
 
   // infinite loops, prevents other system items from starting
   int counter = 0;
-  while(TRUE) {
+  while (TRUE) {
     pktPtr = 0;
     while( !pktReady ) {
       if( dataReadyFlag ) {
@@ -89,11 +91,9 @@ void demod_loop(void) {
         phy_demodulate();
       }
 
-      if (! (++counter & 0xffff)) {
-        if (userAppIsValid()) {
+      if (! (++counter & 0xfffff)) {
+        if (appIsValid()) {
           printf("User app is valid, booting\r\n");
-          adcStopConversion(&ADCD1);
-          adcStop(&ADCD1);
           chThdExit(0);
           printf("Shouldn't make it here\r\n");
         }
@@ -101,7 +101,7 @@ void demod_loop(void) {
     }
 
     // unstripe the transition xor's used to keep baud sync
-    if( (pktBuf[0] & PKTTYPE_MASK) == PKTTYPE_DATA ) {
+    if ((pktBuf[0] & PKTTYPE_MASK) == PKTTYPE_DATA) {
       for( i = 0; i < PKT_LEN - 4; i++ ) {
         if( (i % 16) == 7 )
           pktBuf[i] ^= 0x55;
@@ -157,12 +157,6 @@ static size_t heap_size(void) {
   return (size_t) (&__heap_end__ - &__heap_base__);
 }
 
-static void putc_x(void *storage, char c) {
-  (void) storage;
-
-  chnWrite(&SD1, (const uint8_t *) &c, 1);
-}
-
 /* Initialize the bootloader setup */
 static void blcrt_init(void) {
   /* Variables defined by the linker */
@@ -196,24 +190,16 @@ static THD_FUNCTION(demod_thread, arg) {
 
   // init the serial interface
   sdStart(&SD1, &serialConfig);
-  //  sd_lld_init();
-  //  sd_lld_start((&SD1), &serialConfig);
-  init_printf(NULL,putc_x);
   stream = stream_driver;
 
-  //chnWrite( &SD1, (const uint8_t *) "\r\n\r\nOrchard audio wtf loader.\r\n", 32);
-  //chThdSleepMilliseconds(1000);
-  tfp_printf( "\r\n\r\nOrchard audio bootloader.  Based on build %s\r\n", gitversion);
-  tfp_printf( "core free memory : %d bytes\r\n", heap_size());
-  chThdSleepMilliseconds(100); // give a little time for the status message to appear
+  tfp_printf("\r\n\r\nOrchard audio bootloader.  Based on build %s\r\n",
+             gitversion);
+  tfp_printf("core free memory : %d bytes\r\n", heap_size());
 
-  //i2cStart(i2cDriver, &i2c_config);
+  i2cStart(i2cDriver, &i2c_config);
   adcStart(&ADCD1, &adccfg1);
   analogStart();
-
   demodInit();
-
-  flashStart();
 
   /*
     clock rate: 0.020833us/clock, 13.3us/sample @ 75kHz
@@ -263,90 +249,6 @@ static THD_FUNCTION(demod_thread, arg) {
   demod_loop();
 }
 
-#include "app.h"
-extern struct app_header _app_header;
-static memory_heap_t app_heap;
-
-static THD_FUNCTION(app_thread, arg) {
-
-  (void)arg;
-  void (**func)(void);
-
-  chRegSetThreadName("user code");
-
-  chHeapObjectInit(&app_heap, _app_header.heap_start + sizeof(thread_t),
-      _app_header.heap_end - _app_header.heap_start - sizeof(thread_t));
-
-  func = _app_header.const_start;
-  while (func != _app_header.const_end) {
-    (*func)();
-    func++;
-  }
-
-  _app_header.entry();
-}
-
-void *malloc(size_t size) {
-  return chHeapAlloc(&app_heap, size);
-}
-
-void free(void *ptr) {
-  chHeapFree(ptr);
-}
-
-/* http://www.chibios.com/forum/viewtopic.php?t=1314&p=22848#p22848 */
-void *realloc (void *addr, size_t size)
-{
-   union heap_header *hp;
-   size_t prev_size, new_size;
-
-   void *ptr;
-
-   if(addr == NULL) {
-      return chHeapAlloc(&app_heap, size);
-   }
-
-   /* previous allocated segment is preceded by an heap_header */
-   hp = addr - sizeof(union heap_header);
-   prev_size = hp->h.size; /* size is always multiple of 8 */
-
-   /* check new size memory alignment */
-   if(size % 8 == 0) {
-      new_size = size;
-   }
-   else {
-      new_size = ((int) (size / 8)) * 8 + 8;
-   }
-
-   if(prev_size >= new_size) {
-      return addr;
-   }
-
-   ptr = chHeapAlloc(&app_heap, size);
-   if(ptr == NULL) {
-      return NULL;
-   }
-
-   memcpy(ptr, addr, prev_size);
-
-   chHeapFree(addr);
-
-   return ptr;
-} /* realloc */
-
-thread_t *chBootToApp(void) {
-
-  memset(_app_header.bss_start, 0,
-         _app_header.bss_end - _app_header.bss_start);
-  memcpy(_app_header.data_start, _app_header.data_load_start,
-         _app_header.data_end - _app_header.data_start);
-
-  return chThdCreateStatic(_app_header.heap_start,
-                       (_app_header.heap_end + 1 - _app_header.heap_start) & ~3,
-                       HIGHPRIO,
-                       app_thread,
-                       NULL);
-}
 /*
  * Threads static table, one entry per thread. The number of entries must
  * match NIL_CFG_NUM_THREADS.
@@ -382,6 +284,8 @@ int main(void)
   while (demod_thread_p->p_state != CH_STATE_FINAL);
   NVIC_EnableIRQ(PendSV_IRQn);
   NVIC_EnableIRQ(SysTick_IRQn);
+  adcStopConversion(&ADCD1);
+  adcStop(&ADCD1);
   chBootToApp();
 #endif
 
