@@ -10,7 +10,7 @@ endif
 
 # Compiler options here.
 ifeq ($(USE_OPT),)
-  USE_OPT = -O3 -ggdb -fomit-frame-pointer -falign-functions=16 -nostdlib -mfloat-abi=soft -mfp16-format=none -fsingle-precision-constant
+  USE_OPT = -Os -ggdb -fomit-frame-pointer -falign-functions=16 -nostdlib -mfloat-abi=soft -mfp16-format=none -fsingle-precision-constant
 endif
 
 # C specific options here (added to USE_OPT).
