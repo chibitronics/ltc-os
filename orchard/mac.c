@@ -5,12 +5,12 @@
 // mac state is just local to mac
 typedef enum states {
   MAC_IDLE = 0,  
-  MAC_SYNC,
-  MAC_PACKET
+  MAC_SYNC = 1,
+  MAC_PACKET = 2,
 } mac_state;
 
 bl_symbol_bss(volatile uint16_t pktPtr);
-bl_symbol_bss(uint8_t  pktBuf[PKT_LEN]);
+__attribute__((aligned(8))) bl_symbol_bss(uint8_t  pktBuf[PKT_LEN]);
 
 // global flag to indicate packet done. needs mutex if threaded.
 bl_symbol_bss(uint8_t  pktReady);
