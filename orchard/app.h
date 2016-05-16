@@ -27,6 +27,7 @@ struct app_header {
 #define APP_MAGIC 0xd3fbf67a
 #define APP_VERSION 0x00000100 /* 0.0.1.0 */
 
-__attribute__((noreturn)) void Run_App(struct app_header *app);
+thread_t *chBootToApp(void);
+int appIsValid(void);
 
 #endif
