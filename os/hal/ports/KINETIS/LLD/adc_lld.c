@@ -97,7 +97,6 @@ OSAL_IRQ_HANDLER(KINETIS_ADC0_IRQ_VECTOR) {
 
   ADCDriver *adcp = &ADCD1;
   
-  GPIOB->PSOR |= (1 << 6);   // red
   /* Read the sample into the buffer */
   adcp->samples[adcp->current_index++] = adcp->adc->RA;
 
@@ -110,7 +109,6 @@ OSAL_IRQ_HANDLER(KINETIS_ADC0_IRQ_VECTOR) {
   if( adcp->current_index == (adcp->number_of_samples / 2) ) {
     _adc_isr_half_code(&ADCD1);
   }
-  GPIOB->PCOR |= (1 << 6);   // red
   
 #if !DEMOD_DEBUG
   OSAL_IRQ_EPILOGUE();
