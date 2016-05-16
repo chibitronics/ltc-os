@@ -32,19 +32,19 @@ void putBitMac(int bit) {
     // search until at least 32 zeros are found, then next transition "might" be sync
     if( idle_zeros > 32 ) {
       if( bit != 0 ) {
-	mstate = MAC_SYNC;
-	g_bitpos = 6;
-	g_curbyte = 0x80;
-	wordcnt = 0;
+        mstate = MAC_SYNC;
+        g_bitpos = 6;
+        g_curbyte = 0x80;
+        wordcnt = 0;
       } else {
-	if(idle_zeros < 255)
-	  idle_zeros++;
+        if(idle_zeros < 255)
+          idle_zeros++;
       }
     } else {
       if( bit != 0 )
-	idle_zeros = 0;
+        idle_zeros = 0;
       else
-	idle_zeros++;
+        idle_zeros++;
     }
     break;
     
@@ -57,27 +57,27 @@ void putBitMac(int bit) {
     
     if( g_bitpos == 0 ) {
       if( g_curbyte == 0x00 ) {  // false noise trigger, go back to idle
-	mstate = MAC_IDLE;
-	idle_zeros = 8; // we just saw 8 zeros, so count those
-	break;
+        mstate = MAC_IDLE;
+        idle_zeros = 8; // we just saw 8 zeros, so count those
+        break;
       }
       // else, tally up the sync characters
       mac_sync[wordcnt++] = g_curbyte;
       g_bitpos = 8;
       g_curbyte = 0;
       if( wordcnt == 3 ) {
-	// test for sync sequence. It's one byte less than the # of leading zeros
-	// to allow for the idle escape trick above to work in case of zero-biased noise
-	if( (mac_sync[0] == 0xAA) && (mac_sync[1] == 0x55) && (mac_sync[2] = 0x42)) {
-	  // found the sync sequence, proceed to packet state
-	  osalDbgAssert(pktReady == 0, "Packet buffer full flag still set while new packet incoming\n\r");
-	  mstate = MAC_PACKET;
-	  pktPtr = 0;
-	  pkt_len = PKT_LEN;
-	} else {
-	  mstate = MAC_IDLE;
-	  idle_zeros = 0;
-	}
+        // test for sync sequence. It's one byte less than the # of leading zeros
+        // to allow for the idle escape trick above to work in case of zero-biased noise
+        if( (mac_sync[0] == 0xAA) && (mac_sync[1] == 0x55) && (mac_sync[2] = 0x42)) {
+          // found the sync sequence, proceed to packet state
+          osalDbgAssert(pktReady == 0, "Packet buffer full flag still set while new packet incoming\n\r");
+          mstate = MAC_PACKET;
+          pktPtr = 0;
+          pkt_len = PKT_LEN;
+        } else {
+          mstate = MAC_IDLE;
+          idle_zeros = 0;
+        }
       }
     }
     break;
@@ -85,33 +85,33 @@ void putBitMac(int bit) {
   case MAC_PACKET:
     if( pktPtr < pkt_len ) {
       if( pktPtr == 1 ) { // first byte is always version/type code
-	if( (pktBuf[0] & PKTTYPE_MASK) == PKTTYPE_CTRL ) {
-	  if( (pktBuf[0] & ~PKTTYPE_MASK) != MAC_CTRL_VER ) {
-	    // version code doesn't match, abort
-	    mstate = MAC_IDLE;
-	    pktReady = 0;
-	    idle_zeros = 0;
-	  }
-	  pkt_len = CTRL_LEN;  // we're looking for a control packet this time
-	} else {
-	  // it's a data packet, check version
-	  if( (pktBuf[0] & ~PKTTYPE_MASK) != MAC_DATA_VER ) {
-	    // version code doesn't match, abort
-	    mstate = MAC_IDLE;
-	    pktReady = 0;
-	    idle_zeros = 0;
-	  }
-	}
+        if( (pktBuf[0] & PKTTYPE_MASK) == PKTTYPE_CTRL ) {
+          if( (pktBuf[0] & ~PKTTYPE_MASK) != MAC_CTRL_VER ) {
+            // version code doesn't match, abort
+            mstate = MAC_IDLE;
+            pktReady = 0;
+            idle_zeros = 0;
+          }
+          pkt_len = CTRL_LEN;  // we're looking for a control packet this time
+        } else {
+          // it's a data packet, check version
+          if( (pktBuf[0] & ~PKTTYPE_MASK) != MAC_DATA_VER ) {
+            // version code doesn't match, abort
+            mstate = MAC_IDLE;
+            pktReady = 0;
+            idle_zeros = 0;
+          }
+        }
       }
       g_curbyte >>= 1;
       g_bitpos--;
       if( bit )
-	g_curbyte |= 0x80;
+        g_curbyte |= 0x80;
       
       if(g_bitpos == 0) {
-	pktBuf[pktPtr++] = g_curbyte;
-	g_bitpos = 8;
-	g_curbyte = 0;
+        pktBuf[pktPtr++] = g_curbyte;
+        g_bitpos = 8;
+        g_curbyte = 0;
       }
     } else {
       mstate = MAC_IDLE;
