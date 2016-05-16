@@ -6,6 +6,7 @@
 #define BANK_NUMBER(x) ((x & ~0x1f) >> 5)
 
 static int pin_to_hwpin(int pin) {
+
   return pin;
 }
 
@@ -52,6 +53,7 @@ void pinMode(int pin, enum pin_mode mode) {
 
 /* Digital IO */
 void digitalWrite(int pin, int value) {
+
   pin = pin_to_hwpin(pin);
   switch (BANK_NUMBER(pin)) {
 
@@ -66,6 +68,7 @@ void digitalWrite(int pin, int value) {
 }
 
 int digitalRead(int pin) {
+
   pin = pin_to_hwpin(pin);
   switch (BANK_NUMBER(pin)) {
   case 0: return !!(readl(FGPIOA_PDIR) & (1 << PIN_NUMBER(pin)));
@@ -84,20 +87,24 @@ void analogReference(enum analog_reference_type type) {
 }
 
 int analogRead(int pin) {
+
   return 0;
 }
 
 
 void tone(int pin, unsigned int frequency, unsigned long duration) {
+
   return;
 }
 
 void noTone(int pin) {
+
   return;
 }
 
 /* Simple communication protocols */
 void shiftOut(int dataPin, int clockPin, int bitOrder, uint8_t val) {
+
   uint8_t i;
 
   for (i = 0; i < 8; i++)  {
@@ -109,10 +116,10 @@ void shiftOut(int dataPin, int clockPin, int bitOrder, uint8_t val) {
     digitalWrite(clockPin, HIGH);
     digitalWrite(clockPin, LOW);
   }
-
 }
 
 uint8_t shiftIn(int dataPin, int clockPin, int bitOrder) {
+
   uint8_t value = 0;
   uint8_t i;
 
