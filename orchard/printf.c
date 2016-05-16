@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #if 1
 #include "chprintf.h"
 #include "memstreams.h"
+extern void *stream;
 
 void init_printf(void* putp,void (*putf) (void*,char)) {
   (void)putp;
@@ -32,7 +33,23 @@ void init_printf(void* putp,void (*putf) (void*,char)) {
   return;
 }
 
-int tfp_printf(const char *fmt, ...) {
+int printf(const char *fmt, ...) {
+  va_list ap;
+  int formatted_bytes;
+
+  va_start(ap, fmt);
+  formatted_bytes = chvprintf(stream, fmt, ap);
+  va_end(ap);
+
+  return formatted_bytes;
+}
+
+int puts(const char *s) {
+
+  return chprintf(stream, "%s", s);
+}
+
+void tfp_printf(const char *fmt, ...) {
   va_list ap;
   int formatted_bytes;
   extern void *stream;
@@ -41,7 +58,7 @@ int tfp_printf(const char *fmt, ...) {
   formatted_bytes = chvprintf(stream, fmt, ap);
   va_end(ap);
 
-  return formatted_bytes;
+  return;
 }
 
 #else
