@@ -127,6 +127,7 @@ CSRC = main.c \
        ws2812b.c \
        $(CHIBIOS)/os/hal/lib/streams/chprintf.c \
        __aeabi.c \
+       app.c \
        math.c \
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
