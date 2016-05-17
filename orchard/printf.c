@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #if 1
 #include "chprintf.h"
 #include "memstreams.h"
+#include "orchard.h"
+
 extern void *stream;
 
 void init_printf(void* putp,void (*putf) (void*,char)) {
@@ -44,6 +46,19 @@ int printf(const char *fmt, ...) {
   return formatted_bytes;
 }
 
+int putchar(int c) {
+  chSequentialStreamPut(stream_driver, c);
+  return c;
+}
+
+int getchar(void) {
+  return chSequentialStreamGet(stream_driver);
+}
+
+int cangetchar(void) {
+  return !sdGetWouldBlock(stream);
+}
+
 int puts(const char *s) {
 
   return chprintf(stream, "%s", s);
@@ -51,11 +66,10 @@ int puts(const char *s) {
 
 void tfp_printf(const char *fmt, ...) {
   va_list ap;
-  int formatted_bytes;
   extern void *stream;
 
   va_start(ap, fmt);
-  formatted_bytes = chvprintf(stream, fmt, ap);
+  chvprintf(stream, fmt, ap);
   va_end(ap);
 
   return;
