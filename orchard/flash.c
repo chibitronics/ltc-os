@@ -156,10 +156,11 @@ int8_t flashProgram(uint8_t *src, uint8_t *dest, uint32_t count) {
     return F_ERR_RANGE;
   }
 
-  // check if number of bytes to write & destination is word-aligned
-  if ( ((count % 4) != 0) || (( ((uint32_t) dest) % 4) != 0)) {
+  // check if number of bytes to write, src, destination are word-aligned
+  if (((count % 4) != 0)
+  || ((((uint32_t) dest) % 4) != 0)
+  || ((((uint32_t) src) % 4) != 0))
     return F_ERR_NOTALIGN;
-  }
 
   // check that the destination bytes have been erased
   // we can't re-program over 0's, it will overstress the Flash
@@ -190,7 +191,7 @@ int8_t flashProgram(uint8_t *src, uint8_t *dest, uint32_t count) {
   }
   
   if (ret) {
-    tfp_printf( "Failed programming verification at USER margin levels: worry a little bit. Failure address: %08x\n\r", failaddr );
+    tfp_printf("Failed programming verification at USER margin levels: worry a little bit. Failure address: %08x\n\r", failaddr );
     return F_ERR_U_MARGIN;
   }
 
