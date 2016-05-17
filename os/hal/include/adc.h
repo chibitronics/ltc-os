@@ -172,7 +172,6 @@ typedef enum {
  *
  * @notapi
  */
-#if 0
 #define _adc_isr_full_code(adcp) {                                          \
   if ((adcp)->grpp->circular) {                                             \
     /* Callback handling.*/                                                 \
@@ -208,16 +207,6 @@ typedef enum {
     _adc_wakeup_isr(adcp);                                                  \
   }                                                                         \
 }
-#else
-// optimize for speed in a fixed configuration
-#define _adc_isr_full_code(adcp) {                                          \
-    /* Invokes the callback passing the 2nd half of the buffer.*/	\
-    size_t half = (adcp)->depth / 2;					\
-    size_t half_index = half * (adcp)->grpp->num_channels;		\
-    (adcp)->grpp->end_cb(adcp, (adcp)->samples + half_index, half);	\
-  } \
-  
-#endif
 
 /**
  * @brief   Common ISR code, error event.
