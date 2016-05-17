@@ -277,8 +277,6 @@ int main(void)
 
 #if defined(_CHIBIOS_RT_)
   volatile thread_t *demod_thread_p;
-  extern int fast_adc;
-  fast_adc = 1;
   demod_thread_p = chThdCreateStatic(waDemodThread, sizeof(waDemodThread),
                                      HIGHPRIO, demod_thread, NULL);
   /* Wait for thread to exit */
@@ -287,9 +285,7 @@ int main(void)
   demod_thread_p = NULL;
   NVIC_EnableIRQ(PendSV_IRQn);
   NVIC_EnableIRQ(SysTick_IRQn);
-  adcStopConversion(&ADCD1);
-  adcStop(&ADCD1);
-  fast_adc = 0;
+  analogStop();
   chBootToApp();
 #endif
 
