@@ -104,6 +104,8 @@ void bootToUserApp(void) {
    */
   if (appIsValid())
     chThdExit(0);
+  else
+    printf("But app is not valid.\r\n");
 }
 
 void init_storage_header(demod_pkt_ctrl_t *cpkt) {
