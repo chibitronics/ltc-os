@@ -349,6 +349,13 @@ extern "C" {
   void adc_lld_stop(ADCDriver *adcp);
   void adc_lld_start_conversion(ADCDriver *adcp);
   void adc_lld_stop_conversion(ADCDriver *adcp);
+
+  /* If you want to override the normal ISR, set one of these pointers.
+   * The FastISR operates outside of ChibiOS, and is thus faster, though
+   * in general it can't call any ChibiOS code.
+   */
+  extern void (*adcFastISR)(void);
+  extern void (*adcISR)(void);
 #ifdef __cplusplus
 }
 #endif

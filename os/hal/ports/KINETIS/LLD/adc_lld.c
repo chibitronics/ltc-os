@@ -25,6 +25,9 @@
 #include "hal.h"
 #include "demod.h"
 
+void (*adcFastISR)(void);
+void (*adcISR)(void);
+
 #if HAL_USE_ADC || defined(__DOXYGEN__)
 
 /*===========================================================================*/
@@ -91,28 +94,58 @@ static void calibrate(ADCDriver *adcp) {
  * @isr
  */
 OSAL_IRQ_HANDLER(KINETIS_ADC0_IRQ_VECTOR) {
-#if !DEMOD_DEBUG
+  if (adcFastISR) {
+    adcFastISR();
+    return;
+  }
+
   OSAL_IRQ_PROLOGUE();
-#endif
 
-  ADCDriver *adcp = &ADCD1;
-  
-  /* Read the sample into the buffer */
-  adcp->samples[adcp->current_index++] = adcp->adc->RA;
+  if (adcISR) {
+    adcISR();
+  }
+  else {
+    ADCDriver *adcp = &ADCD1;
 
-  /*  At the end of the buffer then we may be finished */
-  if(adcp->current_index == adcp->number_of_samples) {
-    _adc_isr_full_code(&ADCD1);
-    adcp->current_index = 0;
+    /* Disable Interrupt, Disable Channel */
+    adcp->adc->SC1A = ADCx_SC1n_ADCH(ADCx_SC1n_ADCH_DISABLED);
+
+    /* Read the sample into the buffer */
+    adcp->samples[adcp->current_index++] = adcp->adc->RA;
+
+    bool more = true;
+
+    /*  At the end of the buffer then we may be finished */
+    if (adcp->current_index == adcp->number_of_samples) {
+      /* We are never finished in circular mode */
+      more = ADCD1.grpp->circular;
+
+      _adc_isr_full_code(&ADCD1);
+
+      adcp->current_index = 0;
+
+    }
+
+    if (more) {
+
+      /* Signal half completion in circular mode. */
+      if (ADCD1.grpp->circular &&
+          (adcp->current_index == (adcp->number_of_samples / 2))) {
+
+          _adc_isr_half_code(&ADCD1);
+      }
+
+      /* Skip to the next channel */
+      do {
+        adcp->current_channel = (adcp->current_channel + 1) & ADC_CHANNEL_MASK;
+      } while (((1 << adcp->current_channel) & adcp->grpp->channel_mask) == 0);
+
+      /* Enable Interrupt, Select the Channel */
+      adcp->adc->SC1A = ADCx_SC1n_AIEN | ADCx_SC1n_ADCH(adcp->current_channel);
+    }
   }
-  
-  if( adcp->current_index == (adcp->number_of_samples / 2) ) {
-    _adc_isr_half_code(&ADCD1);
-  }
-  
-#if !DEMOD_DEBUG
+
   OSAL_IRQ_EPILOGUE();
-#endif
 }
 #endif
 
