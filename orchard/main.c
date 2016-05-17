@@ -40,7 +40,8 @@ void *stream;
 #define OSCOPE_PROFILING 0
 uint8_t screenpos = 0;
 
-volatile uint8_t dataReadyFlag = 0; // global flag, careful of sync issues when multi-threaded...
+// global flag, careful of sync issues when multi-threaded...
+volatile uint8_t dataReadyFlag = 0;
 volatile adcsample_t *bufloc;
 size_t buf_n;
 
@@ -65,7 +66,8 @@ static void phy_demodulate(void) {
 #endif
   // demodulation handler based on microphone data coming in
   for( frames = 0; frames < NB_FRAMES; frames++ ) {
-    FSKdemod(dm_buf + (frames * NB_SAMPLES), NB_SAMPLES, putBitMac); // putBitMac is callback to MAC layer
+    // putBitMac is callback to MAC layer
+    FSKdemod(dm_buf + (frames * NB_SAMPLES), NB_SAMPLES, putBitMac);
   }
   dataReadyFlag = 0;
 }
@@ -73,40 +75,40 @@ static void phy_demodulate(void) {
 void demod_loop(void) {
   uint32_t i;
 
-  // stop systick interrupts
   NVIC_DisableIRQ(PendSV_IRQn);
   NVIC_DisableIRQ(SysTick_IRQn);
-
   // infinite loops, prevents other system items from starting
-  int counter = 0;
   while (TRUE) {
-    pktPtr = 0;
-    while( !pktReady ) {
-      if( dataReadyFlag ) {
+    while (!pktReady) {
+      if (dataReadyFlag) {
         // copy from the double-buffer into a demodulation buffer
-        for( i = 0 ; i < buf_n; i++ ) {
+        for (i = 0 ; i < buf_n; i++) {
           dm_buf[i] = (int16_t) (((int16_t) bufloc[i]) - 2048);
         }
         // call handler, which includes the demodulation routine
         phy_demodulate();
       }
 
+      /*
       if (! (++counter & 0xfffff)) {
         if (appIsValid()) {
-          printf("User app is valid, booting\r\n");
+          printf("User app is valid, booting...\r\n");
           chThdExit(0);
-          printf("Shouldn't make it here\r\n");
         }
       }
+      */
     }
 
     // unstripe the transition xor's used to keep baud sync
-    if ((pktBuf[0] & PKTTYPE_MASK) == PKTTYPE_DATA) {
-      for( i = 0; i < PKT_LEN - 4; i++ ) {
-        if( (i % 16) == 7 )
-          pktBuf[i] ^= 0x55;
-        else if( (i % 16) == 15)
-          pktBuf[i] ^= 0xAA;
+    if (pkt.header.type == PKTTYPE_DATA) {
+      /* We don't xor the header or the ending hash, but xor everything else */
+      for (i = sizeof(pkt.header);
+           i < sizeof(pkt.data_pkt) - sizeof(pkt.data_pkt.hash);
+           i++) {
+        if ((i % 16) == 7)
+          ((uint8_t *)&pkt)[i] ^= 0x55;
+        else if ((i % 16) == 15)
+          ((uint8_t *)&pkt)[i] ^= 0xAA;
       }
     }
 
@@ -116,37 +118,41 @@ void demod_loop(void) {
     uint32_t txhash;
     uint16_t pkt_len;
     // replace the code in this #if bracket with the storage flashing code
-    if( (pktBuf[0] & PKTTYPE_MASK) == PKTTYPE_DATA ) {
-      pkt_len = PKT_LEN;
+    if (pkt.header.type == PKTTYPE_DATA) {
+      pkt_len = DATA_LEN;
       tfp_printf( "\n\r data packet:" );
-    } else {
+    }
+    else {
       tfp_printf( "\n\r control packet:" );
       pkt_len = CTRL_LEN;
     }
 
-    for( i = 0; i < 16; i++ ) { // abridged dump
-      if( i % 32 == 0 ) {
-	tfp_printf( "\n\r" );
+    for (i = 0; i < 16; i++) { // abridged dump
+      if (i % 32 == 0) {
+        tfp_printf( "\n\r" );
       }
-      tfp_printf( "%02x", pktBuf[i] /* isprint(pktBuf[i]) ? pktBuf[i] : '.'*/ );
+      tfp_printf( "%02x", ((uint8_t *)&pkt)[i] /* isprint(pktBuf[i]) ? pktBuf[i] : '.'*/ );
     }
+
     // check hash
-    MurmurHash3_x86_32(pktBuf, pkt_len - 4 /* packet minus hash */, MURMUR_SEED_BLOCK, &hash);
+    MurmurHash3_x86_32(&pkt,
+                       pkt_len - 4 /* packet minus hash */,
+                       MURMUR_SEED_BLOCK,
+                       &hash);
 
-    txhash = (pktBuf[pkt_len-4] & 0xFF) | (pktBuf[pkt_len-3] & 0xff) << 8 |
-      (pktBuf[pkt_len-2] & 0xFF) << 16 | (pktBuf[pkt_len-1] & 0xff) << 24;
+    /* The hash is always the last element of the packet, regardless of type. */
+    txhash = ((uint32_t *)(((void *)&pkt) + pkt_len))[-1];
 
-    tfp_printf( " tx: %08x rx: %08x\n\r", txhash, hash);
-    if( txhash != hash ) {
+    tfp_printf(" tx: %08x rx: %08x\n\r", txhash, hash);
+    if (txhash != hash)
       tfp_printf( " fail\n\r" );
-    } else {
+    else
       tfp_printf( " pass\n\r" );
-    }
 
     pktReady = 0; // we've extracted packet data, so clear the buffer flag
 #else
 
-    updaterPacketProcess(pktBuf);
+    updaterPacketProcess(&pkt);
 #endif
   }
 }
@@ -158,6 +164,7 @@ static size_t heap_size(void) {
 }
 
 /* Initialize the bootloader setup */
+int blbss_len;
 static void blcrt_init(void) {
   /* Variables defined by the linker */
   extern uint32_t _textbldata_start;
@@ -166,8 +173,9 @@ static void blcrt_init(void) {
   extern uint32_t _blbss_start;
   extern uint32_t _blbss_end;
 
-  memset(&_blbss_start, 0, ((uint32_t)&_blbss_end) - ((uint32_t)&_blbss_start) - 1);
-  memcpy(&_bldata_start, &_textbldata_start, ((uint32_t)&_bldata_end) - ((uint32_t)&_bldata_start) - 1);
+  blbss_len = ((uint32_t)&_blbss_end) - ((uint32_t)&_blbss_start);
+  memset(&_blbss_start, 0, blbss_len);
+  memcpy(&_bldata_start, &_textbldata_start, ((uint32_t)&_bldata_end) - ((uint32_t)&_bldata_start));
 }
 
 /*
@@ -236,15 +244,6 @@ static THD_FUNCTION(demod_thread, arg) {
   NVIC_SetPriority(ADC0_IRQn, 0);
   NVIC_SetPriority(UART0_IRQn, 3);
 
-  while( !(((volatile SysTick_Type *)SysTick)->CTRL & SysTick_CTRL_COUNTFLAG_Msk) )
-    ;
-  //x/2x 0xe000ed1c
-  NVIC_SetPriority(SVCall_IRQn, 3);
-  NVIC_SetPriority(PendSV_IRQn, 3);
-  NVIC_SetPriority(SysTick_IRQn, 3);
-  NVIC_DisableIRQ(PendSV_IRQn);
-  NVIC_DisableIRQ(SysTick_IRQn);
-
   analogUpdateMic();  // starts mic sampling loop (interrupt-driven and automatic)
   demod_loop();
 }
@@ -278,14 +277,19 @@ int main(void)
 
 #if defined(_CHIBIOS_RT_)
   volatile thread_t *demod_thread_p;
+  extern int fast_adc;
+  fast_adc = 1;
   demod_thread_p = chThdCreateStatic(waDemodThread, sizeof(waDemodThread),
                                      HIGHPRIO, demod_thread, NULL);
   /* Wait for thread to exit */
-  while (demod_thread_p->p_state != CH_STATE_FINAL);
+  while (demod_thread_p->p_state != CH_STATE_FINAL)
+    ;
+  demod_thread_p = NULL;
   NVIC_EnableIRQ(PendSV_IRQn);
   NVIC_EnableIRQ(SysTick_IRQn);
   adcStopConversion(&ADCD1);
   adcStop(&ADCD1);
+  fast_adc = 0;
   chBootToApp();
 #endif
 
