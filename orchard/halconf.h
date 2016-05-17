@@ -165,7 +165,7 @@
  * @note    Disabling this option saves both code and data space.
  */
 #if !defined(ADC_USE_WAIT) || defined(__DOXYGEN__)
-#define ADC_USE_WAIT                FALSE
+#define ADC_USE_WAIT                TRUE
 #endif
 
 /**
