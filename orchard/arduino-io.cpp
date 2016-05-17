@@ -90,7 +90,7 @@ void analogReference(enum analog_reference_type type) {
   return;
 }
 
-int pinToADC(int pin) {
+uint32_t pinToADC(int pin) {
   /* Microphone input channel. */
   return ADC_DADP0;
 }
@@ -98,6 +98,7 @@ int pinToADC(int pin) {
 int analogRead(int pin) {
 
   msg_t result;
+  adcsample_t sample;
   static const ADCConversionGroup arduinogrp = {
     0, // circular buffer mode? no.
     1, // just one channel
@@ -131,11 +132,13 @@ int analogRead(int pin) {
     // /4   75ksps after averaging by factor of 4
   };
 
-  adcsample_t sample;
   result = adcConvert(&ADCD1,
                      &arduinogrp,
                      &sample,
                      1);
+  if (result)
+    sample = 0;
+
   return sample;
 }
 
