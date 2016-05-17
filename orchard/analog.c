@@ -12,6 +12,26 @@ extern volatile uint8_t dataReadyFlag;
 extern volatile adcsample_t *bufloc;
 extern size_t buf_n;
 
+static void analog_fast_isr(void) {
+  ADCDriver *adcp = &ADCD1;
+
+  /* Read the sample into the buffer */
+  adcp->samples[adcp->current_index++] = adcp->adc->RA;
+
+  /*  At the end of the buffer then we may be finished */
+  if (adcp->current_index == adcp->number_of_samples) {
+    /* Invokes the callback passing the 2nd half of the buffer.*/
+    size_t half = adcp->depth / 2;
+    size_t half_index = half * adcp->grpp->num_channels;
+    adcp->grpp->end_cb(adcp, adcp->samples + half_index, half);
+    adcp->current_index = 0;
+  }
+
+  if( adcp->current_index == (adcp->number_of_samples / 2) ) {
+    _adc_isr_half_code(&ADCD1);
+  }
+}
+
 static void adc_mic_end_cb(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
   (void)adcp;
   (void)n;
@@ -73,8 +93,12 @@ void analogUpdateMic(void) {
   //  adcReleaseBus(&ADCD1);
 }
 
-void analogStart() {
-  
+void analogStart(void) {
+  adcFastISR = analog_fast_isr;
 }
 
-
+void analogStop(void) {
+  adcStopConversion(&ADCD1);
+  adcStop(&ADCD1);
+  adcFastISR = NULL;
+}
