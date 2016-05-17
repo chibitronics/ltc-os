@@ -64,6 +64,6 @@ typedef struct storage_header_ram_ {
 // * Minimum patch size is 4 bytes (one word)
 
 // this is the call made to process an incoming packet, once it has been received
-int8_t updaterPacketProcess(uint8_t *pkt);
+int8_t updaterPacketProcess(demod_pkt_t *pkt);
 
 #endif // __ORCHARD_STORAGE__

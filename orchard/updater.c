@@ -81,11 +81,11 @@
  */
 
 typedef enum states {
-  APP_IDLE = 0,
-  APP_GOT_ID,
-  APP_UPDATING,   // keep circulating here until all blocks received
-  APP_UPDATED,    // check if all blocks are good in this state
-  APP_FAIL,       // app failed to boot
+  APP_IDLE      = 0,
+  APP_GOT_ID    = 1, // (unused state)
+  APP_UPDATING  = 2, // keep circulating here until all blocks received
+  APP_UPDATED   = 3, // check if all blocks are good in this state
+  APP_FAIL      = 4, // app failed to boot
 } app_state;
 static app_state astate = APP_IDLE;
 
@@ -106,20 +106,19 @@ void bootToUserApp(void) {
     chThdExit(0);
 }
 
-void init_storage_header(demod_ctrl_pkt *cpkt) {
+void init_storage_header(demod_pkt_ctrl_t *cpkt) {
   storage_header_ram proto;
-  uint32_t i;
 
-  proto.version = STORAGE_VERSION;
-  proto.magic = STORAGE_MAGIC;
-  proto.fullhash = cpkt->fullhash[0] | cpkt->fullhash[1] << 8 | cpkt->fullhash[2] << 16 | cpkt->fullhash[3] << 24;
-  proto.length = cpkt->length[0] | cpkt->length[1] << 8 | cpkt->length[2] << 16 | cpkt->length[3] << 24;
-  for(i = 0; i < GUID_BYTES; i++ ) {
-    proto.guid[i] = cpkt->guid[i];
-  }
+  proto.version   = STORAGE_VERSION;
+  proto.magic     = STORAGE_MAGIC;
+  proto.fullhash  = cpkt->fullhash;
+  proto.length    = cpkt->length;
+  memcpy(proto.guid, cpkt->guid, GUID_BYTES);
 
   // this routine could fail, but...nothing to do if it doesn't work!
-  flashProgram((uint8_t *) &proto, (uint8_t *) STORAGE_HEADER_OFFSET, sizeof(storage_header_ram));
+  flashProgram((uint8_t *)&proto,
+               (uint8_t *)storageHdr,
+               sizeof(proto));
 }
 
 // guarantee entering here: all packets are "good" (as in they pass mac-level hash checks)
@@ -127,101 +126,129 @@ void init_storage_header(demod_ctrl_pkt *cpkt) {
 // it'll repeatedly erase flash due to guid mismatch fails!
 // we also assume the packets are the correct version; the MAC should reject packets for
 // versions that don't match our firmware
-int8_t updaterPacketProcess(uint8_t *pkt) {
-  demod_data_pkt *dpkt;
-  demod_ctrl_pkt *cpkt;
-  uint32_t i;
-  int8_t err = 0;
+int8_t updaterPacketProcess(demod_pkt_t *pkt) {
 
-  tfp_printf( "S%d ", (uint8_t) astate );
-  switch(astate) {
+  demod_pkt_ctrl_t *cpkt;
+  demod_pkt_data_t *dpkt;
+  int8_t err = 0;
+  uint32_t i;
+
+  tfp_printf("S%d ", (uint8_t) astate);
+  switch (astate) {
   case APP_IDLE:
-    cpkt = (demod_ctrl_pkt *) pkt; // expecting a control packet
+    cpkt = &pkt->ctrl_pkt; // expecting a control packet
     
-    if( (cpkt->version & PKTTYPE_MASK) != PKTTYPE_CTRL )
+    if (cpkt->header.type != PKTTYPE_CTRL)
       break; // if not a control packet, stay in idle
 
-    // we don't check the magic #, just guid because chance of collision is remote
-    if( memcmp( storageHdr->guid, cpkt->guid, 16 ) == 0 ) {
-      if( storageHdr->complete == 0xFFFFFFFF ) {
-        // we're getting a resend of an incomplete transmission, move to the updating state
+    /* we don't check the magic #, just guid because chance of collision
+     * is remote.
+     */
+    if (memcmp(storageHdr->guid, cpkt->guid, 16) == 0) {
+      if (storageHdr->complete == 0xFFFFFFFF) {
+        /* we're getting a resend of an incomplete transmission, move
+         * to the updating state.
+         */
         astate = APP_UPDATING;
         break;
-      } else {
+      }
+      else {
         break; // attempt to program the sticker with the same program, just abort & ignore
       }
     }
 
-    // ok, so now we've got a control packet, and it's for a new program guid.
-    // let's nuke the flash to make room for the new code and pray the update doesn't fail.
+    /* We've got a control packet, and it's for a new program guid.
+     * Nuke the flash to make room for the new code and pray that
+     * the update doesn't fail.
+     */
     err = flashEraseSectors(SECTOR_MIN, SECTOR_COUNT);
 
-    // now init the storage header
+    /* Re-initialize the storage header. */
     init_storage_header(cpkt);
     astate = APP_UPDATING;
     break;
 
   case APP_UPDATING:
-    if( storageHdr->magic != STORAGE_MAGIC ) { // we should /only/ get here if the header has been initialized!!
-      // some kind of corruption to internal header, reset the system to a known state
+
+    /* We should /only/ get here if the header has been initialized!!
+     * If Magic has changed, there has been some kind of corruption to
+     * the internal header.  Reset the system to a known state.
+     */
+    if (storageHdr->magic != STORAGE_MAGIC) {
       err = flashEraseSectors(SECTOR_MIN, SECTOR_COUNT);
       astate = APP_IDLE;
+      break;
     }
-    dpkt = (demod_data_pkt *) pkt;
-    if( (dpkt->version & PKTTYPE_MASK) != PKTTYPE_DATA )
+
+    dpkt = &pkt->data_pkt;
+    if (dpkt->header.type != PKTTYPE_DATA)
       break; // if not a data packet, ignore and wait again
 
-    // check and see if the current sector we're trying to write has been updated before
-    // flashing it. It's bad for Flash to write over a sector that's got data
-    uint16_t block = dpkt->block[0] | dpkt->block[1] << 8;
-    if( storageHdr->blockmap[block] == 0xFFFFFFFF ) {
-      // NOTE: we first clear the block map before programming because if someone powers down
-      // the system in the middle of the block programming, we don't want to accidentally reprogram
-      // the block: this will overstress the flash
-      // There's a full-program hash check later on that will save us from any partially programmed
-      // blocks later on.....
+    /* Check and see if the current sector we're trying to write
+     * has been updated before flashing it.  It's bad for Flash 
+     * to write over a sector that already has data.
+     */
+    uint16_t block = dpkt->block;
+    if (storageHdr->blockmap[block] == 0xFFFFFFFF) {
+      /* NOTE: we first clear the block map before programming because
+       * if someone powers down the system in the middle of the
+       * block programming, we don't want to accidentally reprogram
+       * the block, as this will overstress the flash.
+       *
+       * There's a full-program hash check later on that will save us
+       * from any partially programmed blocks later on.....
+       */
       uint32_t dummy = 0;
-      // clear the entry in the block map to record programming state
+
+      /* clear the entry in the block map to record programming state. */
       err = flashProgram((uint8_t *)&dummy, (uint8_t *)(&(storageHdr->blockmap[block])), sizeof(uint32_t));
       tfp_printf( "\n\r P%d b%d", (uint8_t) block, err );
       
       // only program if the blockmap says it's not been programmed
       err = flashProgram(dpkt->payload, (uint8_t *) (STORAGE_PROGRAM_OFFSET + (block * BLOCK_SIZE)), BLOCK_SIZE);
       tfp_printf( " d%d", err );
-    } else {
+    }
+    else {
       tfp_printf( " _%d", (uint8_t) block ); // redundant block received
     }
     
-    // now check if the entire block map, within the range of the program length, has been programmed
-    // we want to do this on every block, even if it's already been programmed, because there's a
-    // potential race condition where we could have received the last block, but failed to blow the
-    // "complete" flag, due to a power failure at the wrong time
-    // in other words, don't make the below check an "else" clause of the previous "if" thinking it's
-    // an optimization.
+    /* Now check if the entire block map, within the range of the
+     * program length, has been programmed.  We want to do this
+     * on every block, even if it's already been programmed, because
+     * there's a potential race condition where we could have received
+     * the last block, but failed to blow the "complete" flag, due to
+     * a power failure at the wrong time.  In other words, don't
+     * make the below check an "else" clause of the previous "if",
+     * thinking it's an optimization.
+     */
     uint8_t alldone = 1;
-    for( i = 0; i < ((storageHdr->length - 1) / BLOCK_SIZE) + 1; i++ ) {
-      if( storageHdr->blockmap[i] == 0xFFFFFFFF )
+    for (i = 0; i < ((storageHdr->length - 1) / BLOCK_SIZE) + 1; i++) {
+      if (storageHdr->blockmap[i] == 0xFFFFFFFF)
         alldone = 0;
     }
     if(!alldone)
       break;  // stay in app-updating state
 
-    // now that it's claimed to be done, do a full hash check and confirm this /actually/ worked
+    /* Now that it's claimed to be done, do a full hash check
+     * and confirm this /actually/ worked.
+     */
     uint32_t hash;
     MurmurHash3_x86_32((uint8_t *)STORAGE_PROGRAM_OFFSET, storageHdr->length, MURMUR_SEED_TOTAL, &hash);
-    if(hash == storageHdr->fullhash) {
-      // hurray, we're done! mark the whole thing as complete
+    if (hash == storageHdr->fullhash) {
+      /* Hurray, we're done! mark the whole thing as complete. */
       uint32_t dummy = 0;
       err = flashProgram((uint8_t *)(&(storageHdr->complete)), (uint8_t *)&dummy, sizeof(uint32_t));
       astate = APP_UPDATED;
       bootToUserApp();
       astate = APP_FAIL;
-    } else {
+    }
+    else {
       tfp_printf( "\n\r Transfer complete but corrupted. Erase & retry.\n\r" );
       tfp_printf( "\n\r Source hash: %08x local hash: %08x\n\r", storageHdr->fullhash, hash );
       
-      // hash check failed. Something went wrong. Just nuke all of storage and bring us back to
-      // a virgin state
+      /* Hash check failed. Something went wrong. Just nuke all of storage
+       * and bring us back to a virgin state.
+       */
       err = flashEraseSectors(SECTOR_MIN, SECTOR_COUNT);
       astate = APP_IDLE;
     }

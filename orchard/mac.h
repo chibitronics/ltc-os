@@ -6,35 +6,69 @@
 #define MURMUR_SEED_BLOCK  (0xdeadbeef)
 #define MURMUR_SEED_TOTAL  (0x32d0babe)
 
+typedef struct demod_ph {
+
+  /* Protocol version */
+  uint8_t version;
+
+  /* Packet type */
+  uint8_t type;
+} __attribute__((packed)) demod_pkt_header_t;
+
 typedef struct demod_dp {
-  uint8_t  version;
-  uint8_t  block[2];  // can't do uint16_t because of struct alignment issues in C
-  uint8_t  payload[PAYLOAD_LEN];
-  uint8_t hash[4];    // again, can't do uint32_t due to struct alignment issues
-} demod_data_pkt;
+
+  demod_pkt_header_t header;
+
+  /* Block number (offset is block * PAYLOAD_LEN) */
+  uint16_t  block;
+
+  /* Payload contents */
+  uint8_t   payload[PAYLOAD_LEN];
+
+  /* Hash of this data packet */
+  uint32_t  hash;
+} __attribute__((packed)) demod_pkt_data_t;
 
 typedef struct demod_cp {
-  uint8_t version;
-  uint8_t length[4];    // total length of program in bytes (# blocks = ceil(length / blocksize)
-  uint8_t fullhash[4];  // lightweight data integrity hash, computed across "length" of program given above
-  uint8_t guid[16];  // uid code for identifying a program uniquely, and globally
-  uint8_t hash[4];   // the hash check of /this/ packet
-} demod_ctrl_pkt;
 
-#define PKT_LEN  (sizeof(demod_data_pkt))   // size of the largest packet we could receive
-#define CTRL_LEN  (sizeof(demod_ctrl_pkt))
+  demod_pkt_header_t header;
+
+  /* Padding */
+  uint16_t reserved;
+
+  /* Total length of program in bytes (# blocks = ceil(length / blocksize) */
+  uint32_t length;
+
+  /* Lightweight data integrity hash, computed across "length"
+   * of program given above.
+   */
+  uint32_t fullhash;
+
+  /* UID code for identifying a program uniquely, and globally */
+  uint8_t guid[16];
+
+  /* Hash check of /this/ packet */
+  uint32_t hash;
+} __attribute__((packed)) demod_pkt_ctrl_t;
+
+typedef union demod_packet {
+  demod_pkt_header_t header;
+  demod_pkt_ctrl_t ctrl_pkt;
+  demod_pkt_data_t data_pkt;
+} __attribute__((packed)) demod_pkt_t;
+
+// size of the largest packet we could receive
+#define DATA_LEN  (sizeof(demod_pkt_data_t))
+#define CTRL_LEN  (sizeof(demod_pkt_ctrl_t))
 
 // bit 7 defines packet type on the version code (first byte received)
-#define PKTTYPE_MASK  0x80
-#define PKTTYPE_CTRL  0x80
-#define PKTTYPE_DATA  0x00
+#define PKTTYPE_CTRL  0x01
+#define PKTTYPE_DATA  0x02
 
-// version codes for mac control & data packets
-#define MAC_CTRL_VER  0x01
-#define MAC_DATA_VER  0x01
+#define PKT_VER 0x01
 
 extern volatile uint16_t pktPtr;
-extern uint8_t  pktBuf[PKT_LEN];
+extern demod_pkt_t pkt;
 extern uint8_t  pktReady;
 
 void putBitMac(int bit);
