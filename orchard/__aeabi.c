@@ -57,18 +57,11 @@ char *utoa(unsigned long val, char *s, int radix) {
   return ch_ltoa(s, val, radix);
 }
 
-void *_memset(void *dst0, int val, size_t length) {
+void *memset (void *dst0, int val, size_t length) {
   uint8_t *ptr = dst0;
-  uint8_t *end_ptr = ptr + length;
-
-  while (end_ptr != ptr)
-    ptr[length] = 1;
+  while(length--)
+    *ptr++ = val;
   return dst0;
-}
-
-void *memset(void *dst0, int val, size_t length) {
-  return 0;
-  return _memset(dst0, val, length);
 }
 
 void *memmove(void *dest, const void *src, size_t n) {
