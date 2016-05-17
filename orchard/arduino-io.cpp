@@ -1,6 +1,10 @@
+#include "hal.h"
+#include "adc.h"
+
 #include "Arduino.h"
 #include "kl02.h"
 #include "memio.h"
+#include "printf.h"
 
 #define PIN_NUMBER(x) (x & 0x1f)
 #define BANK_NUMBER(x) ((x & ~0x1f) >> 5)
@@ -86,9 +90,53 @@ void analogReference(enum analog_reference_type type) {
   return;
 }
 
+int pinToADC(int pin) {
+  /* Microphone input channel. */
+  return ADC_DADP0;
+}
+
 int analogRead(int pin) {
 
-  return 0;
+  msg_t result;
+  static const ADCConversionGroup arduinogrp = {
+    0, // circular buffer mode? no.
+    1, // just one channel
+    NULL,  // callback
+    NULL,  // error callback
+    pinToADC(pin),
+    // CFG1 register
+    // SYSCLK = 48MHz.
+    // BUSCLK = SYSCLK / 4 = 12MHz
+    // ADCCLK = SYSCLK / 2 / 1 = 6 MHz
+
+    // ADLPC = 0 (normal power)
+    // ADLSMP = 0 (short sample time)
+    // ADHSC = 0 (normal conversion sequence)
+    // -> 5 ADCK cycles + 5 bus clock cycles = SFCadder
+    // 20 ADCK cycles per sample
+
+    ADCx_CFG1_ADIV(ADCx_CFG1_ADIV_DIV_2) |
+    ADCx_CFG1_ADICLK(ADCx_CFG1_ADIVCLK_BUS_CLOCK_DIV_2) |
+    ADCx_CFG1_MODE(ADCx_CFG1_MODE_12_OR_13_BITS),  // 12 bits per sample
+
+    // SC3 register
+    ADCx_SC3_AVGE |
+    ADCx_SC3_AVGS(ADCx_SC3_AVGS_AVERAGE_4_SAMPLES) // 4 sample average
+
+    //      48 MHz sysclk
+    // /2   24 MHz busclk
+    // /2   12 MHz after prescaler
+    // /2   6 MHz after adiv
+    // /20  300ksps after base sample time @ 12 bps
+    // /4   75ksps after averaging by factor of 4
+  };
+
+  adcsample_t sample;
+  result = adcConvert(&ADCD1,
+                     &arduinogrp,
+                     &sample,
+                     1);
+  return sample;
 }
 
 
