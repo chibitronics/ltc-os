@@ -97,18 +97,6 @@ size_t strlen(const char *s) {
   return i;
 }
 
-int printf(const char *fmt, ...) {
-  va_list ap;
-  int formatted_bytes;
-  extern void *stream;
-
-  va_start(ap, fmt);
-  formatted_bytes = chvprintf(stream, fmt, ap);
-  va_end(ap);
-
-  return formatted_bytes;
-}
-
 int memcmp(const void *s1, const void *s2, size_t n)
 {
   unsigned char u1, u2;
