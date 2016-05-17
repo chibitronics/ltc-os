@@ -4,10 +4,10 @@
 extern "C" {
   extern const uint32_t * const SysCall_Table[];
   extern uint32_t do_nothing;
-  extern uint32_t __aeabi_memcpy;
-  extern uint32_t __aeabi_memmove;
-  extern uint32_t __aeabi_memset;
-  extern uint32_t __aeabi_memclr;
+  extern uint32_t memcpy;
+  extern uint32_t memmove;
+  extern uint32_t memset;
+  extern uint32_t memclr;
   extern uint32_t __aeabi_uread4;
   extern uint32_t __aeabi_uwrite4;
   extern uint32_t __aeabi_uread8;
@@ -66,16 +66,28 @@ extern "C" {
   extern uint32_t qfp_fexp;
   extern uint32_t qfp_fln;
   extern uint32_t qfp_fsqrt_fast;
-  extern uint32_t free;
-  extern uint32_t malloc;
-  extern uint32_t realloc;
-  extern uint32_t __dso_handle;
+  extern uint32_t strncpy;
+  extern uint32_t strcpy;
+  extern uint32_t strcmp;
+  extern uint32_t strncmp;
+  extern uint32_t strchr;
+  extern uint32_t strlen;
+  extern uint32_t chsnprintf;
   extern uint32_t ltoa;
   extern uint32_t utoa;
   extern uint32_t ultoa;
   extern uint32_t itoa;
-  extern uint32_t ledShow;
+  extern uint32_t simple_strtol;
+  extern uint32_t simple_strtoul;
   extern uint32_t printf;
+  extern uint32_t putchar;
+  extern uint32_t getchar;
+  extern uint32_t cangetchar;
+  extern uint32_t free;
+  extern uint32_t malloc;
+  extern uint32_t realloc;
+  extern uint32_t __dso_handle;
+  extern uint32_t ledShow;
 };
 
 extern void pinMode(int pin, enum pin_mode mode);
@@ -103,10 +115,10 @@ extern long randomSeed(unsigned long seed);
 __attribute__((section(".rodata")))
 const uint32_t * const SysCall_Table[] = {
     (const uint32_t *)&do_nothing,
-    (const uint32_t *)&__aeabi_memcpy,
-    (const uint32_t *)&__aeabi_memmove,
-    (const uint32_t *)&__aeabi_memset,
-    (const uint32_t *)&__aeabi_memclr,
+    (const uint32_t *)&memcpy,
+    (const uint32_t *)&memmove,
+    (const uint32_t *)&memset,
+    (const uint32_t *)&memclr,
     (const uint32_t *)&__aeabi_uread4,
     (const uint32_t *)&__aeabi_uwrite4,
     (const uint32_t *)&__aeabi_uread8,
@@ -165,16 +177,28 @@ const uint32_t * const SysCall_Table[] = {
     (const uint32_t *)&qfp_fexp,
     (const uint32_t *)&qfp_fln,
     (const uint32_t *)&qfp_fsqrt_fast,
-    (const uint32_t *)&free,
-    (const uint32_t *)&malloc,
-    (const uint32_t *)&realloc,
-    (const uint32_t *)&__dso_handle,
+    (const uint32_t *)&strncpy,
+    (const uint32_t *)&strcpy,
+    (const uint32_t *)&strcmp,
+    (const uint32_t *)&strncmp,
+    (const uint32_t *)&strchr,
+    (const uint32_t *)&strlen,
+    (const uint32_t *)&chsnprintf,
     (const uint32_t *)&ltoa,
     (const uint32_t *)&utoa,
     (const uint32_t *)&ultoa,
     (const uint32_t *)&itoa,
-    (const uint32_t *)&ledShow,
+    (const uint32_t *)&simple_strtol,
+    (const uint32_t *)&simple_strtoul,
     (const uint32_t *)&printf,
+    (const uint32_t *)&putchar,
+    (const uint32_t *)&getchar,
+    (const uint32_t *)&cangetchar,
+    (const uint32_t *)&free,
+    (const uint32_t *)&malloc,
+    (const uint32_t *)&realloc,
+    (const uint32_t *)&__dso_handle,
+    (const uint32_t *)&ledShow,
     (const uint32_t *)static_cast<void (*)(int pin, enum pin_mode mode)>(&pinMode),
     (const uint32_t *)static_cast<void (*)(int pin, int value)>(&digitalWrite),
     (const uint32_t *)static_cast<int (*)(int pin)>(&digitalRead),
