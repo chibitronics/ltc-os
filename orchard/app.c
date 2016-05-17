@@ -37,7 +37,8 @@ void *malloc(size_t size) {
 }
 
 void free(void *ptr) {
-  chHeapFree(ptr);
+  if (ptr)
+    chHeapFree(ptr);
 }
 
 /* http://www.chibios.com/forum/viewtopic.php?t=1314&p=22848#p22848 */
