@@ -126,6 +126,7 @@ CSRC = main.c \
        printf.c \
        ws2812b.c \
        $(CHIBIOS)/os/hal/lib/streams/chprintf.c \
+       $(CHIBIOS)/os/hal/lib/streams/memstreams.c \
        __aeabi.c \
        app.c \
        math.c \
