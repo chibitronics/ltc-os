@@ -87,6 +87,8 @@ void analogWrite(int pin, int value) {
 }
 
 void analogReference(enum analog_reference_type type) {
+  (void)type;
+  
   return;
 }
 
