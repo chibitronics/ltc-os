@@ -10,10 +10,10 @@
 #include "esplanade_demod.h"
 #include "dsptables.h"
 
-bl_symbol_bss(int16_t dm_buf[DMBUF_DEPTH]);
+bl_symbol_bss(demod_sample_t dm_buf[DMBUF_DEPTH]);
 bl_symbol_bss(static FSK_demod_state fsk_state);
 
-int32_t FSK_core(int16_t *b) {
+static int32_t FSK_core(demod_sample_t *b) {
   int32_t j;
   int32_t corr;
   int32_t sum;
@@ -63,25 +63,25 @@ int32_t FSK_core(int16_t *b) {
   return sum;
 }
 
-void FSKdemod(int16_t *samples, uint32_t nb, put_bit_func put_bit)
+void FSKdemod(demod_sample_t *samples, uint32_t nb, put_bit_func put_bit)
 {
   int32_t newsample;
   uint32_t i;
   int32_t sum;
-  int16_t *b;
+  demod_sample_t *b;
   //  int16_t tempo;
 
   //    GPIOB->PSOR |= (1 << 6);   // red
   // measure time to complete: 133.2us
   // number of samples processed: 8 -> needs to get to 106us, ideally 100us for OS overhead
   
-  for(i = 0; i < nb; i++) {
+  for (i = 0; i < nb; i++) {
     /* add a new sample in the demodulation filter */
     fsk_state.filter_buf[fsk_state.buf_ptr++] = samples[i] >> fsk_state.shift;
     if (fsk_state.buf_ptr == FSK_FILTER_BUF_SIZE) {
       memmove(fsk_state.filter_buf, 
 	      fsk_state.filter_buf + FSK_FILTER_BUF_SIZE - fsk_const.filter_size, 
-	      fsk_const.filter_size * sizeof(int16_t));
+	      fsk_const.filter_size * sizeof(demod_sample_t));
       fsk_state.buf_ptr = fsk_const.filter_size;
     }
         

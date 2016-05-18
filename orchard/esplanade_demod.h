@@ -23,18 +23,21 @@
 #define FSK_FILTER_BUF_SIZE (FSK_FILTER_SIZE * 2)
 
 #define DMBUF_DEPTH (NB_SAMPLES * NB_FRAMES) 
-extern int16_t dm_buf[];
+
+typedef int16_t demod_sample_t;
+
+extern demod_sample_t dm_buf[];
 
 /* bit I/O for data pumps */
 typedef void (*put_bit_func)(int bit);
 
 typedef struct {
-    int16_t filter_buf[FSK_FILTER_BUF_SIZE];
+    demod_sample_t filter_buf[FSK_FILTER_BUF_SIZE];
     uint8_t buf_ptr;
 
     int32_t baud_incr;
     int32_t baud_pll, baud_pll_adj, baud_pll_threshold;
-    int16_t lastsample;
+    demod_sample_t lastsample;
     int16_t shift;
 } FSK_demod_state;
 
@@ -46,11 +49,11 @@ typedef struct {
 
     /* local variables */
     int16_t filter_size;
-    int16_t filter_lo_i[FSK_FILTER_SIZE];
-    int16_t filter_lo_q[FSK_FILTER_SIZE];
+    demod_sample_t filter_lo_i[FSK_FILTER_SIZE];
+    demod_sample_t filter_lo_q[FSK_FILTER_SIZE];
     
-    int16_t filter_hi_i[FSK_FILTER_SIZE];
-    int16_t filter_hi_q[FSK_FILTER_SIZE];
+    demod_sample_t filter_hi_i[FSK_FILTER_SIZE];
+    demod_sample_t filter_hi_q[FSK_FILTER_SIZE];
 } FSK_demod_const;
 
 extern const FSK_demod_const fsk_const;
@@ -68,6 +71,6 @@ static inline int dsp_dot_prod(int16_t *tab1, const int16_t *tab2,
 }
 
 void demodInit(void);
-void FSKdemod(int16_t *samples, uint32_t nb, put_bit_func put_bit);
+void FSKdemod(demod_sample_t *samples, uint32_t nb, put_bit_func put_bit);
 
 #endif
