@@ -130,6 +130,8 @@ CSRC = main.c \
        $(CHIBIOS)/os/hal/lib/streams/memstreams.c \
        __aeabi.c \
        math.c \
+       usbphy.c \
+       usbmac.c \
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -164,7 +166,8 @@ ASMSRC += $(STARTUPASM) $(PORTASM) $(OSALASM) \
           run_app.s svc_handler.s ws2812b_ll.s \
           thumb1_case.s \
           hardfault_handler.s memmanage_handler.s \
-          usagefault_handler.s busfault_handler.s
+          usagefault_handler.s busfault_handler.s \
+          usbphy_ll.s
 
 INCDIR = $(STARTUPINC) $(KERNINC) $(PORTINC) $(OSALINC) \
          $(HALINC) $(PLATFORMINC) $(BOARDINC) $(TESTINC) \
