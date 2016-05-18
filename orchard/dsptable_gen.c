@@ -17,7 +17,7 @@ typedef unsigned int            uint32_t;
 typedef unsigned long long      uint64_t;
 typedef long long               int64_t;
 
-#include "demod.h"
+#include "esplanade_demod.h"
 
 FSK_demod_const  fsk;
 
