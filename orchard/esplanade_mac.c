@@ -32,10 +32,10 @@ bl_symbol_bss(static uint8_t mac_sync[4]);
 bl_symbol_bss(static uint8_t sync_count);
 
 /* Expected length of this packet */
-bl_symbol(static uint32_t pkt_len);
+bl_symbol_bss(static uint32_t pkt_len);
 
 /* Number of bytes we've read so far */
-bl_symbol(static uint32_t pkt_read);
+bl_symbol_bss(static uint32_t pkt_read);
 
 // put_bit with a MAC layer on it
 void putBitMac(int bit) {
