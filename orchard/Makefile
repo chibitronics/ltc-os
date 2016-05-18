@@ -132,6 +132,7 @@ CSRC = main.c \
        math.c \
        usbphy.c \
        usbmac.c \
+       arduino-i2c.c \
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
