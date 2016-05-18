@@ -6,7 +6,7 @@
 #include "esplanade_analog.h"
 #include "esplanade_demod.h"
 
-bl_symbol(static adcsample_t mic_sample[MIC_SAMPLE_DEPTH]);
+bl_symbol_bss(static adcsample_t mic_sample[MIC_SAMPLE_DEPTH]);
 
 extern volatile uint8_t dataReadyFlag;
 extern volatile adcsample_t *bufloc;
