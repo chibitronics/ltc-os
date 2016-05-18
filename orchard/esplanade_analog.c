@@ -3,8 +3,8 @@
 #include "esplanade_os.h"
 
 #include "orchard.h"
-#include "analog.h"
-#include "demod.h"
+#include "esplanade_analog.h"
+#include "esplanade_demod.h"
 
 bl_symbol(static adcsample_t mic_sample[MIC_SAMPLE_DEPTH]);
 

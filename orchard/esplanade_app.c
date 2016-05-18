@@ -17,7 +17,7 @@
 #include <string.h>
 
 #include "hal.h"
-#include "app.h"
+#include "esplanade_app.h"
 
 extern struct app_header _app_header;
 static memory_heap_t app_heap;

@@ -110,11 +110,12 @@ LDSCRIPT= $(STARTUPLD)/KL02P20.ld
 CSRC = main.c \
        orchard-vectors.c \
        gitversion.c \
-       analog.c \
-       demod.c \
+       esplanade_analog.c \
+       esplanade_demod.c \
+       esplanade_updater.c \
+       esplanade_mac.c \
+       esplanade_app.c \
        murmur3.c \
-       updater.c \
-       mac.c \
        flash.c \
        $(STARTUPSRC) \
        $(PORTSRC) \
@@ -128,13 +129,15 @@ CSRC = main.c \
        $(CHIBIOS)/os/hal/lib/streams/chprintf.c \
        $(CHIBIOS)/os/hal/lib/streams/memstreams.c \
        __aeabi.c \
-       app.c \
        math.c \
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
 CPPSRC = syscalls.cpp \
-         $(wildcard arduino-*.cpp)
+         arduino-io.cpp \
+         arduino-irqs.cpp \
+         arduino-math.cpp \
+         arduino-time.cpp \
 
 # C sources to be compiled in ARM mode regardless of the global setting.
 # NOTE: Mixing ARM and THUMB mode enables the -mthumb-interwork compiler

@@ -20,11 +20,11 @@
 
 #include "orchard.h"
 
-#include "analog.h"
-#include "demod.h"
-#include "mac.h"
-#include "updater.h"
-#include "app.h"
+#include "esplanade_analog.h"
+#include "esplanade_demod.h"
+#include "esplanade_mac.h"
+#include "esplanade_updater.h"
+#include "esplanade_app.h"
 
 #include "murmur3.h"
 

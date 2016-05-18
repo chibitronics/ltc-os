@@ -1,15 +1,15 @@
 #include "hal.h"
 
-#include "demod.h"
-#include "mac.h"
+#include "esplanade_demod.h"
+#include "esplanade_mac.h"
 #include "flash.h"
-#include "updater.h"
+#include "esplanade_updater.h"
 #include "murmur3.h"
 
 #include "orchard.h"
 #include "printf.h"
 
-#include "app.h"
+#include "esplanade_app.h"
 #include "esplanade_os.h"
 
 #include <string.h>

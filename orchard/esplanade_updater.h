@@ -2,7 +2,7 @@
 #define __ORCHARD_STORAGE__
 
 #include "flash.h"
-#include "demod.h" // for references to tx block length
+#include "esplanade_demod.h" // for references to tx block length
 
 // naming conventions:
 // SECTORS are 1k long, and match the erase block size of the Kinetis FLASH controller

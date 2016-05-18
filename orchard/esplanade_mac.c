@@ -1,5 +1,5 @@
 #include "hal.h"
-#include "mac.h"
+#include "esplanade_mac.h"
 #include "esplanade_os.h"
 
 // mac state is just local to mac

@@ -6,8 +6,8 @@
 #include "hal.h"
 #include "pal.h"
 
-#include "analog.h"
-#include "demod.h"
+#include "esplanade_analog.h"
+#include "esplanade_demod.h"
 #include "dsptables.h"
 
 bl_symbol_bss(int16_t dm_buf[DMBUF_DEPTH]);
