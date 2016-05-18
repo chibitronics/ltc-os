@@ -15,6 +15,8 @@ typedef unsigned int            dword;
 FSK_demod_const  fsk;
 
 void gen_headers(FILE *of) {
+  fprintf(of, "#ifndef __DSPTABLES_H__\n");
+  fprintf(of, "#define __DSPTABLES_H__\n");
   fprintf(of, "////// THIS FILE IS AUTOMATICALLY GENENERATED DO NOT EDIT\n");
   fprintf(of, "////// 'make dsptables' to build this file\n\n");
 }
@@ -84,7 +86,7 @@ void gen_filter_tab(FILE *of) {
 }
 
 void gen_footers(FILE *of) {
-
+  fprintf(of, "#endif /*__DSPTABLES_H__*/\n");
 }
 
 int main(int argc, char **argv) {
