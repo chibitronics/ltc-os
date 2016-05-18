@@ -49,40 +49,40 @@ void gen_filter_tab(FILE *of) {
         fsk.filter_hi_q[i] = (int) (sin(phase) * COS_BASE);
     }
 
-    fprintf(of, "  const FSK_demod_const fsk_const = {");
-    fprintf(of, "    %d, %d,  // f_lo, f_hi\n", fsk.f_lo, fsk.f_hi);
-    fprintf(of, "    %d,      // sample_rate\n", fsk.sample_rate);
-    fprintf(of, "    %d,      // baud_rate\n", fsk.baud_rate);
-    fprintf(of, "    %d,      // filter_size\n", fsk.filter_size);
+    fprintf(of, "  const FSK_demod_const fsk_const = {\n");
+    fprintf(of, "    %6d, %6d,  // f_lo, f_hi\n", fsk.f_lo, fsk.f_hi);
+    fprintf(of, "    %6d,      // sample_rate\n", fsk.sample_rate);
+    fprintf(of, "    %6d,      // baud_rate\n", fsk.baud_rate);
+    fprintf(of, "    %6d,      // filter_size\n", fsk.filter_size);
 
     fprintf(of, "    // filer_lo_i");
-    for( i = 0; i < FSK_FILTER_SIZE; i++ ) {
-      if( (i % 16) == 0 )
-	fprintf(of, "\n    {");
+    for (i = 0; i < FSK_FILTER_SIZE; i++) {
+      if ((i % 16) == 0)
+        fprintf(of, "\n    {");
       fprintf(of, "%d, ", fsk.filter_lo_i[i]);
     }
     fprintf(of, "},\n    ");
 
     fprintf(of, "    // filer_lo_q");
-    for( i = 0; i < FSK_FILTER_SIZE; i++ ) {
-      if( (i % 16) == 0 )
-	fprintf(of, "\n    {");
+    for (i = 0; i < FSK_FILTER_SIZE; i++) {
+      if ((i % 16) == 0)
+        fprintf(of, "\n    {");
       fprintf(of, "%d, ", fsk.filter_lo_q[i]);
     }
     fprintf(of, "},\n    ");
 
     fprintf(of, "    // filer_hi_i");
-    for( i = 0; i < FSK_FILTER_SIZE; i++ ) {
-      if( (i % 16) == 0 )
-	fprintf(of, "\n    {");
+    for (i = 0; i < FSK_FILTER_SIZE; i++) {
+      if ((i % 16) == 0)
+        fprintf(of, "\n    {");
       fprintf(of, "%d, ", fsk.filter_hi_i[i]);
     }
     fprintf(of, "},\n    ");
     
     fprintf(of, "    // filer_hi_q");
-    for( i = 0; i < FSK_FILTER_SIZE; i++ ) {
-      if( (i % 16) == 0 )
-	fprintf(of, "\n    {");
+    for (i = 0; i < FSK_FILTER_SIZE; i++) {
+      if ((i % 16) == 0)
+        fprintf(of, "\n    {");
       fprintf(of, "%d, ", fsk.filter_hi_q[i]);
     }
     fprintf(of, "}\n    ");
@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
   FILE *of;
 
   of = fopen("dsptables.h", "w");
-  if( of == NULL ) {
+  if (of == NULL) {
     perror("dsptables.h");
     return -1;
   }
