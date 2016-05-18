@@ -23,7 +23,6 @@
  */
 
 #include "hal.h"
-#include "demod.h"
 
 void (*adcFastISR)(void);
 void (*adcISR)(void);
