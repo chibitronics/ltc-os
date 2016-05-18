@@ -6,10 +6,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef unsigned char           byte;
-typedef unsigned short          word;
-typedef unsigned int            dword;
-
 #include "esplanade_demod.h"
 
 FSK_demod_const  fsk;
