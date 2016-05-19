@@ -11,7 +11,41 @@
 bl_symbol_bss(demod_sample_t dm_buf[DMBUF_DEPTH]);
 bl_symbol_bss(static FSK_demod_state fsk_state);
 
-static int32_t FSK_core(demod_sample_t *b) {
+#if 1
+int32_t FSK_core(demod_sample_t *b) {
+  int32_t j;
+  int32_t corrs[4] = {};
+  int32_t sum = 0;
+
+  // this optimization reduces time to 122us
+  // with -O2 we get to 111us
+  // with -O3 we get to 68.8us; out of 1.770ms, 1.155ms is used for processing ~65% CPU load
+
+  /* non coherent FSK demodulation - not optimal, but it seems
+     very difficult to do another way */
+  //    corr = dsp_dot_prod(fsk_state.filter_buf + fsk_state.buf_ptr - fsk_const.filter_size,
+  //			fsk_const.filter_hi_i, fsk_const.filter_size, 0);
+  for( j = 0; j < fsk_const.filter_size; j++ ) {
+    corrs[0] += b[j] * fsk_const.filter_hi_i[j];
+    corrs[1] += b[j] * fsk_const.filter_hi_q[j];
+    corrs[2] += b[j] * fsk_const.filter_lo_i[j];
+    corrs[3] += b[j] * fsk_const.filter_lo_q[j];
+  }
+
+  corrs[0] >>= COS_BITS;
+  corrs[1] >>= COS_BITS;
+  corrs[2] >>= COS_BITS;
+  corrs[3] >>= COS_BITS;
+
+  sum += (corrs[0] * corrs[0]);
+  sum += (corrs[1] * corrs[1]);
+  sum -= (corrs[2] * corrs[2]);
+  sum -= (corrs[3] * corrs[3]);
+
+  return sum;
+}
+#else
+int32_t FSK_core(demod_sample_t *b) {
   int32_t j;
   int32_t corr;
   int32_t sum;
@@ -19,7 +53,7 @@ static int32_t FSK_core(demod_sample_t *b) {
   // this optimization reduces time to 122us
   // with -O2 we get to 111us
   // with -O3 we get to 68.8us; out of 1.770ms, 1.155ms is used for processing ~65% CPU load
-    
+
   /* non coherent FSK demodulation - not optimal, but it seems
      very difficult to do another way */
   //    corr = dsp_dot_prod(fsk_state.filter_buf + fsk_state.buf_ptr - fsk_const.filter_size,
@@ -30,7 +64,7 @@ static int32_t FSK_core(demod_sample_t *b) {
   }
   corr = corr >> COS_BITS;
   sum = corr * corr;
-    
+
   //    corr = dsp_dot_prod(fsk_state.filter_buf + fsk_state.buf_ptr - fsk_const.filter_size,
   //			fsk_const.filter_hi_q, fsk_const.filter_size, 0);
   corr = 0;
@@ -48,7 +82,7 @@ static int32_t FSK_core(demod_sample_t *b) {
   }
   corr = corr >> COS_BITS;
   sum -= corr * corr;
-        
+
   //    corr = dsp_dot_prod(fsk_state.filter_buf + fsk_state.buf_ptr - fsk_const.filter_size,
   //			fsk_const.filter_lo_q, fsk_const.filter_size, 0);
   corr = 0;
@@ -57,9 +91,10 @@ static int32_t FSK_core(demod_sample_t *b) {
   }
   corr = corr >> COS_BITS;
   sum -= corr * corr;
-  
+
   return sum;
 }
+#endif
 
 void FSKdemod(demod_sample_t *samples, uint32_t nb, put_bit_func put_bit)
 {
