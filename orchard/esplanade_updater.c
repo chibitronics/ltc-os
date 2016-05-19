@@ -115,7 +115,7 @@ void init_storage_header(demod_pkt_ctrl_t *cpkt) {
   proto.magic     = STORAGE_MAGIC;
   proto.fullhash  = cpkt->fullhash;
   proto.length    = cpkt->length;
-  memcpy(proto.guid, cpkt->guid, GUID_BYTES);
+  memcpy_aligned(proto.guid, cpkt->guid, GUID_BYTES);
 
   // this routine could fail, but...nothing to do if it doesn't work!
   flashProgram((uint8_t *)&proto,
