@@ -205,8 +205,18 @@ void adc_lld_stop(ADCDriver *adcp) {
   if (adcp->state == ADC_READY) {
 #if KINETIS_ADC_USE_ADC0
     if (&ADCD1 == adcp) {
+      osalSysLock();
+
+      /* Disable everything */
+      adcp->adc->CFG1 = 0;
+      adcp->adc->CFG2 = 0;
+      adcp->adc->SC2  = 0;
+      adcp->adc->SC3  = 0;
+
       /* Disable Interrupt, Disable Channel */
       adcp->adc->SC1A = ADCx_SC1n_ADCH(ADCx_SC1n_ADCH_DISABLED);
+
+      osalSysUnlock();
     }
 #endif
 
