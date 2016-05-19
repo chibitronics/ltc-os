@@ -108,10 +108,10 @@ LDSCRIPT= $(STARTUPLD)/KL02P20.ld
 # C sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
 CSRC = main.c \
+       esplanade_demod.c \
        orchard-vectors.c \
        gitversion.c \
        esplanade_analog.c \
-       esplanade_demod.c \
        esplanade_updater.c \
        esplanade_mac.c \
        esplanade_app.c \
@@ -285,6 +285,13 @@ else
 	@echo Creating $@
 	@$(CP) --only-keep-debug $< $@ 2> /dev/null
 endif
+
+# These must go down here, due to variable expansion.
+# Add special command line parameters to certain files.
+$(OBJDIR)/esplanade_demod.o : USE_COPT += -O3
+$(OBJDIR)/esplanade_analog.o : USE_COPT += -O3
+$(OBJDIR)/esplanade_mac.o : USE_COPT += -O3
+$(OBJDIR)/esplanade_updater.o : USE_COPT += -O3
 
 # Debug hook - enable printing Makefile variables
 # by running e.g. "make print-OUTFILES"
