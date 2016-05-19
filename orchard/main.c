@@ -64,10 +64,20 @@ static void phy_demodulate(void) {
   // this is happening once every 1.748ms with NB_FRAMES = 16, NB_SAMPLES = 8
   // computed about 0.0413ms -> 41.3us per call overhead for OS required ~2.5% overhead
 #endif
+
   // demodulation handler based on microphone data coming in
-  for( frames = 0; frames < NB_FRAMES; frames++ ) {
-    // putBitMac is callback to MAC layer
-    FSKdemod(dm_buf + (frames * NB_SAMPLES), NB_SAMPLES, putBitMac);
+//  while (dataReadyFlag--) {
+    for (frames = 0; frames < NB_FRAMES; frames++) {
+      // putBitMac is callback to MAC layer
+      FSKdemod(dm_buf + (frames * NB_SAMPLES), NB_SAMPLES, putBitMac);
+    }
+//  }
+
+  /* If we overflow, print a message. */
+  if (dataReadyFlag > 1) {
+    putchar('>');
+    putchar('O');
+    putchar('0' + dataReadyFlag);
   }
   dataReadyFlag = 0;
 }
