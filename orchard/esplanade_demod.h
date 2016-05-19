@@ -24,7 +24,7 @@
 
 #define DMBUF_DEPTH (NB_SAMPLES * NB_FRAMES) 
 
-typedef int16_t demod_sample_t;
+typedef int32_t demod_sample_t;
 
 extern demod_sample_t dm_buf[];
 
@@ -48,7 +48,7 @@ typedef struct {
     uint32_t baud_rate;
 
     /* local variables */
-    int16_t filter_size;
+    int32_t filter_size;
     demod_sample_t filter_lo_i[FSK_FILTER_SIZE];
     demod_sample_t filter_lo_q[FSK_FILTER_SIZE];
     
