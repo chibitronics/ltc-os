@@ -1,5 +1,3 @@
-#pragma GCC optimize ("O3")
-
 #include <string.h>
 #include "esplanade_os.h"
 
