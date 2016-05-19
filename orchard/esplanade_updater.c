@@ -123,17 +123,16 @@ void init_storage_header(demod_pkt_ctrl_t *cpkt) {
                sizeof(proto));
 }
 
-// guarantee entering here: all packets are "good" (as in they pass mac-level hash checks)
-// this state machine really fucks up flash if you pass random garbage into it:
-// it'll repeatedly erase flash due to guid mismatch fails!
-// we also assume the packets are the correct version; the MAC should reject packets for
-// versions that don't match our firmware
+// It'll repeatedly erase flash due to guid mismatch fails!
+// We also assume the packets are the correct version; the MAC should reject
+// packets for versions that don't match our firmware
 int8_t updaterPacketProcess(demod_pkt_t *pkt) {
 
   demod_pkt_ctrl_t *cpkt;
   demod_pkt_data_t *dpkt;
   int8_t err = 0;
   uint32_t i;
+  uint32_t hash;
 
   tfp_printf("S%d ", (uint8_t) astate);
   switch (astate) {
@@ -142,6 +141,14 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
     
     if (cpkt->header.type != PKTTYPE_CTRL)
       break; // if not a control packet, stay in idle
+
+    /* Make sure the packet's hash is correct. */
+    MurmurHash3_x86_32((uint8_t *)cpkt, sizeof(*cpkt) - sizeof(cpkt->hash),
+                       MURMUR_SEED_BLOCK, &hash);
+    if (hash != cpkt->hash) {
+      printf("%08x != 0x%08x\r\n", cpkt->hash, hash);
+      break;
+    }
 
     /* we don't check the magic #, just guid because chance of collision
      * is remote.
@@ -185,6 +192,14 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
     dpkt = &pkt->data_pkt;
     if (dpkt->header.type != PKTTYPE_DATA)
       break; // if not a data packet, ignore and wait again
+
+    /* Make sure the packet's hash is correct. */
+    MurmurHash3_x86_32((uint8_t *)dpkt, sizeof(*dpkt) - sizeof(dpkt->hash),
+                       MURMUR_SEED_BLOCK, &hash);
+    if (hash != dpkt->hash) {
+      printf("%08x != 0x%08x\r\n", dpkt->hash, hash);
+      break;
+    }
 
     /* Check and see if the current sector we're trying to write
      * has been updated before flashing it.  It's bad for Flash 
@@ -234,7 +249,6 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
     /* Now that it's claimed to be done, do a full hash check
      * and confirm this /actually/ worked.
      */
-    uint32_t hash;
     MurmurHash3_x86_32((uint8_t *)STORAGE_PROGRAM_OFFSET, storageHdr->length, MURMUR_SEED_TOTAL, &hash);
     if (hash == storageHdr->fullhash) {
       /* Hurray, we're done! mark the whole thing as complete. */
