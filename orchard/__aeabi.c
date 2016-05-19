@@ -106,6 +106,15 @@ char *utoa(unsigned long val, char *s, int radix) {
   return ch_ltoa(s, val, radix);
 }
 
+void *memset_aligned(void *dst0, int val, size_t length) {
+  uint32_t *ptr = dst0;
+  length /= sizeof(*ptr);
+
+  while (length--)
+    *ptr++ = val;
+  return dst0;
+}
+
 void *memset(void *dst0, int val, size_t length) {
   uint8_t *ptr = dst0;
   while (length--)
@@ -119,6 +128,22 @@ void *memclr(void *dst0, size_t length) {
 
 void *memmove(void *dest, const void *src, size_t n) {
   return memcpy(dest, src, n);
+}
+
+void *memcpy_aligned(void *dest, const void *src, size_t n) {
+  size_t i;
+  uint32_t *d = dest;
+  const uint32_t *s = src;
+  n /= sizeof(*d);
+
+  for (i = 0; i < n; i++)
+    d[i] = s[i];
+
+  return d;
+}
+
+void *memmove_aligned(void *dest, const void *src, size_t n) {
+  return memcpy_aligned(dest, src, n);
 }
 
 void *memcpy(void *dest, const void *src, size_t n) {
