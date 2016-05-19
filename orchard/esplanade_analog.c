@@ -25,17 +25,17 @@ static void analog_fast_isr(void) {
     size_t half = MIC_SAMPLE_DEPTH / 2;
     size_t half_index = half * 1;
 
-    dataReadyFlag = 1;
     bufloc = mic_sample + half_index;
     buf_n = half;
     adc_current_index = 0;
+    dataReadyFlag++;
   }
 
   /* If buffer 1 has filled up, deliver the samples and continue to buffer 2 */
   else if (adc_current_index == (MIC_SAMPLE_DEPTH / 2)) {
-    dataReadyFlag = 1;
     bufloc = mic_sample;
     buf_n = MIC_SAMPLE_DEPTH / 2;
+    dataReadyFlag++;
   }
 }
 
