@@ -99,7 +99,7 @@ int8_t flashEraseSectors(uint32_t offset, uint16_t sectorCount) {
     return retval;
   }
   
-  tfp_printf( "ES%d-%d\n\r", destination, end - 1);
+  //tfp_printf( "ES%d-%d\n\r", destination, end - 1);
   
   while (destination < end) {
 
@@ -120,11 +120,11 @@ int8_t flashEraseSectors(uint32_t offset, uint16_t sectorCount) {
         printf("Sector %d, margin %d, result: %d\r\n", destination, margin_read_level, retval);
     }
 
-    tfp_printf( " e%d ", destination );
+    //tfp_printf( " e%d ", destination );
     destination++;
   }
 
-  tfp_printf( "\n\r");
+  //tfp_printf( "\n\r");
   
   return retval;
 }
