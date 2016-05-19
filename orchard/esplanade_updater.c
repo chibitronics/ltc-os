@@ -93,7 +93,7 @@ bl_symbol(static const storage_header *storageHdr) =
     (const storage_header *) STORAGE_START;
 
 void bootToUserApp(void) {
-  tfp_printf( "\n\r Reached boot to user app!!!\n\r" );
+  printf( "\n\r Reached boot to user app!!!\n\r" );
   GPIOB->PCOR |= (1 << 6);   // blue on
   /*
     todo:
@@ -134,7 +134,7 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
   uint32_t i;
   uint32_t hash;
 
-  tfp_printf("S%d ", (uint8_t) astate);
+  //printf("S%d ", (uint8_t) astate);
   switch (astate) {
   case APP_IDLE:
     cpkt = &pkt->ctrl_pkt; // expecting a control packet
@@ -146,7 +146,7 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
     MurmurHash3_x86_32((uint8_t *)cpkt, sizeof(*cpkt) - sizeof(cpkt->hash),
                        MURMUR_SEED_BLOCK, &hash);
     if (hash != cpkt->hash) {
-      printf("%08x != 0x%08x\r\n", cpkt->hash, hash);
+      //printf("%08x != 0x%08x\r\n", cpkt->hash, hash);
       break;
     }
 
@@ -197,7 +197,7 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
     MurmurHash3_x86_32((uint8_t *)dpkt, sizeof(*dpkt) - sizeof(dpkt->hash),
                        MURMUR_SEED_BLOCK, &hash);
     if (hash != dpkt->hash) {
-      printf("%08x != 0x%08x\r\n", dpkt->hash, hash);
+      //printf("%08x != 0x%08x\r\n", dpkt->hash, hash);
       break;
     }
 
@@ -219,14 +219,14 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
 
       /* clear the entry in the block map to record programming state. */
       err = flashProgram((uint8_t *)&dummy, (uint8_t *)(&(storageHdr->blockmap[block])), sizeof(uint32_t));
-      tfp_printf( "\n\r P%d b%d", (uint8_t) block, err );
+      //printf( "\n\r P%d b%d", (uint8_t) block, err );
       
       // only program if the blockmap says it's not been programmed
       err = flashProgram(dpkt->payload, (uint8_t *) (STORAGE_PROGRAM_OFFSET + (block * BLOCK_SIZE)), BLOCK_SIZE);
-      tfp_printf( " d%d", err );
+      //printf( " d%d", err );
     }
     else {
-      tfp_printf( " _%d", (uint8_t) block ); // redundant block received
+      //printf( " _%d", (uint8_t) block ); // redundant block received
     }
     
     /* Now check if the entire block map, within the range of the
@@ -259,8 +259,8 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
       astate = APP_FAIL;
     }
     else {
-      tfp_printf( "\n\r Transfer complete but corrupted. Erase & retry.\n\r" );
-      tfp_printf( "\n\r Source hash: %08x local hash: %08x\n\r", storageHdr->fullhash, hash );
+      //printf( "\n\r Transfer complete but corrupted. Erase & retry.\n\r" );
+      //printf( "\n\r Source hash: %08x local hash: %08x\n\r", storageHdr->fullhash, hash );
       
       /* Hash check failed. Something went wrong. Just nuke all of storage
        * and bring us back to a virgin state.
