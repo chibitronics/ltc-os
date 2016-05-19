@@ -72,21 +72,21 @@ void FSKdemod(demod_sample_t *samples, uint32_t nb, put_bit_func put_bit)
   //    GPIOB->PSOR |= (1 << 6);   // red
   // measure time to complete: 133.2us
   // number of samples processed: 8 -> needs to get to 106us, ideally 100us for OS overhead
-  
+
   for (i = 0; i < nb; i++) {
     /* add a new sample in the demodulation filter */
     fsk_state.filter_buf[fsk_state.buf_ptr++] = samples[i] >> fsk_state.shift;
     if (fsk_state.buf_ptr == FSK_FILTER_BUF_SIZE) {
-      memmove(fsk_state.filter_buf, 
-	      fsk_state.filter_buf + FSK_FILTER_BUF_SIZE - fsk_const.filter_size, 
+      memmove_aligned(fsk_state.filter_buf,
+	      fsk_state.filter_buf + FSK_FILTER_BUF_SIZE - fsk_const.filter_size,
 	      fsk_const.filter_size * sizeof(demod_sample_t));
       fsk_state.buf_ptr = fsk_const.filter_size;
     }
-        
+
     b = fsk_state.filter_buf + fsk_state.buf_ptr - fsk_const.filter_size;
 
     sum = FSK_core(b);
-    
+
     //tempo = (s16) (sum / 65536.0);
     //fwrite(&tempo, 1, sizeof(s16), fout);
 	
@@ -103,27 +103,27 @@ void FSKdemod(demod_sample_t *samples, uint32_t nb, put_bit_func put_bit)
       else
         fsk_state.baud_pll -= fsk_state.baud_pll_adj;
     }
-        
+
     fsk_state.baud_pll += fsk_state.baud_incr;
-    
+
     if (fsk_state.baud_pll >= 0x10000) {
       fsk_state.baud_pll -= 0x10000;
       //            printf("baud=%f (%d)\n", fsk_state.baud_pll / 65536.0, fsk_state.lastsample);
       put_bit(fsk_state.lastsample);
     }
   }
-  
+
   //    GPIOB->PCOR |= (1 << 6);   // red
 }
 
 void demodInit(void) {
   int32_t a;
-  
+
   fsk_state.baud_incr = ((int32_t) fsk_const.baud_rate * 0x10000L) / (int32_t) fsk_const.sample_rate;
   fsk_state.baud_pll = 0;
   fsk_state.baud_pll_adj = fsk_state.baud_incr / 4;
 
-  memset(fsk_state.filter_buf, 0, sizeof(fsk_state.filter_buf));
+  memset_aligned(fsk_state.filter_buf, 0, sizeof(fsk_state.filter_buf));
   fsk_state.buf_ptr = fsk_const.filter_size;
   fsk_state.lastsample = 0;
 
