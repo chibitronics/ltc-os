@@ -14,6 +14,8 @@
 
 #include <string.h>
 
+extern void *memcpy_aligned(void *dst, const void *src, size_t length);
+
 /*
   Facts:
   -  The KL02 has 1k sectors.
