@@ -5,23 +5,8 @@
 #include "usbphy.h"
 #include "usbmac.h"
 
-static struct USBPHY defaultUsbPhy = {
-  /* PTB0 */
-  .usbdnIAddr = FGPIOB_PDIR,
-  .usbdnSAddr = FGPIOB_PSOR,
-  .usbdnCAddr = FGPIOB_PCOR,
-  .usbdnDAddr = FGPIOB_PDDR,
-  .usbdnMask  = (1 << 0),
-  .usbdnShift = 0,
-
-  /* PTA4 */
-  .usbdpIAddr = FGPIOA_PDIR,
-  .usbdpSAddr = FGPIOA_PSOR,
-  .usbdpCAddr = FGPIOA_PCOR,
-  .usbdpDAddr = FGPIOA_PDDR,
-  .usbdpMask  = (1 << 4),
-  .usbdpShift = 4,
-};
+static void (*gpioaFastISR)(void);
+struct USBPHY *current_usb_phy;
 
 int usbPhyInitialized(struct USBPHY *phy) {
   if (!phy)
@@ -163,7 +148,7 @@ void usbPhyInit(struct USBPHY *phy, struct USBMAC *mac) {
 
 #if (CH_USE_RT == TRUE)
 void usbPhyDrainIfNecessary(void) {
-  struct USBPHY *phy = &defaultUsbPhy;
+  struct USBPHY *phy = current_usb_phy;
 
   if (phy->read_queue_tail != phy->read_queue_head)
     osalThreadResumeI(&phy->thread, MSG_OK);
@@ -172,10 +157,10 @@ void usbPhyDrainIfNecessary(void) {
 
 struct USBPHY *usbPhyDefaultPhy(void) {
 
-  return &defaultUsbPhy;
+  return current_usb_phy;
 }
 
-void usbphy_fast_isr(void) {
+static void usbphy_fast_isr(void) {
 
   /* Note: We can't use ANY ChibiOS threads here.
    * This thread may interrupt the SysTick handler, which would cause
@@ -186,7 +171,7 @@ void usbphy_fast_isr(void) {
    * That way, this function is free to preempt EVERYTHING without
    * interfering with the timing of the system.
    */
-  struct USBPHY *phy = &defaultUsbPhy;
+  struct USBPHY *phy = current_usb_phy;
   usbCaptureI(phy);
   /* Clear all pending interrupts on this port. */
   PORTA->ISFR = 0xFFFFFFFF;
@@ -208,6 +193,9 @@ void usbPhyAttach(struct USBPHY *phy) {
   /* Set both lines to input */
   *(phy->usbdpDAddr) &= ~phy->usbdpMask;
   *(phy->usbdnDAddr) &= ~phy->usbdnMask;
+
+  current_usb_phy = phy;
+  gpioaFastISR = usbphy_fast_isr;
 }
 
 void usbPhyDetachDefault(void) {
