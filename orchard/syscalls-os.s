@@ -3,6 +3,7 @@
 SysCall_Table:
 
 .short do_nothing
+.short getSyscallABI
 .short memcpy
 .short memmove
 .short memset
@@ -116,6 +117,13 @@ SysCall_Table:
 .short usbDetach
 .short createThread
 .short exitThread
+.short suspendThread
+.short suspendThreadTimeout
+.short resumeThread
+.short yieldThread
+.short threadSleep
+.short threadSleepUntil
+.short waitThread
 .short lockSystem
 .short lockSystemFromISR
 .short unlockSystem
