@@ -88,7 +88,7 @@ void analogWrite(int pin, int value) {
 
 void analogReference(enum analog_reference_type type) {
   (void)type;
-  
+
   return;
 }
 
@@ -101,7 +101,7 @@ int analogRead(int pin) {
 
   msg_t result;
   adcsample_t sample;
-  static const ADCConversionGroup arduinogrp = {
+  ADCConversionGroup arduinogrp = {
     0, // circular buffer mode? no.
     1, // just one channel
     NULL,  // callback
