@@ -59,6 +59,8 @@ SysCall_Table:
 .short qfp_drsub
 .short qfp_fsub
 .short qfp_dsub
+.short qfp_float2str
+.short qfp_str2float
 .short qfp_fcos
 .short qfp_fsin
 .short qfp_ftan
