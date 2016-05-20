@@ -40,7 +40,6 @@ static int kinetis_flash_cmd(uint8_t cmd, uint32_t addr,
   int ret = F_ERR_OK;
 
   /* Wait for (optional) previous command to complete */
-  chSysLock();
   while (!(readb(FTFx_FSTAT) & FTFx_FSTAT_CCIF))
     ;
 
@@ -65,7 +64,6 @@ static int kinetis_flash_cmd(uint8_t cmd, uint32_t addr,
     ;
 
   fstat = readb(FTFx_FSTAT);
-  chSysUnlock();
 
   /* Check ACCERR and FPVIOL are zero in FSTAT */
   if (fstat & (FTFx_FSTAT_ACCERR | FTFx_FSTAT_FPVIOL | FTFx_FSTAT_MGSTAT0))
@@ -82,7 +80,7 @@ int8_t flashEraseSectors(uint32_t offset, uint16_t sectorCount) {
   uint16_t number;               /* Number of longword or phrase to be program or verify*/
   uint32_t margin_read_level;    /* 0=normal, 1=user - margin read for reading 1's */
   int32_t retval = F_ERR_OK;
-  
+
   destination = offset;
   end = destination + (uint32_t) sectorCount;
 
@@ -98,9 +96,9 @@ int8_t flashEraseSectors(uint32_t offset, uint16_t sectorCount) {
     retval = F_ERR_RANGE;
     return retval;
   }
-  
+
   //tfp_printf( "ES%d-%d\n\r", destination, end - 1);
-  
+
   while (destination < end) {
 
     retval = kinetis_flash_cmd(FTFx_CMD_SECTERASE,
@@ -125,7 +123,7 @@ int8_t flashEraseSectors(uint32_t offset, uint16_t sectorCount) {
   }
 
   //tfp_printf( "\n\r");
-  
+
   return retval;
 }
 
@@ -147,9 +145,9 @@ int8_t flashProgram(uint8_t *src, uint8_t *dest, uint32_t count) {
   uint32_t i;
 
   // do nothing if our count is 0
-  if (count == 0) 
+  if (count == 0)
     return ret;
-  
+
   // check if dest, dest+count is in the user-designated area of FLASH
   if ( ((uint32_t) dest < (F_USER_SECTOR_START * FTFx_PSECTOR_SIZE)) ||
       (((uint32_t) dest + count) > (P_FLASH_BASE + P_FLASH_SIZE)) ) {
@@ -175,7 +173,7 @@ int8_t flashProgram(uint8_t *src, uint8_t *dest, uint32_t count) {
                             (uint32_t)&dest[i],
                             *((uint32_t *)&src[i]), 0);
   }
-  
+
   if (ret)
     return ret;
 
@@ -189,7 +187,7 @@ int8_t flashProgram(uint8_t *src, uint8_t *dest, uint32_t count) {
     if (ret)
       failaddr = (uint32_t)&dest[i];
   }
-  
+
   if (ret) {
     tfp_printf("Failed programming verification at USER margin levels: worry a little bit. Failure address: %08x\n\r", failaddr );
     return F_ERR_U_MARGIN;
