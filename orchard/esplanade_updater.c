@@ -25,11 +25,11 @@
   -  Users will typically be using phones to program the stickers. It's not possible
      to guarantee silence on the headphone port, so a sound-based trigger to initiate
      programming is ruled out (imagine if every time you get a notification, your
-     project flips into programming mode; pretty annoying). 
-  
+     project flips into programming mode; pretty annoying).
+
   Transmission format:
   - Two types of blocks: data, and control
-    - Data block consists of: 
+    - Data block consists of:
       -- Preamble Sync (00, 00, 00, 00, aa, 55, 42)
       -- Version code (1 byte: 0x00-0x7f)
       -- Block offset (2 bytes): address offset = (block offset * 256 bytes + app code base)
@@ -54,7 +54,7 @@
   22.5k
     9.5k for User application code (including any arduino libraries that have to stay resident)
   32k
- 
+
   Programming Algorithm:
   - Unit boots to programing mode and searches with a timeout of 5s for a carrier tone;
     failing a carrier, it will revert to run mode if and only if a valid program already exists
@@ -68,11 +68,11 @@
     - System exits program mode once all blocks are received and starts running user code
 
   New proposed programming method:
-  - Assume the presence of an external circuit which takes an external button, and provides two 
+  - Assume the presence of an external circuit which takes an external button, and provides two
     views on it: a pulsed version, and the current level
     -- the pulsed version is wired to RESET
     -- the current level is fed into a GPIO
-  - On boot or reset, check the current level of the external button. 
+  - On boot or reset, check the current level of the external button.
     - If it's held down for more than 1s, go into programming mode, and stay there.
     - Otherwise, go into application run mode and never come back
 
@@ -118,9 +118,11 @@ void init_storage_header(demod_pkt_ctrl_t *cpkt) {
   memcpy_aligned(proto.guid, cpkt->guid, GUID_BYTES);
 
   // this routine could fail, but...nothing to do if it doesn't work!
+  osalSysLock();
   flashProgram((uint8_t *)&proto,
                (uint8_t *)storageHdr,
                sizeof(proto));
+  osalSysUnlock();
 }
 
 // It'll repeatedly erase flash due to guid mismatch fails!
@@ -138,7 +140,7 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
   switch (astate) {
   case APP_IDLE:
     cpkt = &pkt->ctrl_pkt; // expecting a control packet
-    
+
     if (cpkt->header.type != PKTTYPE_CTRL)
       break; // if not a control packet, stay in idle
 
@@ -170,7 +172,9 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
      * Nuke the flash to make room for the new code and pray that
      * the update doesn't fail.
      */
+    osalSysLock();
     err = flashEraseSectors(SECTOR_MIN, SECTOR_COUNT);
+    osalSysUnlock();
 
     /* Re-initialize the storage header. */
     init_storage_header(cpkt);
@@ -184,7 +188,9 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
      * the internal header.  Reset the system to a known state.
      */
     if (storageHdr->magic != STORAGE_MAGIC) {
+      osalSysLock();
       err = flashEraseSectors(SECTOR_MIN, SECTOR_COUNT);
+      osalSysUnlock();
       astate = APP_IDLE;
       break;
     }
@@ -202,7 +208,7 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
     }
 
     /* Check and see if the current sector we're trying to write
-     * has been updated before flashing it.  It's bad for Flash 
+     * has been updated before flashing it.  It's bad for Flash
      * to write over a sector that already has data.
      */
     uint16_t block = dpkt->block;
@@ -218,17 +224,21 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
       uint32_t dummy = 0;
 
       /* clear the entry in the block map to record programming state. */
+      osalSysLock();
       err = flashProgram((uint8_t *)&dummy, (uint8_t *)(&(storageHdr->blockmap[block])), sizeof(uint32_t));
+      osalSysUnlock();
       //printf( "\n\r P%d b%d", (uint8_t) block, err );
-      
+
       // only program if the blockmap says it's not been programmed
+      osalSysLock();
       err = flashProgram(dpkt->payload, (uint8_t *) (STORAGE_PROGRAM_OFFSET + (block * BLOCK_SIZE)), BLOCK_SIZE);
+      osalSysUnlock();
       //printf( " d%d", err );
     }
     else {
       //printf( " _%d", (uint8_t) block ); // redundant block received
     }
-    
+
     /* Now check if the entire block map, within the range of the
      * program length, has been programmed.  We want to do this
      * on every block, even if it's already been programmed, because
@@ -253,7 +263,9 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
     if (hash == storageHdr->fullhash) {
       /* Hurray, we're done! mark the whole thing as complete. */
       uint32_t dummy = 0;
+      osalSysLock();
       err = flashProgram((uint8_t *)(&(storageHdr->complete)), (uint8_t *)&dummy, sizeof(uint32_t));
+      osalSysUnlock();
       astate = APP_UPDATED;
       bootToUserApp();
       astate = APP_FAIL;
@@ -261,11 +273,13 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
     else {
       //printf( "\n\r Transfer complete but corrupted. Erase & retry.\n\r" );
       //printf( "\n\r Source hash: %08x local hash: %08x\n\r", storageHdr->fullhash, hash );
-      
+
       /* Hash check failed. Something went wrong. Just nuke all of storage
        * and bring us back to a virgin state.
        */
+      osalSysLock();
       err = flashEraseSectors(SECTOR_MIN, SECTOR_COUNT);
+      osalSysUnlock();
       astate = APP_IDLE;
     }
     break;
@@ -274,7 +288,7 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
     bootToUserApp();
     astate = APP_FAIL;
     break;
-    
+
   default:
     break;
   }
