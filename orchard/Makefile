@@ -30,7 +30,7 @@ endif
 
 # Linker extra options here.
 ifeq ($(USE_LDOPT),)
-  USE_LDOPT = 
+  USE_LDOPT =
 endif
 
 # Enable this if you want link time optimizations (LTO)
@@ -93,7 +93,7 @@ include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/startup_kl02x.mk
 # HAL-OSAL files (optional).
 include $(CHIBIOS)/os/hal/hal.mk
 include $(CHIBIOS)/os/hal/ports/KINETIS/KL02x/platform.mk
-include $(CHIBIOS)/os/hal/boards/CHIBITRONICS_ESPLANADE/board.mk 
+include $(CHIBIOS)/os/hal/boards/CHIBITRONICS_ESPLANADE/board.mk
 include $(CHIBIOS)/os/hal/osal/rt/osal.mk
 # RTOS files (optional).
 include $(CHIBIOS)/os/rt/rt.mk
@@ -132,15 +132,18 @@ CSRC = main.c \
        math.c \
        usbphy.c \
        usbmac.c \
+       arduino-chibios.c \
+       arduino-flash.c \
        arduino-i2c.c \
+       arduino-io.c \
+       arduino-irqs.c \
+       arduino-math.c \
+       arduino-time.c \
+       arduino-usb.c \
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
-CPPSRC = syscalls.cpp \
-         arduino-io.cpp \
-         arduino-irqs.cpp \
-         arduino-math.cpp \
-         arduino-time.cpp \
+CPPSRC =
 
 # C sources to be compiled in ARM mode regardless of the global setting.
 # NOTE: Mixing ARM and THUMB mode enables the -mthumb-interwork compiler
@@ -168,7 +171,8 @@ ASMSRC += $(STARTUPASM) $(PORTASM) $(OSALASM) \
           thumb1_case.s \
           hardfault_handler.s memmanage_handler.s \
           usagefault_handler.s busfault_handler.s \
-          usbphy_ll.s
+          usbphy_ll.s \
+          syscalls-os.s \
 
 INCDIR = $(STARTUPINC) $(KERNINC) $(PORTINC) $(OSALINC) \
          $(HALINC) $(PLATFORMINC) $(BOARDINC) $(TESTINC) \
@@ -209,7 +213,7 @@ AOPT =
 TOPT = -mthumb -DTHUMB -msoft-float
 
 # Define C warning options here
-CWARN = -Wall -Wextra -Wstrict-prototypes # -Wundef 
+CWARN = -Wall -Wextra -Wstrict-prototypes # -Wundef
 
 # Define C++ warning options here
 CPPWARN = -Wall -Wextra # -Wundef
