@@ -11,6 +11,10 @@
 bl_symbol_bss(demod_sample_t dm_buf[DMBUF_DEPTH]);
 bl_symbol_bss(static FSK_demod_state fsk_state);
 
+/* Accelerated versions for 32-bit-aligned operations. */
+extern void *memset_aligned(void *dst, int val, size_t length);
+extern void *memmove_aligned(void *dst, const void *src, size_t length);
+
 #if 1
 int32_t FSK_core(demod_sample_t *b) {
   int32_t j;
@@ -124,7 +128,7 @@ void FSKdemod(demod_sample_t *samples, uint32_t nb, put_bit_func put_bit)
 
     //tempo = (s16) (sum / 65536.0);
     //fwrite(&tempo, 1, sizeof(s16), fout);
-	
+
     newsample = sum > 0;
 
     /* baud PLL synchronisation : when we see a transition of
