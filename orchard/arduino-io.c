@@ -62,6 +62,12 @@ void pinMode(int pin, enum pin_mode arduino_mode) {
   if (pin_to_port(pin, &port, &pad))
     return;
 
+  /* Disconnect alternate pins for A0 and A1 */
+  if (pin == A0)
+    palSetPadMode(IOPORT1, 8, PAL_MODE_UNCONNECTED);
+  if (pin == A1)
+    palSetPadMode(IOPORT1, 9, PAL_MODE_UNCONNECTED);
+
   if (arduino_mode == INPUT_PULLUP)
     mode = PAL_MODE_INPUT_PULLUP;
   else if (arduino_mode == INPUT_PULLDOWN)
@@ -79,7 +85,6 @@ void digitalWrite(int pin, int value) {
 
   ioportid_t port;
   uint8_t pad;
-  iomode_t mode;
 
   if (pin_to_port(pin, &port, &pad))
     return;
@@ -91,16 +96,74 @@ int digitalRead(int pin) {
 
   ioportid_t port;
   uint8_t pad;
-  iomode_t mode;
 
   if (pin_to_port(pin, &port, &pad))
-    return;
+    return 0;
 
   return palReadPad(port, pad);
 }
 
 /* Analog IO */
+#define ARDUINO_MAX 1024 /* Arduino PWM values go from 0 to 1024 */
+#define PWM_DIVISOR 16
+#define PWM_FREQUENCY (KINETIS_SYSCLK_FREQUENCY / PWM_DIVISOR)
+#define PWM_PERIOD (PWM_FREQUENCY / (2 * ARDUINO_MAX)) /* Two cycles per seocnd */
+static const PWMConfig pwmcfg = {
+  PWM_FREQUENCY,                            /* 500 Hz PWM clock frequency.   */
+  PWM_PERIOD,                                 /* Initial PWM period 1S.       */
+  NULL,
+  {
+    {PWM_OUTPUT_ACTIVE_HIGH, NULL},
+    {PWM_OUTPUT_ACTIVE_HIGH, NULL},
+  },
+};
+
 void analogWrite(int pin, int value) {
+
+  ioportid_t port;
+  uint8_t pad;
+  uint8_t channel;
+  iomode_t mode;
+  PWMDriver *driver = NULL;
+
+  if (pin_to_port(pin, &port, &pad))
+    return;
+
+  if (pin == A0) {
+    palSetPadMode(IOPORT1, 8, PAL_MODE_UNCONNECTED);
+    mode = PAL_MODE_ALTERNATIVE_2;
+    driver = &PWMD1;
+    channel = 1;
+  }
+  else if (pin == A1) {
+    palSetPadMode(IOPORT1, 9, PAL_MODE_UNCONNECTED);
+    mode = PAL_MODE_ALTERNATIVE_2;
+    driver = &PWMD1;
+    channel = 0;
+  }
+  else if (pin == A2) {
+    mode = PAL_MODE_ALTERNATIVE_2;
+    driver = &PWMD2;
+    channel = 0;
+  }
+  else if (pin == A3) {
+    mode = PAL_MODE_ALTERNATIVE_2;
+    driver = &PWMD2;
+    channel = 1;
+  }
+  else
+    /* Invalid channel */
+    return;
+
+  palSetPadMode(port, pad, mode);
+
+  /* Start the driver, if necessary. */
+  if (driver->state != PWM_READY)
+    pwmStart(driver, &pwmcfg);
+
+  pwmEnableChannel(driver, channel, value * PWM_PERIOD / ARDUINO_MAX);
+//                   PWM_PERCENTAGE_TO_WIDTH(driver, value * 100 / 1024));
+
   return;
 }
 
