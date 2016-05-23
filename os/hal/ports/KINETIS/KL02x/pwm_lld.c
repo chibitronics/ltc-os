@@ -30,7 +30,7 @@
 /* Driver local definitions.                                                 */
 /*===========================================================================*/
 
-#define KINETIS_TPM0_CHANNELS 6
+#define KINETIS_TPM0_CHANNELS 2
 #define KINETIS_TPM1_CHANNELS 2
 #define KINETIS_TPM2_CHANNELS 2
 
@@ -89,18 +89,6 @@ static void pwm_lld_serve_interrupt(PWMDriver *pwmp) {
   if (((sr & TPM_STATUS_CH1F) != 0) &&
       (pwmp->config->channels[1].callback != NULL))
     pwmp->config->channels[1].callback(pwmp);
-  if (((sr & TPM_STATUS_CH2F) != 0) &&
-      (pwmp->config->channels[2].callback != NULL))
-    pwmp->config->channels[2].callback(pwmp);
-  if (((sr & TPM_STATUS_CH3F) != 0) &&
-      (pwmp->config->channels[3].callback != NULL))
-    pwmp->config->channels[3].callback(pwmp);
-  if (((sr & TPM_STATUS_CH4F) != 0) &&
-      (pwmp->config->channels[4].callback != NULL))
-    pwmp->config->channels[4].callback(pwmp);
-  if (((sr & TPM_STATUS_CH5F) != 0) &&
-      (pwmp->config->channels[5].callback != NULL))
-    pwmp->config->channels[5].callback(pwmp);
 }
 
 /*===========================================================================*/
