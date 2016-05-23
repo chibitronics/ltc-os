@@ -21,6 +21,7 @@
 
 extern struct app_header _app_header;
 static memory_heap_t app_heap;
+thread_t *esplanadeThread;
 
 static const ADCConfig adccfg1 = {
     /* Perform initial calibration */
@@ -125,9 +126,11 @@ thread_t *chBootToApp(void) {
   memcpy(_app_header.data_start, _app_header.data_load_start,
          _app_header.data_end - _app_header.data_start);
 
-  return chThdCreateStatic(_app_header.heap_start,
-                       (_app_header.heap_end - _app_header.heap_start) & ~7,
-                       HIGHPRIO,
-                       app_thread,
-                       NULL);
+  esplanadeThread = chThdCreateStatic(_app_header.heap_start,
+                           (_app_header.heap_end - _app_header.heap_start) & ~7,
+                           HIGHPRIO,
+                           app_thread,
+                           NULL);
+
+  return esplanadeThread;
 }

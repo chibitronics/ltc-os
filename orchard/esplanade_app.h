@@ -30,4 +30,6 @@ struct app_header {
 thread_t *chBootToApp(void);
 int appIsValid(void);
 
+extern thread_t *esplanadeThread;
+
 #endif
