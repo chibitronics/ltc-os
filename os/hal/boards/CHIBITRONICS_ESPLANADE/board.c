@@ -47,7 +47,7 @@ const PALConfig pal_default_config =
       .port = IOPORT2,  // PORTB
       .pads = {
         /* PTB0*/ PAL_MODE_INPUT,           /* PTB1*/ PAL_MODE_INPUT,         /* PTB2*/ PAL_MODE_INPUT_ANALOG,    // dig0, mode_pb, ana3 (irq)
-        /* PTB3*/ PAL_MODE_ALTERNATIVE_3,   /* PTB4*/ PAL_MODE_ALTERNATIVE_3, /* PTB5*/ PAL_MODE_UNCONNECTED,    // uart_tx, uart_rx, audio
+        /* PTB3*/ PAL_MODE_ALTERNATIVE_3,   /* PTB4*/ PAL_MODE_ALTERNATIVE_3, /* PTB5*/ PAL_MODE_INPUT_ANALOG,    // uart_tx, uart_rx, audio
         /* PTB6*/ PAL_MODE_OUTPUT_PUSHPULL, /* PTB7*/ PAL_MODE_INPUT,         /* PTB8*/ PAL_MODE_UNCONNECTED,     // prog_statg, rst_level, nc
         /* PTB9*/ PAL_MODE_UNCONNECTED,     /*PTB10*/ PAL_MODE_INPUT_ANALOG,  /*PTB11*/ PAL_MODE_INPUT_ANALOG,    // nc, ana0, ana1
         /*PTB12*/ PAL_MODE_UNCONNECTED,     /*PTB13*/ PAL_MODE_INPUT_ANALOG,  /*PTB14*/ PAL_MODE_UNCONNECTED,     // nc, ana3, nc
