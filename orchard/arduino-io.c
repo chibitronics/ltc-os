@@ -6,79 +6,97 @@
 #include "memio.h"
 #include "printf.h"
 
-#define PIN_NUMBER(x) (x & 0x1f)
-#define BANK_NUMBER(x) ((x & ~0x1f) >> 5)
+static int pin_to_port(int pin, ioportid_t *port, uint8_t *pad) {
 
-static int pin_to_hwpin(int pin) {
+  if (pin == A0) {
+    *port = IOPORT2;
+    *pad = 10;
+    return 0;
+  }
 
-  return pin;
+  if (pin == A1) {
+    *port = IOPORT2;
+    *pad = 11;
+    return 0;
+  }
+
+  if (pin == A2) {
+    *port = IOPORT1;
+    *pad = 12;
+    return 0;
+  }
+
+  if (pin == A3) {
+    *port = IOPORT2;
+    *pad = 12;
+    return 0;
+  }
+
+  if (pin == A4) {
+    *port = IOPORT2;
+    *pad = 5;
+    return 0;
+  }
+
+  if (pin == 0) {
+    *port = IOPORT2;
+    *pad = 0;
+    return 0;
+  }
+
+  if (pin == 1) {
+    *port = IOPORT1;
+    *pad = 7;
+    return 0;
+  }
+
+  return -1;
 }
 
-void pinMode(int pin, enum pin_mode mode) {
+void pinMode(int pin, enum pin_mode arduino_mode) {
 
-  pin = pin_to_hwpin(pin);
+  ioportid_t port;
+  uint8_t pad;
+  iomode_t mode;
 
-  switch (BANK_NUMBER(pin)) {
-  case 0: /* PTA */
-    /* Set pin mux to GPIO, and set pull */
-    if (mode == INPUT_PULLUP)
-      writel(0x00000103, PORTA_PCR(PIN_NUMBER(pin)));
-    else if (mode == INPUT_PULLDOWN)
-      writel(0x00000102, PORTA_PCR(PIN_NUMBER(pin)));
-    else
-      writel(0x00000100, PORTA_PCR(PIN_NUMBER(pin)));
+  if (pin_to_port(pin, &port, &pad))
+    return;
 
-    /* Set pin direction */
-    if (mode == OUTPUT)
-      writel(readl(GPIOA_PDDR) | (1 << PIN_NUMBER(pin)), GPIOA_PDDR);
-    else
-      writel(readl(GPIOA_PDDR) & ~(1 << PIN_NUMBER(pin)), GPIOA_PDDR);
+  if (arduino_mode == INPUT_PULLUP)
+    mode = PAL_MODE_INPUT_PULLUP;
+  else if (arduino_mode == INPUT_PULLDOWN)
+    mode = PAL_MODE_INPUT_PULLDOWN;
+  else if (arduino_mode == INPUT)
+    mode = PAL_MODE_INPUT;
+  else
+    mode = PAL_MODE_OUTPUT_PUSHPULL;
 
-    break;
-
-  case 1: /* PTB */
-    /* Set pin mux to GPIO, and set pull */
-    if (mode == INPUT_PULLUP)
-      writel(0x00000103, PORTB_PCR(PIN_NUMBER(pin)));
-    else if (mode == INPUT_PULLDOWN)
-      writel(0x00000102, PORTB_PCR(PIN_NUMBER(pin)));
-    else
-      writel(0x00000100, PORTB_PCR(PIN_NUMBER(pin)));
-
-    /* Set pin direction */
-    if (mode == OUTPUT)
-      writel(readl(GPIOB_PDDR) | (1 << PIN_NUMBER(pin)), GPIOB_PDDR);
-    else
-      writel(readl(GPIOB_PDDR) & ~(1 << PIN_NUMBER(pin)), GPIOB_PDDR);
-    break;
-
-  }
+  palSetPadMode(port, pad, mode);
 }
 
 /* Digital IO */
 void digitalWrite(int pin, int value) {
 
-  pin = pin_to_hwpin(pin);
-  switch (BANK_NUMBER(pin)) {
+  ioportid_t port;
+  uint8_t pad;
+  iomode_t mode;
 
-  case 0:
-    writel(1 << PIN_NUMBER(pin), value ? FGPIOA_PSOR : FGPIOA_PCOR);
-    break;
+  if (pin_to_port(pin, &port, &pad))
+    return;
 
-  case 1:
-    writel(1 << PIN_NUMBER(pin), value ? FGPIOB_PSOR : FGPIOB_PCOR);
-    break;
-  }
+  palWritePad(port, pad, !!value);
 }
 
 int digitalRead(int pin) {
 
-  pin = pin_to_hwpin(pin);
-  switch (BANK_NUMBER(pin)) {
-  case 0: return !!(readl(FGPIOA_PDIR) & (1 << PIN_NUMBER(pin)));
-  case 1: return !!(readl(FGPIOB_PDIR) & (1 << PIN_NUMBER(pin)));
-  }
-  return 0;
+  ioportid_t port;
+  uint8_t pad;
+  iomode_t mode;
+
+  if (pin_to_port(pin, &port, &pad))
+    return;
+
+  return palReadPad(port, pad);
 }
 
 /* Analog IO */
@@ -92,7 +110,7 @@ void analogReference(enum analog_reference_type type) {
   return;
 }
 
-uint32_t pinToADC(int pin) {
+static uint32_t pin_to_adc(int pin) {
 
   if (pin == A0)
     return ADC_AD9;
@@ -112,19 +130,19 @@ uint32_t pinToADC(int pin) {
     return ADC_VREFSH;
   if (pin == A8)
     return ADC_VREFSL;
+
+  return 0;
 }
 
 static void mux_as_adc(int pin) {
-  if (pin == A0)
-    palSetPadMode(IOPORT2, 10, PAL_MODE_INPUT_ANALOG);
-  if (pin == A1)
-    palSetPadMode(IOPORT2, 11, PAL_MODE_INPUT_ANALOG);
-  if (pin == A2)
-    palSetPadMode(IOPORT1, 12, PAL_MODE_INPUT_ANALOG);
-  if (pin == A3)
-    palSetPadMode(IOPORT2, 12, PAL_MODE_INPUT_ANALOG);
-  if (pin == A4)
-    palSetPadMode(IOPORT2, 5, PAL_MODE_INPUT_ANALOG);
+
+  ioportid_t port;
+  uint8_t pad;
+
+  if (pin_to_port(pin, &port, &pad))
+    return;
+
+  palSetPadMode(port, pad, PAL_MODE_INPUT_ANALOG);
 }
 
 int analogRead(int pin) {
@@ -136,7 +154,7 @@ int analogRead(int pin) {
     1, // just one channel
     NULL,  // callback
     NULL,  // error callback
-    pinToADC(pin),
+    pin_to_adc(pin),
     // CFG1 register
     // SYSCLK = 48MHz.
     // BUSCLK = SYSCLK / 4 = 12MHz
