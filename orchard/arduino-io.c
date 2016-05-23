@@ -28,7 +28,7 @@ static int pin_to_port(int pin, ioportid_t *port, uint8_t *pad) {
 
   if (pin == A3) {
     *port = IOPORT2;
-    *pad = 12;
+    *pad = 13;
     return 0;
   }
 
