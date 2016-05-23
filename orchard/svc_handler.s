@@ -34,7 +34,7 @@ svc_handler_dispatch:
     //svc_number = ((char *)svc_args[6])[-2];
     ldr     r3, =SysCall_Table  // Index from the start of uint16_t SysCall_Table
     lsl     r2, #1              // Multiply svc instruction by 2
-    ldr     r3, [r3, r2]        // Load the syscall address
+    ldrsh   r3, [r3, r2]        // Load the syscall address
     str     r3, [r0, r1]        // Store the return value back on the stack
     bx lr
     .endfunc
