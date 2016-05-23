@@ -206,4 +206,19 @@ long randomSeed(unsigned long seed);
 #define bitWrite(value, bit, bitvalue) (bitvalue ? bitSet(value, bit) : bitClear(value, bit))
 #define bit(b) (1UL << (b))
 
+#define PTA(x) (x)
+#define PTB(x) (32 + x)
+
+#define A0 0x80
+#define A1 0x81
+#define A2 0x82
+#define A3 0x83
+#define A4 0x84
+#define A5 0x85
+#define A6 0x86
+#define A7 0x87
+#define A8 0x88
+
+#define RGB_PIN PTA(6)
+
 #endif /* __ARDUINO_KOSAGI_H__ */
