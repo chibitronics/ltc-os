@@ -162,7 +162,6 @@ void analogWrite(int pin, int value) {
     pwmStart(driver, &pwmcfg);
 
   pwmEnableChannel(driver, channel, value * PWM_PERIOD / ARDUINO_MAX);
-//                   PWM_PERCENTAGE_TO_WIDTH(driver, value * 100 / 1024));
 
   return;
 }
