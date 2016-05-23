@@ -57,7 +57,7 @@ static const ADCConversionGroup adcgrpmic = {
   1, // just one channel
   adc_mic_end_cb,  // callback
   NULL,  // error callback
-  ADC_DADP0,  // microphone input channel
+  ADC_DAD1,  // microphone input channel
   // CFG1 register
   // SYSCLK = 48MHz.
   // BUSCLK = SYSCLK / 4 = 12MHz
