@@ -93,8 +93,38 @@ void analogReference(enum analog_reference_type type) {
 }
 
 uint32_t pinToADC(int pin) {
-  /* Microphone input channel. */
-  return ADC_DADP0;
+
+  if (pin == A0)
+    return ADC_AD9;
+  if (pin == A1)
+    return ADC_AD8;
+  if (pin == A2)
+    return ADC_DAD0;
+  if (pin == A3)
+    return ADC_AD13;
+  if (pin == A4)
+    return ADC_DAD1;
+  if (pin == A5)
+    return ADC_TEMP_SENSOR;
+  if (pin == A6)
+    return ADC_BANDGAP;
+  if (pin == A7)
+    return ADC_VREFSH;
+  if (pin == A8)
+    return ADC_VREFSL;
+}
+
+static void mux_as_adc(int pin) {
+  if (pin == A0)
+    palSetPadMode(IOPORT2, 10, PAL_MODE_INPUT_ANALOG);
+  if (pin == A1)
+    palSetPadMode(IOPORT2, 11, PAL_MODE_INPUT_ANALOG);
+  if (pin == A2)
+    palSetPadMode(IOPORT1, 12, PAL_MODE_INPUT_ANALOG);
+  if (pin == A3)
+    palSetPadMode(IOPORT2, 12, PAL_MODE_INPUT_ANALOG);
+  if (pin == A4)
+    palSetPadMode(IOPORT2, 5, PAL_MODE_INPUT_ANALOG);
 }
 
 int analogRead(int pin) {
@@ -133,6 +163,8 @@ int analogRead(int pin) {
     // /20  300ksps after base sample time @ 12 bps
     // /4   75ksps after averaging by factor of 4
   };
+
+  mux_as_adc(pin);
 
   result = adcConvert(&ADCD1,
                      &arduinogrp,
