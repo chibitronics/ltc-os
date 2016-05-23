@@ -89,6 +89,15 @@
 #define KINETIS_ADC_IRQ_PRIORITY              0
 
 /*
+ * PWM driver system settings.
+ */
+#define KINETIS_PWM_USE_TPM0                  TRUE
+#define KINETIS_PWM_USE_TPM1                  TRUE
+#define KINETIS_PWM_TPM0_IRQ_PRIORITY         3
+#define KINETIS_PWM_TPM1_IRQ_PRIORITY         3
+#define KINETIS_PWM_NUM_CHANNELS              2
+
+/*
  * LPTMR driver system settings.
  */
 #define KINETIS_LPTMR0_PRIORITY                3
