@@ -46,7 +46,9 @@
 /**
  * @brief   Number of PWM channels per PWM driver.
  */
-#define PWM_CHANNELS                            6
+#if !defined(KINETIS_PWM_NUM_CHANNELS)
+#define KINETIS_PWM_NUM_CHANNELS                6
+#endif
 
 /*===========================================================================*/
 /* Driver pre-compile time settings.                                         */
@@ -141,7 +143,7 @@ typedef struct {
   /**
    * @brief Channels configurations.
    */
-  PWMChannelConfig          channels[PWM_CHANNELS];
+  PWMChannelConfig          channels[KINETIS_PWM_NUM_CHANNELS];
   /* End of the mandatory fields.*/
 } PWMConfig;
 
