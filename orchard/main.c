@@ -28,6 +28,10 @@
 
 #include "murmur3.h"
 
+#include "kl02.h"
+
+#define BOOT_AFTER_DELAY 1
+
 #include <string.h>
 
 static const I2CConfig i2c_config = {
@@ -75,11 +79,24 @@ static void phy_demodulate(void) {
 
   /* If we overflow, print a message. */
   if (dataReadyFlag > 1) {
+    extern int putchar(int);
     putchar('>');
     putchar('O');
     putchar('0' + dataReadyFlag);
   }
   dataReadyFlag = 0;
+}
+
+static void boot_if_timed_out_and_valid(void) {
+#if BOOT_AFTER_DELAY
+  static int counter;
+  if (! (++counter & 0xfffff)) {
+    if (appIsValid()) {
+      printf("Timed out waiting, and user app is valid.  Booting...\r\n");
+      chThdExit(0);
+    }
+  }
+#endif
 }
 
 void demod_loop(void) {
@@ -99,14 +116,7 @@ void demod_loop(void) {
         phy_demodulate();
       }
 
-      /*
-      if (! (++counter & 0xfffff)) {
-        if (appIsValid()) {
-          printf("User app is valid, booting...\r\n");
-          chThdExit(0);
-        }
-      }
-      */
+      boot_if_timed_out_and_valid();
     }
 
     // unstripe the transition xor's used to keep baud sync
@@ -210,9 +220,9 @@ static THD_FUNCTION(demod_thread, arg) {
   sdStart(&SD1, &serialConfig);
   stream = stream_driver;
 
-  tfp_printf("\r\n\r\nOrchard audio bootloader.  Based on build %s\r\n",
-             gitversion);
-  tfp_printf("core free memory : %d bytes\r\n", heap_size());
+  printf("\r\n\r\nOrchard audio bootloader.  Based on build %s\r\n",
+         gitversion);
+  printf("core free memory : %d bytes\r\n", heap_size());
 
   i2cStart(i2cDriver, &i2c_config);
   adcStart(&ADCD1, &adccfg1);
@@ -284,6 +294,14 @@ int main(void)
 
   halInit();
   chSysInit();
+  
+  /* Clear the onboard LED to prevent us from blinding people. */
+  {
+    extern void ledUpdate(uint32_t num_leds, void *pixels, uint32_t mask,
+                          uint32_t set_addr, uint32_t clr_addr);
+    uint32_t pixel = 0;
+    ledUpdate(1, &pixel, (1 << 6), FGPIOA_PSOR, FGPIOA_PCOR);
+  }
 
 #if defined(_CHIBIOS_RT_)
   volatile thread_t *demod_thread_p;
