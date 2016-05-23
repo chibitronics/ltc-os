@@ -126,12 +126,9 @@ SysCall_Table:
 .short threadSleep
 .short threadSleepUntil
 .short waitThread
-.short lockSystem
-.short lockSystemFromISR
-.short unlockSystem
-.short unlockSystemFromISR
 .short setTimer
 .short resetTimer
+.short runCallbacks
 .short flashErase
 .short flashWrite
 .size SysCall_Table, .-SysCall_Table
