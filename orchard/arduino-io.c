@@ -39,15 +39,39 @@ static int pin_to_port(int pin, ioportid_t *port, uint8_t *pad) {
     return 0;
   }
 
-  if (pin == 0) {
+  if (pin == D0) {
     *port = IOPORT2;
     *pad = 0;
     return 0;
   }
 
-  if (pin == 1) {
+  if (pin == D1) {
     *port = IOPORT1;
     *pad = 7;
+    return 0;
+  }
+
+  if (pin == LED_BUILTIN_RGB) {
+    *port = IOPORT1;
+    *pad = 6;
+    return 0;
+  }
+
+  if (pin == LED_BUILTIN_RED) {
+    *port = IOPORT1;
+    *pad = 5;
+    return 0;
+  }
+
+  if (pin == LED_BUILTIN_GREEN) {
+    *port = IOPORT2;
+    *pad = 6;
+    return 0;
+  }
+
+  if (pin == MODE_BUTTON) {
+    *port = IOPORT2;
+    *pad = 1;
     return 0;
   }
 
