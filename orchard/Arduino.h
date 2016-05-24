@@ -209,6 +209,7 @@ long randomSeed(unsigned long seed);
 #define PTA(x) (x)
 #define PTB(x) (32 + x)
 
+/* Analog pins */
 #define A0 0x80
 #define A1 0x81
 #define A2 0x82
@@ -219,6 +220,13 @@ long randomSeed(unsigned long seed);
 #define A7 0x87
 #define A8 0x88
 
-#define RGB_PIN PTA(6)
+/* Digital pins */
+#define D0 0x00
+#define D1 0x00
+#define LED_BUILTIN_RGB PTA(6)
+#define LED_BUILTIN_RED PTA(5)
+#define LED_BUILTIN_GREEN PTB(6)
+#define MODE_BUTTON PTB(1)
+#define LED_BUILTIN LED_BUILTIN_GREEN
 
 #endif /* __ARDUINO_KOSAGI_H__ */
