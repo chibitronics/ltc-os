@@ -4,6 +4,7 @@ SysCall_Table:
 
 .short do_nothing
 .short getSyscallABI
+.short getSyscallAddr
 .short memcpy
 .short memmove
 .short memset
@@ -129,6 +130,10 @@ SysCall_Table:
 .short setTimer
 .short resetTimer
 .short runCallbacks
+.short lockSystem
+.short unlockSystem
+.short lockSystemFromISR
+.short unlockSystemFromISR
 .short flashErase
 .short flashWrite
 .size SysCall_Table, .-SysCall_Table
