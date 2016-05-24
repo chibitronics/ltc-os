@@ -18,14 +18,6 @@
 #define ADC0_BASE               ((unsigned long)0x4003B000)
 #endif
 
-#if !defined(LPTMR0_BASE) /* Don't re-define these from another implementation */
-#define LPTMR0_BASE             ((unsigned long)0x40040000)
-#endif
-
-#if !defined(MCG_BASE) /* Don't re-define these from another implementation */
-#define MCG_BASE                ((unsigned long)0x40064000)
-#endif
-
 #if !defined(OSC0_BASE) /* Don't re-define these from another implementation */
 #define OSC0_BASE               ((unsigned long)0x40065000)
 #endif
@@ -61,6 +53,20 @@
 #if !defined(RCM_BASE) /* Don't re-define these from another implementation */
 #define RCM_BASE                ((unsigned long)0x4007F000)
 #endif
+
+/* Multipurpose Clock Generator */
+#if !defined(MCG_BASE) /* Don't re-define these from another implementation */
+#define MCG_BASE                ((unsigned long)0x40064000)
+#endif
+#define MCG_C1 0x40064000
+#define MCG_C2 0x40064001
+#define MCG_C3 0x40064002
+#define MCG_C4 0x40064003
+#define MCG_C6 0x40064005
+#define MCG_S 0x40064006
+#define MCG_SC 0x40064007
+#define MCG_ATCVH 0x4006400A
+#define MCG_ATCVL 0x4006400B
 
 /* System Integration Module */
 #if !defined(SIM_BASE)
@@ -260,5 +266,24 @@
 
 /* Watchdog */
 #define WDOG_STCTRH 0x40052000
+
+/* Low power timer */
+#if !defined(LPTMR0_BASE) /* Don't re-define these from another implementation */
+#define LPTMR0_BASE             ((unsigned long)0x40040000)
+#endif
+#define LPTMR0_CSR  0x40040000
+#define LPTMR_CSR_TCF (1 << 7)
+#define LPTMR_CSR_TIE (1 << 6)
+#define LPTMR_CSR_TPS (1 << 4)
+#define LPTMR_CSR_TPP (1 << 3)
+#define LPTMR_CSR_TFC (1 << 2)
+#define LPTMR_CSR_TMS (1 << 1)
+#define LPTMR_CSR_TEN (1 << 0)
+#define LPTMR0_PSR  0x40040004
+#define LPTMR_PSR_PRESCALE (1 << 3)
+#define LPTMR_PSR_PBYP (1 << 2)
+#define LPTMR_PSR_PCS (1 << 0)
+#define LPTMR0_CMR  0x40040008
+#define LPTMR0_CNR  0x4004000C
 
 #endif /* __KL02_H__ */
