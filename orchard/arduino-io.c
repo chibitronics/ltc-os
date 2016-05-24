@@ -197,7 +197,7 @@ void analogReference(enum analog_reference_type type) {
   return;
 }
 
-static uint32_t pin_to_adc(int pin) {
+static int pin_to_adc(int pin) {
 
   if (pin == A0)
     return ADC_AD9;
@@ -218,7 +218,7 @@ static uint32_t pin_to_adc(int pin) {
   if (pin == A8)
     return ADC_VREFSL;
 
-  return 0;
+  return -1;
 }
 
 static void mux_as_adc(int pin) {
@@ -236,12 +236,17 @@ int analogRead(int pin) {
 
   msg_t result;
   adcsample_t sample;
+  int adc_num = pin_to_adc(pin);
+
+  if (adc_num == -1)
+    return 0;
+
   ADCConversionGroup arduinogrp = {
     0, // circular buffer mode? no.
     1, // just one channel
     NULL,  // callback
     NULL,  // error callback
-    pin_to_adc(pin),
+    adc_num,
     // CFG1 register
     // SYSCLK = 48MHz.
     // BUSCLK = SYSCLK / 4 = 12MHz
