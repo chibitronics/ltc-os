@@ -77,13 +77,6 @@ static void phy_demodulate(void) {
     }
 //  }
 
-  /* If we overflow, print a message. */
-  if (dataReadyFlag > 1) {
-    extern int putchar(int);
-    putchar('>');
-    putchar('O');
-    putchar('0' + dataReadyFlag);
-  }
   dataReadyFlag = 0;
 }
 
@@ -92,7 +85,7 @@ static void boot_if_timed_out_and_valid(void) {
   static int counter;
   if (! (++counter & 0xfffff)) {
     if (appIsValid()) {
-      printf("Timed out waiting, and user app is valid.  Booting...\r\n");
+      printf("Boot\r\n");
       chThdExit(0);
     }
   }
