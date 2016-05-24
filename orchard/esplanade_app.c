@@ -19,6 +19,7 @@
 #include "hal.h"
 #include "esplanade_app.h"
 
+__attribute__((aligned(4)))
 extern struct app_header _app_header;
 static memory_heap_t app_heap;
 thread_t *esplanadeThread;
