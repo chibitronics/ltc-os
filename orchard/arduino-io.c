@@ -5,6 +5,7 @@
 #include "kl02.h"
 #include "memio.h"
 #include "printf.h"
+#include "lptmr.h"
 
 static int pin_to_port(int pin, ioportid_t *port, uint8_t *pad) {
 
@@ -256,14 +257,41 @@ int analogRead(int pin) {
   return sample;
 }
 
+virtual_timer_t tone_timer;
+
+/* Timer callback.  Called from a virtual timer to stop the tone after
+ * a certain duration.
+ */
+static void stop_tone(void *par) {
+
+  noTone((uint32_t)par);
+}
 
 void tone(int pin, unsigned int frequency, unsigned long duration) {
+
+
+  ioportid_t port;
+  uint8_t pad;
+
+  if (pin_to_port(pin, &port, &pad))
+    return;
+
+  /* Ensure the pin is an output */
+  palSetPadMode(port, pad, PAL_MODE_OUTPUT_PUSHPULL);
+
+  /* Start up the low-power timer, which directly drives the port. */
+  startLptmr(port, pad, frequency);
+
+  /* Set up a timer callback to stop the tone. */
+  chVTSet(&tone_timer, MS2ST(duration), stop_tone, (void *)pin);
 
   return;
 }
 
 void noTone(int pin) {
 
+  (void)pin;
+  stopLptmr();
   return;
 }
 
