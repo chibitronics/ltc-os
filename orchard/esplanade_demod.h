@@ -9,15 +9,15 @@
 #define NB_SAMPLES 8   // number of samples per demod frame
 #define NB_FRAMES  32   // number of frames to process at once (trade memory off against OS overhead)
 
-#define BAUD_RATE 9600
+#define BAUD_RATE 8000
 #define SAMPLE_RATE 75000  // of the rx side
 #define SAMPLE_RATE_TX 44100
 
 #define COS_BITS   14
 #define COS_BASE   (1 << COS_BITS)
 
-#define F_LO   10400
-#define F_HI   15000
+#define F_LO   8666
+#define F_HI   12500
 
 #define FSK_FILTER_SIZE (SAMPLE_RATE / BAUD_RATE)  // <-- this can be 8 or so with optimal bauds
 #define FSK_FILTER_BUF_SIZE (FSK_FILTER_SIZE * 2)
