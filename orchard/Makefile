@@ -117,6 +117,7 @@ CSRC = main.c \
        esplanade_app.c \
        murmur3.c \
        flash.c \
+       lptmr.c \
        $(STARTUPSRC) \
        $(PORTSRC) \
        $(KERNSRC) \
