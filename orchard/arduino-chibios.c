@@ -136,3 +136,8 @@ void resetTimer(virtual_timer_t *vtp) {
 uint32_t getSyscallABI(void) {
   return 1;
 }
+
+uint32_t getSyscallAddr(uint32_t sysCallNum) {
+  extern uint16_t *SysCall_Table;
+  return SysCall_Table[sysCallNum];
+}
