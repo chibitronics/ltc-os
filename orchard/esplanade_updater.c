@@ -14,6 +14,16 @@
 
 #include <string.h>
 
+#define WITH_LOCKS 1 
+
+#if WITH_LOCKS  
+#define UPDATE_LOCK    osalSysLock()
+#define UPDATE_UNLOCK  osalSysUnlock()
+#else
+#define UPDATE_LOCK
+#define UPDATE_UNLOCK
+#endif
+
 extern void *memcpy_aligned(void *dst, const void *src, size_t length);
 
 /*
@@ -120,11 +130,11 @@ void init_storage_header(demod_pkt_ctrl_t *cpkt) {
   memcpy_aligned(proto.guid, cpkt->guid, GUID_BYTES);
 
   // this routine could fail, but...nothing to do if it doesn't work!
-  osalSysLock();
+  UPDATE_LOCK;
   flashProgram((uint8_t *)&proto,
                (uint8_t *)storageHdr,
                sizeof(proto));
-  osalSysUnlock();
+  UPDATE_UNLOCK;
 }
 
 // It'll repeatedly erase flash due to guid mismatch fails!
@@ -137,10 +147,13 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
   int8_t err = 0;
   uint32_t i;
   uint32_t hash;
+  static uint8_t led_state = 0;
 
   //printf("S%d ", (uint8_t) astate);
   switch (astate) {
   case APP_IDLE:
+    PROG_STATG_OFF;
+    PROG_STATR_ON; 
     cpkt = &pkt->ctrl_pkt; // expecting a control packet
 
     if (cpkt->header.type != PKTTYPE_CTRL)
@@ -174,9 +187,9 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
      * Nuke the flash to make room for the new code and pray that
      * the update doesn't fail.
      */
-    osalSysLock();
+    UPDATE_LOCK;
     err = flashEraseSectors(SECTOR_MIN, SECTOR_COUNT);
-    osalSysUnlock();
+    UPDATE_UNLOCK;
 
     /* Re-initialize the storage header. */
     init_storage_header(cpkt);
@@ -184,15 +197,22 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
     break;
 
   case APP_UPDATING:
+    PROG_STATR_ON; 
+    if( !led_state ) {
+      PROG_STATG_ON;
+    } else {
+      PROG_STATG_OFF;
+    }
+    led_state = !led_state;
 
     /* We should /only/ get here if the header has been initialized!!
      * If Magic has changed, there has been some kind of corruption to
      * the internal header.  Reset the system to a known state.
      */
     if (storageHdr->magic != STORAGE_MAGIC) {
-      osalSysLock();
+      UPDATE_LOCK;
       err = flashEraseSectors(SECTOR_MIN, SECTOR_COUNT);
-      osalSysUnlock();
+      UPDATE_UNLOCK;
       astate = APP_IDLE;
       break;
     }
@@ -226,15 +246,15 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
       uint32_t dummy = 0;
 
       /* clear the entry in the block map to record programming state. */
-      osalSysLock();
+      UPDATE_LOCK;
       err = flashProgram((uint8_t *)&dummy, (uint8_t *)(&(storageHdr->blockmap[block])), sizeof(uint32_t));
-      osalSysUnlock();
+      UPDATE_UNLOCK;
       //printf( "\n\r P%d b%d", (uint8_t) block, err );
 
       // only program if the blockmap says it's not been programmed
-      osalSysLock();
+      UPDATE_LOCK;
       err = flashProgram(dpkt->payload, (uint8_t *) (STORAGE_PROGRAM_OFFSET + (block * BLOCK_SIZE)), BLOCK_SIZE);
-      osalSysUnlock();
+      UPDATE_UNLOCK;
       //printf( " d%d", err );
     }
     else {
@@ -265,10 +285,12 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
     if (hash == storageHdr->fullhash) {
       /* Hurray, we're done! mark the whole thing as complete. */
       uint32_t dummy = 0;
-      osalSysLock();
+      UPDATE_LOCK;
       err = flashProgram((uint8_t *)(&(storageHdr->complete)), (uint8_t *)&dummy, sizeof(uint32_t));
-      osalSysUnlock();
+      UPDATE_UNLOCK;
       astate = APP_UPDATED;
+      PROG_STATG_ON;
+      PROG_STATR_OFF; 
       bootToUserApp();
       astate = APP_FAIL;
     }
@@ -279,16 +301,32 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
       /* Hash check failed. Something went wrong. Just nuke all of storage
        * and bring us back to a virgin state.
        */
-      osalSysLock();
+      UPDATE_LOCK;
       err = flashEraseSectors(SECTOR_MIN, SECTOR_COUNT);
-      osalSysUnlock();
-      astate = APP_IDLE;
+      UPDATE_UNLOCK;
+
+      astate = APP_FAIL;  // could also go APP_IDLE, but there's no user feedback of failure
+      // better to fail and be obvious about the problem than have unexpected behaviors
     }
     break;
 
   case APP_UPDATED:
+    PROG_STATG_ON;
+    PROG_STATR_OFF; 
+
     bootToUserApp();
     astate = APP_FAIL;
+    break;
+
+  case APP_FAIL:
+    // hang in a red flashing loop to indicate a link problem; requires hard reset to boot out of it
+    PROG_STATG_OFF;
+    while(1) {
+      PROG_STATR_ON; 
+      chThdSleepMilliseconds(500);
+      PROG_STATR_OFF; 
+      chThdSleepMilliseconds(500);
+    }
     break;
 
   default:

@@ -30,7 +30,7 @@
 
 #include "kl02.h"
 
-#define BOOT_AFTER_DELAY 1
+#define BOOT_AFTER_DELAY 0
 
 #include <string.h>
 
@@ -257,6 +257,30 @@ static THD_FUNCTION(demod_thread, arg) {
   NVIC_SetPriority(ADC0_IRQn, 0);
   NVIC_SetPriority(UART0_IRQn, 3);
 
+  // for environment consitency sake, we don't check reset/hold pin status until here
+  // not sure what of the above init is assumed by boot to app, so turn it all on
+  // even if we just turn it all off later.
+
+  PROG_STATR_ON;
+  PROG_STATG_ON;
+  chThdSleepMilliseconds(500);  // wait for user to let go of the button
+  // reset_pulse is nom 2ms wide, so this is good margin
+  PROG_STATR_OFF; // toggle LEDs to indicate we're now out of init
+  PROG_STATG_OFF;
+
+
+  if( RESET_LEVEL ) {
+    // user did not hold down the reset button, check if app is valid and run it
+    if(appIsValid()) {
+      PROG_STATG_ON;  // indicate we're running user code
+      PROG_STATR_OFF; 
+      chThdExit(0);
+    }
+  }
+
+  PROG_STATG_OFF;  // indicate we're waiting for code upload
+  PROG_STATR_ON; 
+  
   analogUpdateMic();  // starts mic sampling loop (interrupt-driven and automatic)
   demod_loop();
 }
@@ -295,6 +319,10 @@ int main(void)
     uint32_t pixel = 0;
     ledUpdate(1, &pixel, (1 << 6), FGPIOA_PSOR, FGPIOA_PCOR);
   }
+  
+  // these lights both start "on"; differentiates crashes in boot from a bad power cable
+  PROG_STATR_ON;
+  PROG_STATG_ON;
 
 #if defined(_CHIBIOS_RT_)
   volatile thread_t *demod_thread_p;
