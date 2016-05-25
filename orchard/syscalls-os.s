@@ -140,6 +140,9 @@ SysCall_Table:
 .short unlockSystemFromISR
 .short flashErase
 .short flashWrite
+.short __gnu_thumb1_case_sqi
+.short __gnu_thumb1_case_uqi
+.short __gnu_thumb1_case_uhi
 .short doSudo
 .short setSerialSpeed
 .size SysCall_Table, .-SysCall_Table
