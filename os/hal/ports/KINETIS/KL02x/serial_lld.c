@@ -27,6 +27,9 @@
 
 #if HAL_USE_SERIAL || defined(__DOXYGEN__)
 
+void (*serialFastISR)(void);
+void (*serialISR)(void);
+
 #include "kl02x.h"
 
 /*===========================================================================*/
@@ -207,8 +210,16 @@ static void configure_uart(UARTLP_TypeDef *uart, const SerialConfig *config)
 #if KINETIS_SERIAL_USE_UART0 || defined(__DOXYGEN__)
 OSAL_IRQ_HANDLER(Vector70) {
 
+  if (serialFastISR) {
+    serialFastISR();
+    return;
+  }
+    
   OSAL_IRQ_PROLOGUE();
-  serve_interrupt(&SD1);
+  if (serialISR)
+    serialISR();
+  else
+    serve_interrupt(&SD1);
   OSAL_IRQ_EPILOGUE();
 }
 #endif
