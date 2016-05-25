@@ -271,7 +271,7 @@ else
 	@./dsptables
 endif
 
-dsptables: dsptable_gen.c
+dsptables: dsptable_gen.c esplanade_demod.h
 ifeq ($(USE_VERBOSE_COMPILE),yes)
 	gcc -I. $(IINCDIR) -lm $< -o $@
 else
