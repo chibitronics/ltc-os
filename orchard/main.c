@@ -30,7 +30,7 @@
 
 #include "kl02.h"
 
-#define BOOT_AFTER_DELAY 0
+#define BOOT_AFTER_DELAY FALSE
 
 #include <string.h>
 
@@ -69,19 +69,15 @@ static void phy_demodulate(void) {
   // computed about 0.0413ms -> 41.3us per call overhead for OS required ~2.5% overhead
 #endif
 
-  // demodulation handler based on microphone data coming in
-//  while (dataReadyFlag--) {
-    for (frames = 0; frames < NB_FRAMES; frames++) {
-      // putBitMac is callback to MAC layer
-      FSKdemod(dm_buf + (frames * NB_SAMPLES), NB_SAMPLES, putBitMac);
-    }
-//  }
+  for (frames = 0; frames < NB_FRAMES; frames++)
+    // putBitMac is callback to MAC layer
+    FSKdemod(dm_buf + (frames * NB_SAMPLES), NB_SAMPLES, putBitMac);
 
   dataReadyFlag = 0;
 }
 
 static void boot_if_timed_out_and_valid(void) {
-#if BOOT_AFTER_DELAY
+#if (BOOT_AFTER_DELAY == TRUE)
   static int counter;
   if (! (++counter & 0xfffff)) {
     if (appIsValid()) {
