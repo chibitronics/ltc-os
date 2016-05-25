@@ -101,48 +101,6 @@ void _pal_lld_setgroupmode(ioportid_t port,
 }
 
 /**
- * @brief   Reads a logical state from an I/O pad.
- * @note    The @ref PAL provides a default software implementation of this
- *          functionality, implement this function if can optimize it by using
- *          special hardware functionalities or special coding.
- *
- * @param[in] port      port identifier
- * @param[in] pad       pad number within the port
- * @return              The logical state.
- * @retval PAL_LOW      low logical state.
- * @retval PAL_HIGH     high logical state.
- *
- * @notapi
- */
-uint8_t pal_lld_readpad(ioportid_t port, uint8_t pad)
-{
-  return (port->PDIR & ((uint32_t) 1 << pad)) ? PAL_HIGH : PAL_LOW;
-}
-
-/**
- * @brief   Writes a logical state on an output pad.
- * @note    This function is not meant to be invoked directly by the
- *          application  code.
- * @note    The @ref PAL provides a default software implementation of this
- *          functionality, implement this function if can optimize it by using
- *          special hardware functionalities or special coding.
- *
- * @param[in] port      port identifier
- * @param[in] pad       pad number within the port
- * @param[in] bit       logical value, the value must be @p PAL_LOW or
- *                      @p PAL_HIGH
- *
- * @notapi
- */
-void pal_lld_writepad(ioportid_t port, uint8_t pad, uint8_t bit)
-{
-  if (bit == PAL_HIGH)
-    port->PDOR |= ((uint32_t) 1 << pad);
-  else
-    port->PDOR &= ~((uint32_t) 1 << pad);
-}
-
-/**
  * @brief   Pad mode setup.
  * @details This function programs a pad with the specified mode.
  * @note    The @ref PAL provides a default software implementation of this
