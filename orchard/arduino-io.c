@@ -205,7 +205,7 @@ int digitalRead(int pin) {
   if (!can_use_pin(pin))
     return 0;
 
-  return palReadPad(port, pad);
+  return palReadPad(port, pad) ? HIGH : LOW;
 }
 
 /* Analog IO */
