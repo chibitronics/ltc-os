@@ -24,6 +24,8 @@ extern struct app_header _app_header;
 static memory_heap_t app_heap;
 thread_t *esplanadeThread;
 
+extern systime_t app_start_time;
+
 static const ADCConfig adccfg1 = {
     /* Perform initial calibration */
     true
@@ -121,6 +123,8 @@ int appIsValid(void) {
 }
 
 thread_t *chBootToApp(void) {
+
+  app_start_time = chVTGetSystemTimeX();
 
   memset(_app_header.bss_start, 0,
          _app_header.bss_end - _app_header.bss_start);
