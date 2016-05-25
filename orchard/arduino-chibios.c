@@ -142,7 +142,7 @@ uint32_t getSyscallAddr(uint32_t sysCallNum) {
   return SysCall_Table[sysCallNum];
 }
 
-void serialSetSpeed(uint32_t speed) {
+void setSerialSpeed(uint32_t speed) {
   SerialConfig serialConfig = {
     speed,
   };
