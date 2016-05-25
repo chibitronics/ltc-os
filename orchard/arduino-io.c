@@ -7,6 +7,17 @@
 #include "printf.h"
 #include "lptmr.h"
 
+/* Whether users can access "advanced" features, such as Red/Green LEDs.*/
+static int sudo_mode;
+
+/* Pins that can be used when not in "sudo" mode.*/
+static uint8_t normal_mode_pins[] = {
+  D0, D1,
+  A0, A1, A2, A3,
+  LED_BUILTIN,
+  BUTTON_A1, BUTTON_REC, BUTTON_A3,
+};
+
 static int pin_to_port(int pin, ioportid_t *port, uint8_t *pad) {
 
   if (pin == A0) {
@@ -69,13 +80,68 @@ static int pin_to_port(int pin, ioportid_t *port, uint8_t *pad) {
     return 0;
   }
 
-  if (pin == MODE_BUTTON) {
+  if (pin == LED_BUILTIN) {
+    *port = IOPORT2;
+    *pad = 13;
+  }
+
+  if (pin == BUTTON_A1) {
+    *port = IOPORT1;
+    *pad = 9;
+    return 0;
+  }
+
+  if (pin == BUTTON_A3) {
+    *port = IOPORT2;
+    *pad = 13;
+    return 0;
+  }
+
+  if (pin == BUTTON_REC) {
     *port = IOPORT2;
     *pad = 1;
     return 0;
   }
 
+  if (pin == UART_TX) {
+    *port = IOPORT2;
+    *pad = 3;
+    return 0;
+  }
+
+  if (pin == UART_RX) {
+    *port = IOPORT2;
+    *pad = 4;
+    return 0;
+  }
+
+  if (pin == SWD_CLK) {
+    *port = IOPORT1;
+    *pad = 0;
+    return 0;
+  }
+
+  if (pin == SWD_DIO) {
+    *port = IOPORT1;
+    *pad = 2;
+    return 0;
+  }
+
   return -1;
+}
+
+static int can_use_pin(int pin) {
+
+  unsigned int i;
+
+  if (sudo_mode)
+    return 1;
+
+  for (i = 0; i < sizeof(normal_mode_pins); i++)
+    if (normal_mode_pins[i] == pin)
+      return 1;
+
+  return 0;
 }
 
 void pinMode(int pin, enum pin_mode arduino_mode) {
@@ -87,11 +153,17 @@ void pinMode(int pin, enum pin_mode arduino_mode) {
   if (pin_to_port(pin, &port, &pad))
     return;
 
-  /* Disconnect alternate pins for A0 and A1 */
+  /* Don't let users access illegal pins.*/
+  if (!can_use_pin(pin))
+    return;
+
+  /* Disconnect alternate pins for A0, A1, and A3 */
   if (pin == A0)
     palSetPadMode(IOPORT1, 8, PAL_MODE_UNCONNECTED);
   if (pin == A1)
     palSetPadMode(IOPORT1, 9, PAL_MODE_UNCONNECTED);
+  if (pin == A3)
+    palSetPadMode(IOPORT2, 2, PAL_MODE_UNCONNECTED);
 
   if (arduino_mode == INPUT_PULLUP)
     mode = PAL_MODE_INPUT_PULLUP;
@@ -114,6 +186,10 @@ void digitalWrite(int pin, int value) {
   if (pin_to_port(pin, &port, &pad))
     return;
 
+  /* Don't let users access illegal pins.*/
+  if (!can_use_pin(pin))
+    return;
+
   palWritePad(port, pad, !!value);
 }
 
@@ -123,6 +199,10 @@ int digitalRead(int pin) {
   uint8_t pad;
 
   if (pin_to_port(pin, &port, &pad))
+    return 0;
+
+  /* Don't let users access illegal pins.*/
+  if (!can_use_pin(pin))
     return 0;
 
   return palReadPad(port, pad);
@@ -154,6 +234,10 @@ void analogWrite(int pin, int value) {
   if (pin_to_port(pin, &port, &pad))
     return;
 
+  /* Allow people to specify analogWrite(0) instead of analogWrite(A0).*/
+  if (pin <= 8)
+    pin |= 0x80;
+
   if (pin == A0) {
     palSetPadMode(IOPORT1, 8, PAL_MODE_UNCONNECTED);
     mode = PAL_MODE_ALTERNATIVE_2;
@@ -172,6 +256,7 @@ void analogWrite(int pin, int value) {
     channel = 0;
   }
   else if (pin == A3) {
+    palSetPadMode(IOPORT2, 2, PAL_MODE_UNCONNECTED);
     mode = PAL_MODE_ALTERNATIVE_2;
     driver = &PWMD2;
     channel = 1;
@@ -236,7 +321,13 @@ int analogRead(int pin) {
 
   msg_t result;
   adcsample_t sample;
-  int adc_num = pin_to_adc(pin);
+  int adc_num;
+
+  /* Allow people to e.g. specify analogRead(0) instead of analogRead(A0).*/
+  if (pin <= 8)
+    pin |= 0x80;
+
+  adc_num = pin_to_adc(pin);
 
   if (adc_num == -1)
     return 0;
@@ -303,6 +394,10 @@ void tone(int pin, unsigned int frequency, unsigned long duration) {
   uint8_t pad;
 
   if (pin_to_port(pin, &port, &pad))
+    return;
+
+  /* Don't let users access illegal pins.*/
+  if (!can_use_pin(pin))
     return;
 
   /* Ensure the pin is an output */
@@ -380,4 +475,8 @@ unsigned long pulseIn(int pin, uint8_t state, unsigned long timeout) {
 
 unsigned long pulseInLong(int pin, uint8_t state, unsigned long timeout) {
   return pulseIn(pin, state, timeout);
+}
+
+void doSudo(void) {
+  sudo_mode = 1;
 }
