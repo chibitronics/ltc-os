@@ -105,7 +105,6 @@ bl_symbol(static const storage_header *storageHdr) =
     (const storage_header *) STORAGE_START;
 
 void bootToUserApp(void) {
-  printf( "\n\r Reached boot to user app!!!\n\r" );
   GPIOB->PCOR |= (1 << 6);   // blue on
   /*
     todo:
@@ -116,8 +115,6 @@ void bootToUserApp(void) {
    */
   if (appIsValid())
     chThdExit(0);
-  else
-    printf("But app is not valid.\r\n");
 }
 
 void init_storage_header(demod_pkt_ctrl_t *cpkt) {
