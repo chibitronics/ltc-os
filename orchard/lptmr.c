@@ -67,6 +67,9 @@ void startLptmr(ioportid_t port, uint8_t pad, uint32_t rate_hz) {
 
 void stopLptmr(void) {
 
+  if( !lptmr_running )
+    return;
+
   lptmr_running = 0;
   writel(0, LPTMR0_CSR);
 }
