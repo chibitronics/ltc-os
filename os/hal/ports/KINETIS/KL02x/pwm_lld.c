@@ -26,6 +26,11 @@
 
 #if HAL_USE_PWM || defined(__DOXYGEN__)
 
+void (*pwm0FastISR)(void);
+void (*pwm0ISR)(void);
+void (*pwm1FastISR)(void);
+void (*pwm1ISR)(void);
+
 /*===========================================================================*/
 /* Driver local definitions.                                                 */
 /*===========================================================================*/
@@ -103,8 +108,17 @@ static void pwm_lld_serve_interrupt(PWMDriver *pwmp) {
  */
 OSAL_IRQ_HANDLER(KINETIS_TPM0_HANDLER) {
 
+  if (pwm0FastISR) {
+    pwm0FastISR();
+    return;
+  }
+
   OSAL_IRQ_PROLOGUE();
-  pwm_lld_serve_interrupt(&PWMD1);
+
+  if (pwm0ISR)
+    pwm0ISR();
+  else
+    pwm_lld_serve_interrupt(&PWMD1);
   OSAL_IRQ_EPILOGUE();
 }
 #endif /* KINETIS_PWM_USE_TPM0 */
@@ -117,8 +131,17 @@ OSAL_IRQ_HANDLER(KINETIS_TPM0_HANDLER) {
  */
 OSAL_IRQ_HANDLER(KINETIS_TPM1_HANDLER) {
 
+  if (pwm1FastISR) {
+    pwm1FastISR();
+    return;
+  }
+
   OSAL_IRQ_PROLOGUE();
-  pwm_lld_serve_interrupt(&PWMD2);
+
+  if (pwm1ISR)
+    pwm1ISR();
+  else
+    pwm_lld_serve_interrupt(&PWMD2);
   OSAL_IRQ_EPILOGUE();
 }
 #endif /* KINETIS_PWM_USE_TPM1 */
