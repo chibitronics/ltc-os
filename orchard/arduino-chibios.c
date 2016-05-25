@@ -141,3 +141,12 @@ uint32_t getSyscallAddr(uint32_t sysCallNum) {
   extern uint16_t *SysCall_Table;
   return SysCall_Table[sysCallNum];
 }
+
+void serialSetSpeed(uint32_t speed) {
+  SerialConfig serialConfig = {
+    speed,
+  };
+
+  sdStop(&SD1);
+  sdStart(&SD1, &serialConfig);
+}
