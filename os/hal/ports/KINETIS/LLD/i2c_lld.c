@@ -27,6 +27,9 @@
 
 #if HAL_USE_I2C || defined(__DOXYGEN__)
 
+void (*i2cFastISR)(void);
+void (*i2cISR)(void);
+
 /*===========================================================================*/
 /* Driver local definitions.                                                 */
 /*===========================================================================*/
@@ -182,8 +185,18 @@ static void serve_interrupt(I2CDriver *i2cp) {
 
 OSAL_IRQ_HANDLER(KINETIS_I2C0_IRQ_VECTOR) {
 
+  if (i2cFastISR) {
+    i2cFastISR();
+    return;
+  }
+
   OSAL_IRQ_PROLOGUE();
-  serve_interrupt(&I2CD1);
+
+  if (i2cISR)
+    i2cISR();
+  else
+    serve_interrupt(&I2CD1);
+
   OSAL_IRQ_EPILOGUE();
 }
 

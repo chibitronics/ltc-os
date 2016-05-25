@@ -4,6 +4,7 @@
 #include "kl02.h"
 #include "usbphy.h"
 #include "usbmac.h"
+#include "memio.h"
 
 static void (*gpioaFastISR)(void);
 struct USBPHY *current_usb_phy;
@@ -180,19 +181,19 @@ static void usbphy_fast_isr(void) {
 void usbPhyDetach(struct USBPHY *phy) {
 
   /* Set both lines to 0 (clear both D+ and D-) */
-  *(phy->usbdpCAddr) = phy->usbdpMask;
-  *(phy->usbdnCAddr) = phy->usbdnMask;
+  writel(phy->usbdpMask, phy->usbdpCAddr);
+  writel(phy->usbdnMask, phy->usbdnCAddr);
 
   /* Set both lines to output */
-  *(phy->usbdpDAddr) |= phy->usbdpMask;
-  *(phy->usbdnDAddr) |= phy->usbdnMask;
+  writel(phy->usbdpMask, phy->usbdpDAddr);
+  writel(phy->usbdnMask, phy->usbdnDAddr);
 }
 
 void usbPhyAttach(struct USBPHY *phy) {
 
   /* Set both lines to input */
-  *(phy->usbdpDAddr) &= ~phy->usbdpMask;
-  *(phy->usbdnDAddr) &= ~phy->usbdnMask;
+  writel(readl(phy->usbdpDAddr) & ~phy->usbdpMask, phy->usbdpDAddr);
+  writel(readl(phy->usbdnDAddr) & ~phy->usbdnMask, phy->usbdnDAddr);
 
   current_usb_phy = phy;
   gpioaFastISR = usbphy_fast_isr;

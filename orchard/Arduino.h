@@ -237,4 +237,15 @@ long randomSeed(unsigned long seed);
 #define SWD_CLK           PTA(0)
 #define SWD_DIO           PTA(2)
 
+/* Interrupts */
+
+#define I2C_IRQ           8
+#define SERIAL_IRQ        12
+#define ADC_IRQ           15
+#define PWM0_IRQ          17
+#define PWM1_IRQ          18
+#define LPTMR_IRQ         28
+#define PORTA_IRQ         30
+#define PORTB_IRQ         31
+
 #endif /* __ARDUINO_KOSAGI_H__ */

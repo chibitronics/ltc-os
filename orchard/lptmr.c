@@ -12,6 +12,9 @@ static uint32_t lptmr_rate = 0;
 static ioportid_t lptmr_port;
 static uint8_t lptmr_pad;
 
+void (*lptmrFastISR)(void);
+void (*lptmrISR)(void);
+
 #define RATE 234000000/88
 static void lptmr_enable(void) {
 
@@ -75,19 +78,29 @@ void stopLptmr(void) {
 }
 
 OSAL_IRQ_HANDLER(KINETIS_LPTMR0_HANDLER) {
+  if (lptmrFastISR) {
+    lptmrFastISR();
+    return;
+  }
+
   OSAL_IRQ_PROLOGUE();
 
-  /* Ignore spurrious interrupts that happen for some reason */
-  if (!lptmr_running)
-    return;
+  if (lptmrISR) {
+    lptmrISR();
+  }
+  else {
+    /* Ignore spurrious interrupts that happen for some reason */
+    if (!lptmr_running)
+      return;
 
-  palTogglePad(lptmr_port, lptmr_pad);
+    palTogglePad(lptmr_port, lptmr_pad);
 
-  /* Update the counter with the new value (if it's changed).*/
-  writel(lptmr_rate, LPTMR0_CMR);
+    /* Update the counter with the new value (if it's changed).*/
+    writel(lptmr_rate, LPTMR0_CMR);
 
-  /* Clear the TCF bit, which lets the timer continue.*/
-  writel(LPTMR_CSR_TCF | LPTMR_CSR_TIE | LPTMR_CSR_TEN, LPTMR0_CSR);
+    /* Clear the TCF bit, which lets the timer continue.*/
+    writel(LPTMR_CSR_TCF | LPTMR_CSR_TIE | LPTMR_CSR_TEN, LPTMR0_CSR);
+  }
 
   OSAL_IRQ_EPILOGUE();
 }

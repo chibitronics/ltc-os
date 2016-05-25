@@ -32,7 +32,7 @@ struct usb_device_descriptor {
   uint8_t  iProduct;
   uint8_t  iSerialNumber;
   uint8_t  bNumConfigurations;
-} __attribute__((packed));
+} __attribute__((packed, aligned(4)));
 
 struct usb_configuration_descriptor {
   uint8_t  bLength;             /* Size of this descriptor, in bytes (9) */
@@ -44,13 +44,13 @@ struct usb_configuration_descriptor {
   uint8_t  bmAttributes;        /* Bitmap of attributes.  D7 must be 1. */
   uint8_t  bMaxPower;           /* Maximum power, in units of 2mA */
   uint8_t  data[];              /* Remaining descriptors */
-} __attribute__((packed));
+} __attribute__((packed, aligned(4)));
 
 struct usb_string_descriptor {
   uint8_t bLength;          /* sizeof(usb_string_descriptor) + sizeof(data) */
   uint8_t bDescriptorType;  /* DT_STRING (3) */
   uint8_t data[];           /* UTF-16LE string data or lang data(for string 0 */
-} __attribute__((packed));
+} __attribute__((packed, aligned(4)));
 
 struct usb_interface_descriptor {
   uint8_t bLength;            /* sizeof(usb_interface_descriptor) (9) */
@@ -62,7 +62,7 @@ struct usb_interface_descriptor {
   uint8_t bInterfaceSubclass; /* Class sub-code */
   uint8_t bInterfaceProtocol; /* Protocol code, assigned by USB */
   uint8_t iInterface;         /* Index of string for this interface */
-} __attribute__((packed));
+} __attribute__((packed, aligned(4)));
 
 struct usb_endpoint_descriptor {
   uint8_t  bLength;           /* sizeof(usb_endpoint_descriptor) (7) */
@@ -71,7 +71,7 @@ struct usb_endpoint_descriptor {
   uint8_t  bmAttributes;      /* 0=control, 2=bulk, 3=interrupt */
   uint16_t wMaxPacketSize;    /* Max packet size for this EP */
   uint8_t  bInterval;         /* Polling rate (in 1ms units) */
-} __attribute__((packed));
+} __attribute__((packed, aligned(4)));
 
 struct usb_hid_descriptor {
   uint8_t  bLength;           /* sizeof(usb_hid_descriptor) (9) */
@@ -81,7 +81,7 @@ struct usb_hid_descriptor {
   uint8_t  bNumDescriptors;   /* Number of HID class descriptors (usually 1) */
   uint8_t  bReportDescriptorType;   /* Report descriptor type (usually 0x22) */
   uint16_t wReportDescriptorLength; /* Length of the HID/PID report descriptor */
-} __attribute__((packed));
+} __attribute__((packed, aligned(4)));
 
 
 /* Each of these functions are called by the USB system to get a buffer.
@@ -95,14 +95,17 @@ struct usb_hid_descriptor {
  */
 struct USBLink;
 typedef int (*get_usb_descriptor_t)(struct USBLink *link,
-                                    uint32_t num,
+                                    const void *pkt,
                                     const void **data);
 struct USBLink {
+  /*
   get_usb_descriptor_t getStringDescriptor;
-  get_usb_descriptor_t getDeviceDescriptor;
   get_usb_descriptor_t getConfigurationDescriptor;
   get_usb_descriptor_t getClassDescriptor;
+  */
+  get_usb_descriptor_t getDescriptor;
+  get_usb_descriptor_t getClassDescriptor;
   int config_num;
-};
+} __attribute((packed, aligned(4)));
 
 #endif /* __USB_LINK_H__ */

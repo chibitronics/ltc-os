@@ -48,7 +48,7 @@ struct usb_packet {
   };
   uint8_t size; /* Not including pid (so may be 0) */
   /* Checksum omitted */
-} __attribute__((packed));
+} __attribute__((packed, aligned(4)));
 
 enum usb_mac_packet_type {
   packet_type_none,
@@ -69,7 +69,7 @@ struct usb_mac_setup_packet {
   };
   uint16_t wIndex;
   uint16_t wLength;
-} __attribute__((packed));
+} __attribute__((packed, aligned(4)));
 
 struct USBLink;
 
@@ -101,7 +101,7 @@ struct USBMAC {
 
   uint8_t tok_addr;     /* Last token's address */
   uint8_t tok_epnum;    /* Last token's endpoint */
-};
+} __attribute((packed, aligned(4)));
 
 /* Process all packets sitting in the queue */
 int usbMacProcess(struct USBMAC *mac,

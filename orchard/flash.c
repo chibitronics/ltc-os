@@ -91,8 +91,8 @@ int8_t flashEraseSectors(uint32_t offset, uint16_t sectorCount) {
   }
 
   if (end > ((P_FLASH_BASE + P_FLASH_SIZE) / FTFx_PSECTOR_SIZE)) {
-    tfp_printf( "Too many sectors requested, end at %d but we only have %d sectors.\n\r",
-	     end, (P_FLASH_BASE + P_FLASH_SIZE) / FTFx_PSECTOR_SIZE);
+//    tfp_printf( "Too many sectors requested, end at %d but we only have %d sectors.\n\r",
+//	     end, (P_FLASH_BASE + P_FLASH_SIZE) / FTFx_PSECTOR_SIZE);
     retval = F_ERR_RANGE;
     return retval;
   }
@@ -114,8 +114,8 @@ int8_t flashEraseSectors(uint32_t offset, uint16_t sectorCount) {
                   MAKE_FCCOB(number >> 8, number, margin_read_level, 0),
                   0);
 
-      if (retval)
-        printf("Sector %d, margin %d, result: %d\r\n", destination, margin_read_level, retval);
+//      if (retval)
+//        printf("Sector %d, margin %d, result: %d\r\n", destination, margin_read_level, retval);
     }
 
     //printf( " e%d ", destination );
@@ -141,7 +141,7 @@ uint32_t flashGetSecurity(void) {
 int8_t flashProgram(uint8_t *src, uint8_t *dest, uint32_t count) {
 
   uint32_t ret = F_ERR_OK;
-  uint32_t failaddr = 0;
+//  uint32_t failaddr = 0;
   uint32_t i;
 
   // do nothing if our count is 0
@@ -184,12 +184,12 @@ int8_t flashProgram(uint8_t *src, uint8_t *dest, uint32_t count) {
                             (uint32_t)&dest[i],
                             MAKE_FCCOB(READ_USER_MARGIN, 0, 0, 0),
                             *((uint32_t *)&src[i]));
-    if (ret)
-      failaddr = (uint32_t)&dest[i];
+//    if (ret)
+//      failaddr = (uint32_t)&dest[i];
   }
 
   if (ret) {
-    tfp_printf("Failed programming verification at USER margin levels: worry a little bit. Failure address: %08x\n\r", failaddr );
+    //tfp_printf("Failed programming verification at USER margin levels: worry a little bit. Failure address: %08x\n\r", failaddr );
     return F_ERR_U_MARGIN;
   }
 

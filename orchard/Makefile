@@ -295,8 +295,8 @@ endif
 # Add special command line parameters to certain files.
 $(OBJDIR)/esplanade_demod.o : USE_COPT += -O3
 $(OBJDIR)/esplanade_analog.o : USE_COPT += -O3
-$(OBJDIR)/esplanade_mac.o : USE_COPT += -O3
-$(OBJDIR)/esplanade_updater.o : USE_COPT += -O3
+$(OBJDIR)/esplanade_mac.o : USE_COPT += -Os
+$(OBJDIR)/esplanade_updater.o : USE_COPT += -Os
 
 # Debug hook - enable printing Makefile variables
 # by running e.g. "make print-OUTFILES"

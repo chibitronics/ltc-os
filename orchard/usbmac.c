@@ -151,7 +151,8 @@ static int usb_mac_process_setup_read(struct USBMAC *mac,
 
     /* GET_DESCRIPTOR */
     case 6:
-
+      link->getDescriptor(link, setup, &response);
+#if 0
       switch (setup->wValueL) {
 
       /* GET_DEVICE_DESCRIPTOR */
@@ -170,6 +171,7 @@ static int usb_mac_process_setup_read(struct USBMAC *mac,
         break;
 
       }
+#endif
       break;
     }
     break;
@@ -178,39 +180,9 @@ static int usb_mac_process_setup_read(struct USBMAC *mac,
 
     /* GET_CLASS_DESCRIPTOR */
     case 6:
-      len = link->getClassDescriptor(link, setup->wValueH, &response);
+      len = link->getClassDescriptor(link, setup, &response);
       break;
     }
-    break;
-
-  case 0x82: /* Device-to-host, standard, read from endpoint */
-    break;
-
-  case 0x83: /* Device-to-host, standard, read from other */
-    break;
-
-  case 0xa0: /* Device-to-host, class, read from device */
-    break;
-
-  case 0xa1: /* Device-to-host, class, read from interface */
-    break;
-
-  case 0xa2: /* Device-to-host, class, read from endpoint */
-    break;
-
-  case 0xa3: /* Device-to-host, class, read from other */
-    break;
-
-  case 0xc0: /* Device-to-host, vendor, read from device */
-    break;
-
-  case 0xc1: /* Device-to-host, vendor, read from interface */
-    break;
-
-  case 0xc2: /* Device-to-host, vendor, read from endpoint */
-    break;
-
-  case 0xc3: /* Device-to-host, vendor, read from other */
     break;
   }
 
@@ -407,4 +379,12 @@ struct USBPHY *usbMacPhy(struct USBMAC *mac) {
 struct USBMAC *usbMacDefault(void) {
 
   return &default_mac;
+}
+
+void usbSendControl(void) {
+  return;
+}
+
+void usbReceiveControl(void) {
+  return;
 }
