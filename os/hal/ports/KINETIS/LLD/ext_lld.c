@@ -26,6 +26,11 @@
 
 #if HAL_USE_EXT || defined(__DOXYGEN__)
 
+void (*portaFastISR)(void);
+void (*portaISR)(void);
+void (*portbFastISR)(void);
+void (*portbISR)(void);
+
 /*===========================================================================*/
 /* Driver local definitions.                                                 */
 /*===========================================================================*/
@@ -156,9 +161,17 @@ static inline void irq_handler(PORT_TypeDef * const port, const unsigned port_wi
  */
 #if defined(KINETIS_PORTA_IRQ_VECTOR) && KINETIS_EXT_PORTA_WIDTH > 0
 OSAL_IRQ_HANDLER(KINETIS_PORTA_IRQ_VECTOR) {
+  if (portaFastISR) {
+    portaFastISR();
+    return;
+  }
+
   OSAL_IRQ_PROLOGUE();
 
-  irq_handler(PORTA, KINETIS_EXT_PORTA_WIDTH, porta_channel_map);
+  if (portaISR)
+    portaISR();
+  else
+    irq_handler(PORTA, KINETIS_EXT_PORTA_WIDTH, porta_channel_map);
 
   OSAL_IRQ_EPILOGUE();
 }
@@ -171,9 +184,17 @@ OSAL_IRQ_HANDLER(KINETIS_PORTA_IRQ_VECTOR) {
  */
 #if defined(KINETIS_PORTB_IRQ_VECTOR) && KINETIS_EXT_PORTB_WIDTH > 0
 OSAL_IRQ_HANDLER(KINETIS_PORTB_IRQ_VECTOR) {
+  if (portbFastISR) {
+    portbFastISR();
+    return;
+  }
+
   OSAL_IRQ_PROLOGUE();
 
-  irq_handler(PORTB, KINETIS_EXT_PORTB_WIDTH, portb_channel_map);
+  if (portbISR)
+    portbISR();
+  else
+    irq_handler(PORTB, KINETIS_EXT_PORTB_WIDTH, portb_channel_map);
 
   OSAL_IRQ_EPILOGUE();
 }
