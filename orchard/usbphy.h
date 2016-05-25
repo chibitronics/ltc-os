@@ -12,17 +12,17 @@ struct USBPHY {
   int initialized;
 
   /* USB D+ pin specification */
-  volatile uint32_t *usbdpIAddr;
-  volatile uint32_t *usbdpSAddr;
-  volatile uint32_t *usbdpCAddr;
-  volatile uint32_t *usbdpDAddr;
+  uint32_t usbdpIAddr;
+  uint32_t usbdpSAddr;
+  uint32_t usbdpCAddr;
+  uint32_t usbdpDAddr;
   uint32_t usbdpShift;
 
   /* USB D- pin specification */
-  volatile uint32_t *usbdnIAddr;
-  volatile uint32_t *usbdnSAddr;
-  volatile uint32_t *usbdnCAddr;
-  volatile uint32_t *usbdnDAddr;
+  uint32_t usbdnIAddr;
+  uint32_t usbdnSAddr;
+  uint32_t usbdnCAddr;
+  uint32_t usbdnDAddr;
   uint32_t usbdnShift;
 
   uint32_t usbdpMask;
@@ -42,7 +42,7 @@ struct USBPHY {
 
   /* pkt_size is cached in read_queue[x][11] */
   uint8_t read_queue[PHY_READ_QUEUE_SIZE][12];
-} __attribute__((packed));
+} __attribute__((packed, aligned(4)));
 
 int usbPhyResetStatistics(struct USBPHY *phy);
 
