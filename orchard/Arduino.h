@@ -31,7 +31,7 @@ enum pin_mode {
 #define LSBFIRST 0
 #define MSBFIRST 1
 
-#define digitalPinToPort(x) ((x < 32) ? FGPIOA_BASE : FGPIOB_BASE)
+#define digitalPinToPort(x) (((x & 0x3f) < 32) ? FGPIOA_BASE : FGPIOB_BASE)
 #define digitalPinToBitMask(x) (1 << (x & 0x1f))
 
 /* Program lifetime */
@@ -206,27 +206,35 @@ long randomSeed(unsigned long seed);
 #define bitWrite(value, bit, bitvalue) (bitvalue ? bitSet(value, bit) : bitClear(value, bit))
 #define bit(b) (1UL << (b))
 
-#define PTA(x) (x)
-#define PTB(x) (32 + x)
+#define PTA(x) (0x40 | (x))
+#define PTB(x) (0x40 | (32 + x))
 
-/* Analog pins */
 #define A0 0x80
 #define A1 0x81
 #define A2 0x82
 #define A3 0x83
 #define A4 0x84
-#define A5 0x85
-#define A6 0x86
-#define A7 0x87
-#define A8 0x88
+#define A5 0x85 /* Temperature sensor */
+#define A6 0x86 /* Voltage sensor */
+#define A7 0x87 /* VDD voltage value */
+#define A8 0x88 /* VCC voltage value */
 
 /* Digital pins */
 #define D0 0x00
 #define D1 0x00
-#define LED_BUILTIN_RGB PTA(6)
-#define LED_BUILTIN_RED PTA(5)
+
+#define LED_BUILTIN       PTB(13)
+#define LED_A2            LED_BUILTIN
+#define BUTTON_A1         PTA(9)
+#define BUTTON_REC        PTB(1) /* Silkscreened as "Rec" */
+#define BUTTON_A3         PTB(13)
+#define LED_BUILTIN_RGB   PTA(6)
+
+#define LED_BUILTIN_RED   PTA(5)
 #define LED_BUILTIN_GREEN PTB(6)
-#define MODE_BUTTON PTB(1)
-#define LED_BUILTIN LED_BUILTIN_GREEN
+#define UART_TX           PTB(3)
+#define UART_RX           PTB(4)
+#define SWD_CLK           PTA(0)
+#define SWD_DIO           PTA(2)
 
 #endif /* __ARDUINO_KOSAGI_H__ */
