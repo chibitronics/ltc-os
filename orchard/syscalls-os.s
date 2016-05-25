@@ -97,7 +97,9 @@ SysCall_Table:
 .short analogReference
 .short analogRead
 .short attachInterrupt
+.short attachFastInterrupt
 .short detachInterrupt
+.short detachFastInterrupt
 .short tone
 .short noTone
 .short shiftOut
@@ -115,7 +117,9 @@ SysCall_Table:
 .short i2cSetupSlave
 .short usbSetup
 .short usbSend
+.short usbSendControl
 .short usbReceive
+.short usbReceiveControl
 .short usbAttach
 .short usbDetach
 .short createThread
@@ -136,4 +140,6 @@ SysCall_Table:
 .short unlockSystemFromISR
 .short flashErase
 .short flashWrite
+.short doSudo
+.short setSerialSpeed
 .size SysCall_Table, .-SysCall_Table
