@@ -74,25 +74,16 @@
 #define ADCx_SC1n_ADCH_DADP2            2
 #define ADCx_SC1n_ADCH_DADP3            3
 #define ADCx_SC1n_ADCH_AD4              4
-#define ADCx_SC1n_ADCH_AD5              5
-#define ADCx_SC1n_ADCH_AD6              6
-#define ADCx_SC1n_ADCH_AD7              7
-#define ADCx_SC1n_ADCH_AD8              8
-#define ADCx_SC1n_ADCH_AD9              9
-#define ADCx_SC1n_ADCH_AD10             10
-#define ADCx_SC1n_ADCH_AD11             11
-#define ADCx_SC1n_ADCH_AD12             12
-#define ADCx_SC1n_ADCH_AD13             13
-#define ADCx_SC1n_ADCH_AD14             14
-#define ADCx_SC1n_ADCH_AD15             15
-#define ADCx_SC1n_ADCH_AD16             16
-#define ADCx_SC1n_ADCH_AD17             17
-#define ADCx_SC1n_ADCH_AD18             18
-#define ADCx_SC1n_ADCH_AD19             19
-#define ADCx_SC1n_ADCH_AD20             20
-#define ADCx_SC1n_ADCH_AD21             21
-#define ADCx_SC1n_ADCH_AD22             22
-#define ADCx_SC1n_ADCH_AD23             23
+#define ADCx_SC1n_ADCH_AD5              8
+#define ADCx_SC1n_ADCH_AD6              9
+#define ADCx_SC1n_ADCH_AD7              10
+#define ADCx_SC1n_ADCH_AD8              11
+#define ADCx_SC1n_ADCH_AD9              12
+#define ADCx_SC1n_ADCH_AD10             13
+#define ADCx_SC1n_ADCH_AD11             14
+#define ADCx_SC1n_ADCH_AD12             15
+#define ADCx_SC1n_ADCH_AD13             16
+
 #define ADCx_SC1n_ADCH_TEMP_SENSOR      26
 #define ADCx_SC1n_ADCH_BANDGAP          27
 #define ADCx_SC1n_ADCH_VREFSH           29
@@ -117,16 +108,6 @@
 #define ADC_AD11                        (1 << ADCx_SC1n_ADCH_AD11)
 #define ADC_AD12                        (1 << ADCx_SC1n_ADCH_AD12)
 #define ADC_AD13                        (1 << ADCx_SC1n_ADCH_AD13)
-#define ADC_AD14                        (1 << ADCx_SC1n_ADCH_AD14)
-#define ADC_AD15                        (1 << ADCx_SC1n_ADCH_AD15)
-#define ADC_AD16                        (1 << ADCx_SC1n_ADCH_AD16)
-#define ADC_AD17                        (1 << ADCx_SC1n_ADCH_AD17)
-#define ADC_AD18                        (1 << ADCx_SC1n_ADCH_AD18)
-#define ADC_AD19                        (1 << ADCx_SC1n_ADCH_AD19)
-#define ADC_AD20                        (1 << ADCx_SC1n_ADCH_AD20)
-#define ADC_AD21                        (1 << ADCx_SC1n_ADCH_AD21)
-#define ADC_AD22                        (1 << ADCx_SC1n_ADCH_AD22)
-#define ADC_AD23                        (1 << ADCx_SC1n_ADCH_AD23)
 #define ADC_TEMP_SENSOR                 (1 << ADCx_SC1n_ADCH_TEMP_SENSOR)
 #define ADC_BANDGAP                     (1 << ADCx_SC1n_ADCH_BANDGAP)
 #define ADC_VREFSH                      (1 << ADCx_SC1n_ADCH_VREFSH)
