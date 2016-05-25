@@ -6,7 +6,6 @@ long map(long x, long in_min, long in_max, long out_min, long out_max) {
 }
 
 static long long rand_val;
-#warning "Value exceeds max, min"
 long random(long min, long max) {
   int32_t val;
 
@@ -14,7 +13,7 @@ long random(long min, long max) {
 
   rand_val += val;
 
-  return val;
+  return (val % (max - min)) + min;
 }
 
 long randomSeed(unsigned long seed) {
