@@ -561,7 +561,8 @@ isdig: @ convert ASCII to digit
 @ int str2float(float*f,char*p,char**endptr) {
 
 qfp_str2float:
-
+  bx  lr
+#if 0
 @   if(*p=='+') p++;
 @   else if(*p=='-') sm=0x80000000,p++; // capture mantissa sign
 
@@ -866,3 +867,4 @@ qfp_str2float:
  pop {r4-r7,r15}
 
 @   }
+#endif
