@@ -159,9 +159,9 @@ void pinMode(int pin, enum pin_mode arduino_mode) {
 
   /* Disconnect alternate pins for A0, A1, and A3 */
   if (pin == A0)
-    palSetPadMode(IOPORT1, 8, PAL_MODE_UNCONNECTED);
+    palSetPadMode(IOPORT2, 10, PAL_MODE_UNCONNECTED);
   if (pin == A1)
-    palSetPadMode(IOPORT1, 9, PAL_MODE_UNCONNECTED);
+    palSetPadMode(IOPORT2, 11, PAL_MODE_UNCONNECTED);
   if (pin == A3)
     palSetPadMode(IOPORT2, 2, PAL_MODE_UNCONNECTED);
 
@@ -285,9 +285,9 @@ void analogReference(enum analog_reference_type type) {
 static int pin_to_adc(int pin) {
 
   if (pin == A0)
-    return ADC_AD9;
+    return ADC_DAD3;
   if (pin == A1)
-    return ADC_AD8;
+    return ADC_DAD2;
   if (pin == A2)
     return ADC_DAD0;
   if (pin == A3)
