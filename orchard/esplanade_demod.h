@@ -10,7 +10,7 @@
 #define NB_FRAMES  32   // number of frames to process at once (trade memory off against OS overhead)
 
 #define BAUD_RATE 8000
-#define SAMPLE_RATE 75000  // of the rx side
+#define SAMPLE_RATE 74957  // of the rx side
 #define SAMPLE_RATE_TX 44100
 
 #define COS_BITS   14
