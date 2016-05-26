@@ -20,114 +20,102 @@ static uint8_t normal_mode_pins[] = {
 
 static int pin_to_port(int pin, ioportid_t *port, uint8_t *pad) {
 
-  if (pin == A0) {
+  switch(pin) {
+  case A0:
     *port = IOPORT2;
     *pad = 10;
-    return 0;
-  }
+    break;
 
-  if (pin == A1) {
+  case A1:
     *port = IOPORT2;
     *pad = 11;
-    return 0;
-  }
+    break;
 
-  if (pin == A2) {
+  case A2:
     *port = IOPORT1;
     *pad = 12;
-    return 0;
-  }
+    break;
 
-  if (pin == A3) {
+  case A3:
     *port = IOPORT2;
     *pad = 13;
-    return 0;
-  }
+    break;
 
-  if (pin == A4) {
+  case A4:
     *port = IOPORT2;
     *pad = 5;
-    return 0;
-  }
+    break;
 
-  if (pin == D0) {
+  case D0:
     *port = IOPORT2;
     *pad = 0;
-    return 0;
-  }
+    break;
 
-  if (pin == D1) {
+  case D1:
     *port = IOPORT1;
     *pad = 7;
-    return 0;
-  }
+    break;
 
-  if (pin == LED_BUILTIN_RGB) {
+  case LED_BUILTIN_RGB:
     *port = IOPORT1;
     *pad = 6;
-    return 0;
-  }
+    break;
 
-  if (pin == LED_BUILTIN_RED) {
+  case LED_BUILTIN_RED:
     *port = IOPORT1;
     *pad = 5;
-    return 0;
-  }
+    break;
 
-  if (pin == LED_BUILTIN_GREEN) {
+  case LED_BUILTIN_GREEN:
     *port = IOPORT2;
     *pad = 6;
-    return 0;
-  }
+    break;
 
-  if (pin == LED_BUILTIN) {
-    *port = IOPORT2;
-    *pad = 13;
-  }
+  case LED_BUILTIN:
+    *port = IOPORT1;
+    *pad = 12;
+    break;
 
-  if (pin == BUTTON_A1) {
+  case BUTTON_A1:
     *port = IOPORT1;
     *pad = 9;
-    return 0;
-  }
+    break;
 
-  if (pin == BUTTON_A3) {
+  case BUTTON_A3:
     *port = IOPORT2;
     *pad = 13;
-    return 0;
-  }
+    break;
 
-  if (pin == BUTTON_REC) {
+  case BUTTON_REC:
     *port = IOPORT2;
     *pad = 1;
-    return 0;
-  }
+    break;
 
-  if (pin == UART_TX) {
+  case UART_TX:
     *port = IOPORT2;
     *pad = 3;
-    return 0;
-  }
+    break;
 
-  if (pin == UART_RX) {
+  case UART_RX:
     *port = IOPORT2;
     *pad = 4;
-    return 0;
-  }
+    break;
 
-  if (pin == SWD_CLK) {
+  case SWD_CLK:
     *port = IOPORT1;
     *pad = 0;
-    return 0;
-  }
+    break;
 
-  if (pin == SWD_DIO) {
+  case SWD_DIO:
     *port = IOPORT1;
     *pad = 2;
-    return 0;
+    break;
+
+  default:
+    return -1;
   }
 
-  return -1;
+  return 0;
 }
 
 static int can_use_pin(int pin) {

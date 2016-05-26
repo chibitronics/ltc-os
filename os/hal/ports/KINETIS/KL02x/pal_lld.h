@@ -290,6 +290,47 @@ typedef struct
 #define pal_lld_togglepad(port, pad) (port)->PTOR = ((uint32_t) 1 << (pad))
 
 /**
+ * @brief   Writes a logical state on an output pad.
+ * @note    This function is not meant to be invoked directly by the
+ *          application  code.
+ * @note    The @ref PAL provides a default software implementation of this
+ *          functionality, implement this function if can optimize it by using
+ *          special hardware functionalities or special coding.
+ *
+ * @param[in] port      port identifier
+ * @param[in] pad       pad number within the port
+ * @param[in] bit       logical value, the value must be @p PAL_LOW or
+ *                      @p PAL_HIGH
+ *
+ * @notapi
+ */
+#define pal_lld_writepad(port, pad, bit)    \
+  do {                                      \
+    if (bit == PAL_HIGH)                    \
+      port->PDOR |= ((uint32_t) 1 << pad);  \
+    else                                    \
+      port->PDOR &= ~((uint32_t) 1 << pad); \
+  } while(0)
+
+/**
+ * @brief   Reads a logical state from an I/O pad.
+ * @note    The @ref PAL provides a default software implementation of this
+ *          functionality, implement this function if can optimize it by using
+ *          special hardware functionalities or special coding.
+ *
+ * @param[in] port      port identifier
+ * @param[in] pad       pad number within the port
+ * @return              The logical state.
+ * @retval PAL_LOW      low logical state.
+ * @retval PAL_HIGH     high logical state.
+ *
+ * @notapi
+ */
+#define pal_lld_readpad(port, pad)      \
+    ((port->PDIR & ((uint32_t) 1 << pad)) ? PAL_HIGH : PAL_LOW)
+
+
+/**
  * @brief   Pad mode setup.
  * @details This function programs a pad with the specified mode.
  * @note    The @ref PAL provides a default software implementation of this

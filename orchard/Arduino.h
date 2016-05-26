@@ -221,9 +221,9 @@ long randomSeed(unsigned long seed);
 
 /* Digital pins */
 #define D0 0x00
-#define D1 0x00
+#define D1 0x01
 
-#define LED_BUILTIN       PTB(13)
+#define LED_BUILTIN       PTA(12)
 #define LED_A2            LED_BUILTIN
 #define BUTTON_A1         PTA(9)
 #define BUTTON_REC        PTB(1) /* Silkscreened as "Rec" */

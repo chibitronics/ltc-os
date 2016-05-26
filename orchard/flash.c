@@ -85,7 +85,7 @@ int8_t flashEraseSectors(uint32_t offset, uint16_t sectorCount) {
   end = destination + (uint32_t) sectorCount;
 
   if (destination < F_USER_SECTOR_START) {
-    printf("User sectors start at %d, aborting.\r\n", F_USER_SECTOR_START);
+    //printf("User sectors start at %d, aborting.\r\n", F_USER_SECTOR_START);
     retval = F_ERR_RANGE;
     return retval;
   }
