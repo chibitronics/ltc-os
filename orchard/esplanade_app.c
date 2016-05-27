@@ -89,17 +89,12 @@ static THD_FUNCTION(app_thread, arg) {
   void (**func)(void);
 
   chRegSetThreadName("user code");
-#if 1
+
+  /* Set up the heap */
   void *heap_start = _app_header.heap_start + sizeof(thread_t);
   size_t heap_size = _app_header.heap_end - heap_start - sizeof(thread_t);
 
   chHeapObjectInit(&app_heap, (void *)MEM_ALIGN_NEXT(heap_start), MEM_ALIGN_NEXT((size_t)heap_size));
-//      _app_header.heap_end - _app_header.heap_start - sizeof(thread_t));
-#else
-
-  chHeapObjectInit(&app_heap, _app_header.heap_start + sizeof(thread_t),
-      _app_header.heap_end - _app_header.heap_start - sizeof(thread_t));
-#endif
 
   ArduinoInit();
 
@@ -110,6 +105,7 @@ static THD_FUNCTION(app_thread, arg) {
     func++;
   }
 
+  /* Enter the main Arduino application */
   _app_header.entry();
 }
 
