@@ -4,15 +4,15 @@
     .global HardFault_Handler
     .func HardFault_Handler
 HardFault_Handler:
-    mov r7, lr
-    mov r6, #4
-    tst r7, r6
+    mov r3, lr
+    mov r2, #4
+    tst r3, r2
     beq hardfault_handler_msp
     bne hardfault_handler_psp
 
 hardfault_handler_msp:
-    mrs r7, MSP
-    mov r0, r7
+    mrs r3, MSP
+    mov r0, r3
     mov r1, #1
 
     mov sp, r0          // Restore the stack pointer
@@ -21,8 +21,8 @@ hardfault_handler_msp:
     bx r2
 
 hardfault_handler_psp:
-    mrs r7, PSP
-    mov r0, r7          // Store the stack frame in register 0
+    mrs r3, PSP
+    mov r0, r3          // Store the stack frame in register 0
     mov r1, #0          // Set "is_isr" to 0
     mov sp, r0          // Restore the stack pointer so "bt" works
 
