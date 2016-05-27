@@ -150,3 +150,19 @@ void setSerialSpeed(uint32_t speed) {
   sdStop(&SD1);
   sdStart(&SD1, &serialConfig);
 }
+
+void mutexInit(mutex_t *mp) {
+  chMtxObjectInit(mp);
+}
+
+void mutexLock(mutex_t *mp) {
+  chMtxLock(mp);
+}
+
+bool mutexTryLock(mutex_t *mp) {
+  return chMtxTryLock(mp);
+}
+
+void mutexUnlock(mutex_t *mp) {
+  chMtxUnlock(mp);
+}
