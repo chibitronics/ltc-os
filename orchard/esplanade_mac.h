@@ -13,7 +13,7 @@ typedef struct demod_ph {
 
   /* Packet type */
   uint8_t type;
-} __attribute__((packed, aligned(4))) demod_pkt_header_t;
+} __attribute__((packed)) demod_pkt_header_t;
 
 typedef struct demod_dp {
 
@@ -27,7 +27,7 @@ typedef struct demod_dp {
 
   /* Hash of this data packet */
   uint32_t  hash;
-} __attribute__((packed, aligned(4))) demod_pkt_data_t;
+} __attribute__((packed)) demod_pkt_data_t;
 
 typedef struct demod_cp {
 
@@ -49,13 +49,13 @@ typedef struct demod_cp {
 
   /* Hash check of /this/ packet */
   uint32_t hash;
-} __attribute__((packed, aligned(4))) demod_pkt_ctrl_t;
+} __attribute__((packed)) demod_pkt_ctrl_t;
 
 typedef union demod_packet {
   demod_pkt_header_t header;
   demod_pkt_ctrl_t ctrl_pkt;
   demod_pkt_data_t data_pkt;
-} __attribute__((packed, aligned(4))) demod_pkt_t;
+} __attribute__((packed)) demod_pkt_t;
 
 // size of the largest packet we could receive
 #define DATA_LEN  (sizeof(demod_pkt_data_t))
