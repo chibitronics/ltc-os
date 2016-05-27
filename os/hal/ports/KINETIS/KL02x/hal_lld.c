@@ -145,7 +145,7 @@ void kl2x_clock_init(void) {
   //  PORTA->PCR[18] &= ~0x01000700; /* Set PA18 to analog (default) */  // defaults should already be good
   //  PORTA->PCR[19] &= ~0x01000700; /* Set PA19 to analog (default) */
 
-  OSC0->CR = 0;
+  OSC0->CR = 0xC;
 
   /* From KL25P80M48SF0RM section 24.5.1.1 "Initializing the MCG". */
   /* To change from FEI mode to FEE mode: */
