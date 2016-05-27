@@ -117,9 +117,7 @@ SysCall_Table:
 .short i2cSetupSlave
 .short usbSetup
 .short usbSend
-.short usbSendControl
 .short usbReceive
-.short usbReceiveControl
 .short usbAttach
 .short usbDetach
 .short createThread
@@ -138,6 +136,10 @@ SysCall_Table:
 .short unlockSystem
 .short lockSystemFromISR
 .short unlockSystemFromISR
+.short mutexInit
+.short mutexLock
+.short mutexTryLock
+.short mutexUnlock
 .short flashErase
 .short flashWrite
 .short __gnu_thumb1_case_sqi
