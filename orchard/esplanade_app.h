@@ -22,7 +22,7 @@ struct app_header {
   void (**const_end)(void);   /* Start of C++ constructors */
   void *heap_start;           /* Start of heap */
   void *heap_end;             /* End of heap */
-} __attribute__((__packed__));
+} __attribute__((packed, aligned(4)));
 
 #define APP_MAGIC 0xd3fbf67a
 #define APP_VERSION 0x00000100 /* 0.0.1.0 */
