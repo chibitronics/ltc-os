@@ -1,4 +1,4 @@
-//.section .ramtext /* Can also run out of .section .ramtext */
+.section .ramtext /* Can also run out of .section .ramtext */
 .section .text    /* Can also run out of .section .ramtext */
 
 .cpu    cortex-m0plus
@@ -214,7 +214,7 @@ usb_phy_read__sync_wait:
   cmp rlastval, rval
   beq usb_phy_read__start_reading_usb
   mov rlastval, rval
-  bl usb_phy_wait_27_cycles
+  bl usb_phy_wait_22_cycles
 .endr
   b usb_phy_read__sync_timeout
 
@@ -230,6 +230,7 @@ usb_phy_read__start_reading_usb:
      #1.
    */
   ldr rmash, [rusbphy, #dpShift]
+  ldr rscratch, [rusbphy, #dnMask]
   ror rval, rmash
   and rval, rone                      // AND the last value by 1, to get bit.
   mov rlastval, rval                  // Store shifted value in hi register.
@@ -269,15 +270,14 @@ usb_phy_read__get_usb_bit:
    * If the byte continues, check for SE0.
    */
   add rcounter, rone                  // Increment the total-bit counter.
-  mov rscratch, #7                    // Prepare to mask by 0x7
-  tst rcounter, rscratch              // Perform the mask
+  mov rmash, #7                       // Prepare to mask by 0x7
+  tst rcounter, rmash                 // Perform the mask
   beq usb_phy_read__advance_byte      // If the result is 0, advance the byte.
   // 4 (or 5, if branch taken)
 
   // The result is NOT 0, so see if it's an SE0.
 usb_phy_read__check_se0:
   // Check for SE0
-  ldr rscratch, [sp, #rsDnMask]
   and rreg, rscratch
   add rreg, rval                      // An end-of-frame is indicated by two
                                       // frames of SE0.  If this is the case,
@@ -301,8 +301,8 @@ usb_phy_read__advance_byte:
 usb_phy_read__check_unstuff:
   mov rreg, runstuff
   mov rval, #0b111111                 // Unstuff mask
-  and rreg, rval
-  cmp rreg, rval
+//  and rreg, rval
+//  cmp rreg, rval
 
   /* Loop again */
   b usb_phy_read__get_usb_bit
