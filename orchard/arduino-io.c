@@ -18,7 +18,7 @@ static uint8_t normal_mode_pins[] = {
   BUTTON_A1, BUTTON_REC, BUTTON_A3,
 };
 
-static int pin_to_port(int pin, ioportid_t *port, uint8_t *pad) {
+int pinToPort(int pin, ioportid_t *port, uint8_t *pad) {
 
   switch(pin) {
   case A0:
@@ -31,11 +31,13 @@ static int pin_to_port(int pin, ioportid_t *port, uint8_t *pad) {
     *pad = 11;
     break;
 
+  case LED_BUILTIN:
   case A2:
     *port = IOPORT1;
     *pad = 12;
     break;
 
+  case BUTTON_A3:
   case A3:
     *port = IOPORT2;
     *pad = 13;
@@ -71,19 +73,9 @@ static int pin_to_port(int pin, ioportid_t *port, uint8_t *pad) {
     *pad = 6;
     break;
 
-  case LED_BUILTIN:
-    *port = IOPORT1;
-    *pad = 12;
-    break;
-
   case BUTTON_A1:
     *port = IOPORT1;
     *pad = 9;
-    break;
-
-  case BUTTON_A3:
-    *port = IOPORT2;
-    *pad = 13;
     break;
 
   case BUTTON_REC:
@@ -138,7 +130,7 @@ void pinMode(int pin, enum pin_mode arduino_mode) {
   uint8_t pad;
   iomode_t mode;
 
-  if (pin_to_port(pin, &port, &pad))
+  if (pinToPort(pin, &port, &pad))
     return;
 
   /* Don't let users access illegal pins.*/
@@ -171,7 +163,7 @@ void digitalWrite(int pin, int value) {
   ioportid_t port;
   uint8_t pad;
 
-  if (pin_to_port(pin, &port, &pad))
+  if (pinToPort(pin, &port, &pad))
     return;
 
   /* Don't let users access illegal pins.*/
@@ -186,7 +178,7 @@ int digitalRead(int pin) {
   ioportid_t port;
   uint8_t pad;
 
-  if (pin_to_port(pin, &port, &pad))
+  if (pinToPort(pin, &port, &pad))
     return 0;
 
   /* Don't let users access illegal pins.*/
@@ -219,7 +211,7 @@ void analogWrite(int pin, int value) {
   iomode_t mode;
   PWMDriver *driver = NULL;
 
-  if (pin_to_port(pin, &port, &pad))
+  if (pinToPort(pin, &port, &pad))
     return;
 
   /* Allow people to specify analogWrite(0) instead of analogWrite(A0).*/
@@ -299,7 +291,7 @@ static void mux_as_adc(int pin) {
   ioportid_t port;
   uint8_t pad;
 
-  if (pin_to_port(pin, &port, &pad))
+  if (pinToPort(pin, &port, &pad))
     return;
 
   palSetPadMode(port, pad, PAL_MODE_INPUT_ANALOG);
@@ -381,7 +373,7 @@ void tone(int pin, unsigned int frequency, unsigned long duration) {
   ioportid_t port;
   uint8_t pad;
 
-  if (pin_to_port(pin, &port, &pad))
+  if (pinToPort(pin, &port, &pad))
     return;
 
   /* Don't let users access illegal pins.*/
