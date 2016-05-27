@@ -1,6 +1,7 @@
 #ifndef __ARDUINO_KOSAGI_H__
 #define __ARDUINO_KOSAGI_H__
 
+#include "hal.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include "kl02.h"
@@ -196,6 +197,8 @@ static inline long random(long max) {
 }
 #endif
 long randomSeed(unsigned long seed);
+
+int pinToPort(int pin, ioportid_t *port, uint8_t *pad);
 
 /* Bits and Bytes */
 #define lowByte(w) ((uint8_t) ((w) & 0xff))
