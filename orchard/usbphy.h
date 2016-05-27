@@ -1,6 +1,8 @@
 #ifndef __USB_PHY_H__
 #define __USB_PHY_H__
 
+#include "hal.h"
+
 #define PHY_READ_QUEUE_SIZE 4
 #define PHY_READ_QUEUE_MASK (PHY_READ_QUEUE_SIZE - 1)
 
@@ -31,20 +33,19 @@ struct USBPHY {
   const void *queued_data;
   uint32_t queued_size;
 
-#if (CH_USE_RT == TRUE)
+#if defined(_CHIBIOS_RT_)
   thread_reference_t thread;
-  THD_WORKING_AREA(waThread, 64);
+  THD_WORKING_AREA(waThread, 128);
   event_source_t data_available;
 #endif
 
   uint8_t read_queue_head;
   uint8_t read_queue_tail;
+  uint16_t padding;
 
   /* pkt_size is cached in read_queue[x][11] */
   uint8_t read_queue[PHY_READ_QUEUE_SIZE][12];
 } __attribute__((packed, aligned(4)));
-
-int usbPhyResetStatistics(struct USBPHY *phy);
 
 void usbPhyInit(struct USBPHY *phy, struct USBMAC *mac);
 int usbPhyReadI(const struct USBPHY *phy, uint8_t samples[11]);

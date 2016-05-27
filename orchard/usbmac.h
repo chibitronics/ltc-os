@@ -87,7 +87,7 @@ struct USBMAC {
   int32_t data_out_left;
   int32_t data_out_max;
 
-#if (CH_USE_RT == TRUE)
+#if defined(_CHIBIOS_RT_)
   thread_reference_t thread;
 #endif
 

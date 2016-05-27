@@ -96,16 +96,10 @@ struct usb_hid_descriptor {
 struct USBLink;
 typedef int (*get_usb_descriptor_t)(struct USBLink *link,
                                     const void *pkt,
-                                    const void **data);
+                                    void **data);
 struct USBLink {
-  /*
-  get_usb_descriptor_t getStringDescriptor;
-  get_usb_descriptor_t getConfigurationDescriptor;
-  get_usb_descriptor_t getClassDescriptor;
-  */
   get_usb_descriptor_t getDescriptor;
-  get_usb_descriptor_t getClassDescriptor;
   int config_num;
-} __attribute((packed, aligned(4)));
+} __attribute__((packed, aligned(4)));
 
 #endif /* __USB_LINK_H__ */

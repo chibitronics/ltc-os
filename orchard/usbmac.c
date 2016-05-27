@@ -131,7 +131,7 @@ int usbSendData(struct USBMAC *mac, int epnum, const void *data, int count) {
 
   usb_mac_process_data(mac);
 
-#if (CH_USE_RT == TRUE)
+#if defined(_CHIBIOS_RT_)
   (void) osalThreadSuspendS(&mac->thread);
 #endif
 
@@ -141,37 +141,20 @@ int usbSendData(struct USBMAC *mac, int epnum, const void *data, int count) {
 static int usb_mac_process_setup_read(struct USBMAC *mac,
                                       const struct usb_mac_setup_packet *setup)
 {
-  const void *response = NULL;
+  void *response = NULL;
   uint32_t len = 0;
   struct USBLink *link = mac->link;
 
+#if 0
   switch (setup->bmRequestType) {
   case 0x80:  /* Device-to-host, standard, read from device */
     switch (setup->bRequest) {
 
     /* GET_DESCRIPTOR */
     case 6:
+#endif
       link->getDescriptor(link, setup, &response);
 #if 0
-      switch (setup->wValueL) {
-
-      /* GET_DEVICE_DESCRIPTOR */
-      case 1:
-        len = link->getDeviceDescriptor(link, setup->wValueH, &response);
-        break;
-
-      /* GET_CONFIGURATION_DESCRIPTOR */
-      case 2:
-        len = link->getConfigurationDescriptor(link, setup->wValueH, &response);
-        break;
-
-      /* GET_STRING_DESCRIPTOR */
-      case 3:
-        len = link->getStringDescriptor(link, setup->wValueH, &response);
-        break;
-
-      }
-#endif
       break;
     }
     break;
@@ -185,7 +168,7 @@ static int usb_mac_process_setup_read(struct USBMAC *mac,
     }
     break;
   }
-
+#endif
   usb_mac_send_data(mac, response, len, setup->wLength);
   return 0;
 }
@@ -331,7 +314,7 @@ int usbMacProcess(struct USBMAC *mac,
     break;
 
   case USB_PID_ACK:
-#if (CH_USE_RT == TRUE)
+#if defined(_CHIBIOS_RT_)
     if (mac->thread && !mac->data_out) {
       mac->data_out_left = 0;
       mac->data_out_max = 0;

@@ -115,11 +115,19 @@ SysCall_Table:
 .short randomSeed
 .short i2cTransceive
 .short i2cSetupSlave
+<<<<<<< Updated upstream
 .short usbSetup
 .short usbSend
 .short usbReceive
 .short usbAttach
 .short usbDetach
+=======
+.short 0
+.short 0
+.short 0
+.short 0
+.short 0
+>>>>>>> Stashed changes
 .short createThread
 .short exitThread
 .short suspendThread
@@ -136,10 +144,17 @@ SysCall_Table:
 .short unlockSystem
 .short lockSystemFromISR
 .short unlockSystemFromISR
+<<<<<<< Updated upstream
 .short mutexInit
 .short mutexLock
 .short mutexTryLock
 .short mutexUnlock
+=======
+.short 0
+.short 0
+.short 0
+.short 0
+>>>>>>> Stashed changes
 .short flashErase
 .short flashWrite
 .short __gnu_thumb1_case_sqi
