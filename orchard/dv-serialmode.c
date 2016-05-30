@@ -97,7 +97,7 @@ void update_screen(void) {
 	break;
 
       if( (text_buffer[cur_char] == '\n') || (text_buffer[cur_char] == '\r') ) {
-	str_to_render[i] = '*';
+	str_to_render[i] = ' ';
 	cur_char++; i++; chars_processed++;
 	cur_char %= TEXT_LEN;
 	break;
@@ -126,7 +126,7 @@ void update_screen(void) {
 void dvInit(void) {
   int i;
   for( i = 0; i < TEXT_LEN; i++ ) {
-    text_buffer[i] = '+'; // init with whitespace
+    text_buffer[i] = ' '; // init with whitespace
   }
   text_buffer[TEXT_LEN-1] = '\n'; // simulate final newline
   write_ptr = 0;
