@@ -77,7 +77,7 @@
 /*
  * I2C system settings.
  */
-#define KINETIS_I2C_USE_I2C0                    TRUE
+#define KINETIS_I2C_USE_I2C0                    FALSE
 #define KINETIS_I2C_USE_I2C1                    FALSE
 #define KINETIS_I2C_I2C0_PRIORITY               4
 #define KINETIS_I2C_I2C1_PRIORITY               4

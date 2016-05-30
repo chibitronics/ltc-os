@@ -57,7 +57,7 @@ const uint8_t _cfm[0x10] = {
   0xFF,  /* NV_FPROT0: PROT=0xFF */
   0x7E,  /* NV_FSEC: KEYEN=1,MEEN=3,FSLACC=3,SEC=2 */
   0xFB,  /* NV_FOPT: ??=1,??=1,FAST_INIT=1,LPBOOT1=1,RESET_PIN_CFG=1,
-                      NMI_DIS=1,EZPORT_DIS=1,LPBOOT0=1 */
+                      NMI_DIS=0,EZPORT_DIS=1,LPBOOT0=1 */
   0xFF,
   0xFF
 };

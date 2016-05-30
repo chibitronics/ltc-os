@@ -31,7 +31,7 @@ static const SerialConfig serialConfig = {
 
 static thread_t *shell_tp = NULL;
 //static THD_WORKING_AREA(waShellThread, 288);
-static THD_WORKING_AREA(waShellThread, 288);
+static THD_WORKING_AREA(waShellThread, 400);
 //static THD_WORKING_AREA(waShellThread, 560); // to accommodate gfx
 
 void orchardShellInit(void)
@@ -39,7 +39,7 @@ void orchardShellInit(void)
   sdStart(serialDriver, &serialConfig);
   stream = stream_driver;
 
-  shellInit();
+  //  shellInit();
 }
 
 void orchardShellRestart(void)

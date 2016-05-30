@@ -5,7 +5,7 @@
 
 # Compiler options here.
 ifeq ($(USE_OPT),)
-  USE_OPT = -Os -ggdb -fomit-frame-pointer -falign-functions=16 -nostdlib -fstack-protector
+  USE_OPT = -O2 -ggdb -fomit-frame-pointer -falign-functions=16 -nostdlib -fstack-protector
 endif
 
 # C specific options here (added to USE_OPT).
@@ -54,7 +54,7 @@ endif
 # Stack size to be allocated to the Cortex-M process stack. This stack is
 # the stack used by the main() thread.
 ifeq ($(USE_PROCESS_STACKSIZE),)
-  USE_PROCESS_STACKSIZE = 0x300
+  USE_PROCESS_STACKSIZE = 0x500
 endif
 
 # Stack size to the allocated to the Cortex-M main/exceptions stack. This
@@ -81,13 +81,19 @@ include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/startup_kl02x.mk
 # HAL-OSAL files (optional).
 include $(CHIBIOS)/os/hal/hal.mk
 include $(CHIBIOS)/os/hal/ports/KINETIS/KL02x/platform.mk
-include $(CHIBIOS)/os/hal/boards/CHIBITRONICS_ESPLANADE/board.mk 
+include $(CHIBIOS)/os/hal/boards/CHIBITRONICS_DATAVIEWER/board.mk 
 include $(CHIBIOS)/os/hal/osal/rt/osal.mk
 # RTOS files (optional).
 include $(CHIBIOS)/os/rt/rt.mk
 include $(CHIBIOS)/os/rt/ports/ARMCMx/compilers/GCC/mk/port_v6m.mk
 # Other files (optional).
 include $(CHIBIOS)/test/rt/test.mk
+
+# uGFX includes
+GFXLIB =$(CHIBIOS)/ext/ugfx
+include $(GFXLIB)/gfx.mk
+include $(GFXLIB)/boards/base/Chibitronics-Dataviewer/board.mk
+include $(GFXLIB)/drivers/gdisp/SSD1306/driver.mk
 
 # Define linker script file here
 LDSCRIPT= $(STARTUPLD)/KL02P20.ld
@@ -97,10 +103,10 @@ LDSCRIPT= $(STARTUPLD)/KL02P20.ld
 CSRC = main.c \
        orchard-shell.c \
        orchard-vectors.c \
-       $(wildcard cmd-*.c) \
        gitversion.c \
-       accel.c \
+       oled.c \
        analog.c \
+       dv-serialmode.c \
        $(STARTUPSRC) \
        $(PORTSRC) \
        $(KERNSRC) \
@@ -108,9 +114,11 @@ CSRC = main.c \
        $(OSALSRC) \
        $(PLATFORMSRC) \
        $(BOARDSRC) \
+       $(GFXSRC) \
        $(CHIBIOS)/os/hal/lib/streams/chprintf.c \
        $(CHIBIOS)/os/hal/lib/streams/memstreams.c \
-       $(CHIBIOS)/os/various/shell.c \
+#       $(CHIBIOS)/os/various/shell.c \
+#       $(wildcard cmd-*.c) \
 
 #       orchard-events.c \
 
@@ -139,11 +147,13 @@ TCSRC =
 TCPPSRC =
 
 # List ASM source files here
-ASMSRC = $(STARTUPASM) $(PORTASM) $(OSALASM)
+ASMSRC = $(STARTUPASM) $(PORTASM) $(OSALASM) \
+          hardfault_handler.s memmanage_handler.s \
+          usagefault_handler.s busfault_handler.s
 
 INCDIR = $(STARTUPINC) $(KERNINC) $(PORTINC) $(OSALINC) \
-         $(HALINC) $(PLATFORMINC) $(BOARDINC) $(TESTINC) \
-         $(CHIBIOS)/os/hal/lib/streams $(CHIBIOS)/os/various
+         $(HALINC) $(PLATFORMINC) $(BOARDINC) $(TESTINC) $(GFXINC) \
+         $(CHIBIOS)/os/hal/lib/streams $(CHIBIOS)/os/various 
 
 
 #
