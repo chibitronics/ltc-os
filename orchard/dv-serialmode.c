@@ -58,7 +58,7 @@ int find_printable_window(void) {
     chars_since_newline++;
   }
 
-  // this is a bodge case, should never happen actually (remove once debugged fully)
+  // this happens when there are no new lines at all, and the buffer just wraps around
   if( cur_ptr == write_ptr ) {
     //    chprintf(stream, "x");
     cur_ptr = write_ptr + 1;
