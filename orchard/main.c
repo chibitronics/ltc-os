@@ -37,8 +37,12 @@
 #include "kl02x.h"
 
 struct evt_table orchard_app_events;
-event_source_t ta_update_event;
-event_source_t adc_celcius_event;
+event_source_t refresh_event;
+event_source_t serial_event;
+uint8_t serial_init = 0;
+
+static virtual_timer_t led_vt;
+static virtual_timer_t refresh_vt;
 
 static void mode_cb(EXTDriver *extp, expchannel_t channel);
 static void option_cb(EXTDriver *extp, expchannel_t channel);
@@ -68,6 +72,8 @@ typedef enum {
   MODE_VOLTS,
 } dv_mode;
 static char current_mode = MODE_SERIAL;
+
+#define REFRESH_RATE  50   // in ms
 
 static void print_mcu_info(void) {
   uint32_t sdid = SIM->SDID;
@@ -113,6 +119,24 @@ static void print_mcu_info(void) {
                    pins[(sdid >> 0) & 15]);
 }
 
+static void led_cb(void *arg) {
+  (void) arg;
+
+  palTogglePad(GPIOA, 6);
+  chSysLockFromISR();
+  chVTSetI(&led_vt, MS2ST(500), led_cb, NULL);
+  chSysUnlockFromISR();
+}
+
+static void refresh_cb(void *arg) {
+  (void) arg;
+
+  chSysLockFromISR();
+  chVTSetI(&refresh_vt, MS2ST(REFRESH_RATE), refresh_cb, NULL);
+  chEvtBroadcastI(&refresh_event);
+  chSysUnlockFromISR();
+}
+
 static void mode_cb(EXTDriver *extp, expchannel_t channel) {
   (void)extp;
   (void)channel;
@@ -129,23 +153,69 @@ static void adc_celcius_handler(eventid_t id) {
   chprintf(stream, "celcius: %d\n\r", analogReadTemperature());
 }
 
-static void update_handler(eventid_t id) {
+static void refresh_handler(eventid_t id) {
   (void) id;
 
+  switch(current_mode) {
+  case MODE_SERIAL:
+    updateSerialScreen();
+    break;
+  default:
+    break;
+  }
 }
 
-void init_update_events(void) {
-  chEvtObjectInit(&ta_update_event);
-  evtTableHook(orchard_app_events, ta_update_event, update_handler);
+static void serial_handler(eventid_t id) {
+  (void) id;
+  dvDoSerial();
 }
 
-static thread_t *blink_tp = NULL;
-static THD_WORKING_AREA(waEvHandlerThread, 96);
+static thread_t *evHandler_tp = NULL;
+static THD_WORKING_AREA(waEvHandlerThread, 0x500);
 
 static THD_FUNCTION(evHandlerThread, arg) {
   (void)arg;
-  
   chRegSetThreadName("Event dispatcher");
+
+  adcStart(&ADCD1, &adccfg1);
+  analogStart();
+
+  spiStart(&SPID1, &spi_config);
+  oledStart(&SPID1);
+
+  orchardShellInit();
+
+  chprintf(stream, "\r\n\r\nOrchard shell.  Based on build %s\r\n", gitversion);
+  print_mcu_info();
+  chprintf(stream, "free memory at boot: %d bytes\r\n", chCoreGetStatusX());
+
+  evtTableInit(orchard_app_events, 9);
+
+  chEvtObjectInit(&refresh_event);
+  evtTableHook(orchard_app_events, refresh_event, refresh_handler);
+
+  chEvtObjectInit(&serial_event);
+  evtTableHook(orchard_app_events, serial_event, serial_handler);
+
+  extStart(&EXTD1, &ext_config); // enables interrupts on gpios
+
+  // now handled properly elsewhere
+  // palWritePad(GPIOA, 5, PAL_HIGH);  // oled_cs
+  // palWritePad(GPIOB, 13,PAL_HIGH);  // oled_dc
+
+  //  palWritePad(GPIOB, 11,PAL_HIGH);  // oled_res
+  orchardGfxInit();
+  oledOrchardBanner();
+  
+  chprintf(stream, "free memory after gfx init: %d bytes\r\n", chCoreGetStatusX());
+
+  // start refreshing the screen
+  chVTObjectInit(&refresh_vt);
+  chVTSet(&refresh_vt, MS2ST(REFRESH_RATE), refresh_cb, NULL);
+
+  serial_init = 1;
+
+  dvInit();
   while(true) {
     chEvtDispatch(evtHandlers(orchard_app_events), chEvtWaitOne(ALL_EVENTS));
   }
@@ -169,67 +239,13 @@ int main(void)
   // set this low here in case something crashes later on, at least we have the LED on to indicate power-on
   palWritePad(GPIOA, 6, PAL_LOW); // mcu_led
 
-  adcStart(&ADCD1, &adccfg1);
-  analogStart();
+  chVTObjectInit(&led_vt);
+  chVTSet(&led_vt, MS2ST(500), led_cb, NULL);
 
-  spiStart(&SPID1, &spi_config);
-  oledStart(&SPID1);
+  evHandler_tp = chThdCreateStatic(waEvHandlerThread, sizeof(waEvHandlerThread), NORMALPRIO + 10, evHandlerThread, NULL);
 
-  orchardShellInit();
-
-  chprintf(stream, "\r\n\r\nOrchard shell.  Based on build %s\r\n", gitversion);
-  print_mcu_info();
-  chprintf(stream, "free memory at boot: %d bytes\r\n", chCoreGetStatusX());
-
-  orchardGfxInit();
-  oledOrchardBanner();
-
-  //  orchardShellRestart();
-
-  evtTableInit(orchard_app_events, 9);
-
-  init_update_events();
-
-  chEvtObjectInit(&adc_celcius_event);
-  evtTableHook(orchard_app_events, adc_celcius_event, adc_celcius_handler);
-  
-  //  chEvtObjectInit(&accel_event);
-  //  evtTableHook(orchard_app_events, accel_event, accel_irq);
-  //  accelStart(i2cDriver);
-
-  //  chEvtObjectInit(&accel_test_event);
-  //  evtTableHook(orchard_app_events, accel_test_event, accel_test);
-
-  //  evtTableHook(orchard_app_events, accel_pulse, accel_pulse_handler);
-
-  extStart(&EXTD1, &ext_config); // enables interrupts on gpios
-
-  // now handled properly elsewhere
-  // palWritePad(GPIOA, 5, PAL_HIGH);  // oled_cs
-  // palWritePad(GPIOB, 13,PAL_HIGH);  // oled_dc
-
-  //  palWritePad(GPIOB, 11,PAL_HIGH);  // oled_res
-
-  blink_tp = chThdCreateStatic(waEvHandlerThread, sizeof(waEvHandlerThread), NORMALPRIO - 20, evHandlerThread, NULL);
-
-  chprintf(stream, "free memory into main loop: %d bytes\r\n", chCoreGetStatusX());
-
-  dvInit();
   while (TRUE) {
-    switch(current_mode) {
-    case MODE_SERIAL:
-      dvDoSerial();
-      break;
-
-    default:
-      break;
-    }
-
-    // blink LED, without using a sleep function
-    if( (ST2MS(chVTGetSystemTimeX()) & 0x3FF) < 0x200 )
-      palWritePad(GPIOA, 6, PAL_LOW);
-    else
-      palWritePad(GPIOA, 6, PAL_HIGH);
+    // this is now an idle loop
   }
 
 }

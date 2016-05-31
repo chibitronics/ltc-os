@@ -76,6 +76,8 @@ static const SerialConfig default_config = {
  * @param[in] u         pointer to an UART I/O block
  * @param[in] sdp       communication channel associated to the UART
  */
+extern event_source_t serial_event;
+extern uint8_t serial_init;
 static void serve_interrupt(SerialDriver *sdp) {
   UARTLP_TypeDef *u = sdp->uart;
 
@@ -85,6 +87,10 @@ static void serve_interrupt(SerialDriver *sdp) {
       chnAddFlagsI(sdp, CHN_INPUT_AVAILABLE);
     if (iqPutI(&sdp->iqueue, u->D) < Q_OK)
       chnAddFlagsI(sdp, SD_OVERRUN_ERROR);
+    
+    if(serial_init)
+      chEvtBroadcastI(&serial_event); // instrument the serial handler to call our event loop
+    
     osalSysUnlockFromISR();
   }
 

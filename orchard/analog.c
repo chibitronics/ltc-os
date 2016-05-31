@@ -53,7 +53,7 @@ static void adc_temperature_end_cb(ADCDriver *adcp, adcsample_t *buffer, size_t 
   celcius = 25000 - delta;
 
   chSysLockFromISR();
-  chEvtBroadcastI(&adc_celcius_event);
+  //  chEvtBroadcastI(&adc_celcius_event);
   chSysUnlockFromISR();
 }
 
@@ -101,7 +101,7 @@ static void adc_mic_end_cb(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
   }
 
   chSysLockFromISR();
-  chEvtBroadcastI(&adc_mic_event);
+  //  chEvtBroadcastI(&adc_mic_event);
   chSysUnlockFromISR();
 }
 

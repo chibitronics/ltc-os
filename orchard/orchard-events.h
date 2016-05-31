@@ -24,12 +24,8 @@
    }
  */
 
-extern event_source_t accel_event;
-extern event_source_t accel_test_event;
-extern event_source_t ta_update_event;
-extern event_source_t adc_celcius_event;
-extern event_source_t adc_mic_event;
-
+extern event_source_t serial_event;
+extern event_source_t refresh_event;
 
 struct ui_info {
   char *str;

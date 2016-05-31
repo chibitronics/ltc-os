@@ -3,6 +3,7 @@
 
 #include "orchard.h"
 #include "orchard-shell.h"
+#include "orchard-events.h"
 #include "oled.h"
 #include "gfx.h"
 
@@ -12,7 +13,7 @@
 #define MAX_ROWS 4
 #define TEXT_LEN (MAX_COLS * MAX_ROWS)
 static char text_buffer[TEXT_LEN];
-static uint8_t write_ptr = 0; 
+static int8_t write_ptr = 0; 
 
 uint8_t isprint_local(char c) {
   return ((c >= ' ' && c <= '~') ? 1 : 0);
@@ -26,10 +27,11 @@ int find_printable_window(void) {
 
   // starting from the last written character, search backwards...
   while( chars_searched < TEXT_LEN ) {
-    if( (text_buffer[cur_ptr] == '\n') || (text_buffer[cur_ptr] == '\r' ) ) {
+    if( text_buffer[cur_ptr] == '\n' ) {
       //      chprintf(stream, "n");
       num_lines++;
-      if( num_lines == (MAX_ROWS+1) ) { // forward back over the final newline we found
+      // MAX_ROWS+1 if you want to show the current incoming line too
+      if( num_lines == (MAX_ROWS+2) ) { // forward back over the final newline we found
 	cur_ptr++; cur_ptr %= TEXT_LEN;
       	break;
       }
@@ -46,7 +48,8 @@ int find_printable_window(void) {
       //      chprintf(stream, "c");
       num_lines++;
       chars_since_newline = 0;
-      if( num_lines >= (MAX_ROWS+1) ) {
+      // MAX_ROWS+1 if you want to show the current incoming line too
+      if( num_lines >= (MAX_ROWS+2) ) {
 	cur_ptr++; cur_ptr %= TEXT_LEN;
 	break;
       }
@@ -69,7 +72,7 @@ int find_printable_window(void) {
   return cur_ptr;
 }
 
-void update_screen(void) {
+void updateSerialScreen(void) {
   coord_t width;
   coord_t font_height;
   font_t font;
@@ -96,7 +99,7 @@ void update_screen(void) {
       if( cur_char == write_ptr )
 	break;
 
-      if( (text_buffer[cur_char] == '\n') || (text_buffer[cur_char] == '\r') ) {
+      if( text_buffer[cur_char] == '\n'  ) {
 	str_to_render[i] = ' ';
 	cur_char++; i++; chars_processed++;
 	cur_char %= TEXT_LEN;
@@ -126,7 +129,7 @@ void update_screen(void) {
 void dvInit(void) {
   int i;
   for( i = 0; i < TEXT_LEN; i++ ) {
-    text_buffer[i] = ' '; // init with whitespace
+    text_buffer[i] = ' '; // init with whitespace, use something else for debugging hints
   }
   text_buffer[TEXT_LEN-1] = '\n'; // simulate final newline
   write_ptr = 0;
@@ -134,18 +137,30 @@ void dvInit(void) {
 
 void dvDoSerial(void) {
   char c;
+  int8_t prev_ptr;
+
+  while(TRUE) {
+    prev_ptr = write_ptr - 1;
+    if( prev_ptr == -1 )
+      prev_ptr = TEXT_LEN - 1;
+    
+    if(chSequentialStreamRead((BaseSequentialStream *) stream, (uint8_t *)&c, 1) == 0)
+      return;  // we keep on running until the buffer is empty
+
+    if( c == '\r' )
+      c = '\n';
+
+    // if CRLF, eat multiple CRLF
+    if( c == '\n' ) {
+      if( text_buffer[prev_ptr] == '\n' )
+	return;
+    }
+    
+    text_buffer[write_ptr] = c;
+
+    write_ptr++;
+    write_ptr %= TEXT_LEN;
+    text_buffer[write_ptr] = ' '; // rule: current spot we're pointing to for write cannot be a newline
+  }
   
-  if(chSequentialStreamRead((BaseSequentialStream *) stream, (uint8_t *)&c, 1) == 0)
-    return;
-
-  //  chSequentialStreamPut((BaseSequentialStream *)stream, c); // local echo to tx
-
-  text_buffer[write_ptr] = c;
-
-  write_ptr++;
-  write_ptr %= TEXT_LEN;
-  text_buffer[write_ptr] = ' '; // rule: current spot we're pointing to for write cannot be a newline
-  
-  update_screen();
-
 }
