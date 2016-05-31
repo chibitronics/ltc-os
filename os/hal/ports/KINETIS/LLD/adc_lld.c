@@ -24,6 +24,9 @@
 
 #include "hal.h"
 
+void (*adcFastISR)(void);
+void (*adcISR)(void);
+
 #if HAL_USE_ADC || defined(__DOXYGEN__)
 
 /*===========================================================================*/
@@ -90,45 +93,55 @@ static void calibrate(ADCDriver *adcp) {
  * @isr
  */
 OSAL_IRQ_HANDLER(KINETIS_ADC0_IRQ_VECTOR) {
-  OSAL_IRQ_PROLOGUE();
-
-  ADCDriver *adcp = &ADCD1;
-
-  /* Disable Interrupt, Disable Channel */
-  adcp->adc->SC1A = ADCx_SC1n_ADCH(ADCx_SC1n_ADCH_DISABLED);
-
-  /* Read the sample into the buffer */
-  adcp->samples[adcp->current_index++] = adcp->adc->RA;
-
-  bool more = true;
-
-  /*  At the end of the buffer then we may be finished */
-  if (adcp->current_index == adcp->number_of_samples) {
-    /* We are never finished in circular mode */
-    more = ADCD1.grpp->circular;  // set this before isr_full_code, because isr_full_code NULLs out ADCD1.grpp
-    
-    _adc_isr_full_code(&ADCD1);
-
-    adcp->current_index = 0;
-
+  if (adcFastISR) {
+    adcFastISR();
+    return;
   }
 
-  if (more) {
+  OSAL_IRQ_PROLOGUE();
 
-    /* Signal half completion in circular mode. */
-    if (ADCD1.grpp->circular &&
-        (adcp->current_index == (adcp->number_of_samples / 2))) {
+  if (adcISR) {
+    adcISR();
+  }
+  else {
+    ADCDriver *adcp = &ADCD1;
 
-        _adc_isr_half_code(&ADCD1);
+    /* Disable Interrupt, Disable Channel */
+    adcp->adc->SC1A = ADCx_SC1n_ADCH(ADCx_SC1n_ADCH_DISABLED);
+
+    /* Read the sample into the buffer */
+    adcp->samples[adcp->current_index++] = adcp->adc->RA;
+
+    bool more = true;
+
+    /*  At the end of the buffer then we may be finished */
+    if (adcp->current_index == adcp->number_of_samples) {
+      /* We are never finished in circular mode */
+      more = ADCD1.grpp->circular;
+
+      _adc_isr_full_code(&ADCD1);
+
+      adcp->current_index = 0;
+
     }
 
-    /* Skip to the next channel */
-    do {
-      adcp->current_channel = (adcp->current_channel + 1) & ADC_CHANNEL_MASK;
-    } while (((1 << adcp->current_channel) & adcp->grpp->channel_mask) == 0);
+    if (more) {
 
-    /* Enable Interrupt, Select the Channel */
-    adcp->adc->SC1A = ADCx_SC1n_AIEN | ADCx_SC1n_ADCH(adcp->current_channel);
+      /* Signal half completion in circular mode. */
+      if (ADCD1.grpp->circular &&
+          (adcp->current_index == (adcp->number_of_samples / 2))) {
+
+          _adc_isr_half_code(&ADCD1);
+      }
+
+      /* Skip to the next channel */
+      do {
+        adcp->current_channel = (adcp->current_channel + 1) & ADC_CHANNEL_MASK;
+      } while (((1 << adcp->current_channel) & adcp->grpp->channel_mask) == 0);
+
+      /* Enable Interrupt, Select the Channel */
+      adcp->adc->SC1A = ADCx_SC1n_AIEN | ADCx_SC1n_ADCH(adcp->current_channel);
+    }
   }
 
   OSAL_IRQ_EPILOGUE();
@@ -189,16 +202,26 @@ void adc_lld_start(ADCDriver *adcp) {
  */
 void adc_lld_stop(ADCDriver *adcp) {
 
-  /* If in ready state then disables the ADC clock.*/
   if (adcp->state == ADC_READY) {
-    SIM->SCGC6 &= ~SIM_SCGC6_ADC0;
-
 #if KINETIS_ADC_USE_ADC0
     if (&ADCD1 == adcp) {
+      osalSysLock();
+
+      /* Disable everything */
+      adcp->adc->CFG1 = 0;
+      adcp->adc->CFG2 = 0;
+      adcp->adc->SC2  = 0;
+      adcp->adc->SC3  = 0;
+
       /* Disable Interrupt, Disable Channel */
       adcp->adc->SC1A = ADCx_SC1n_ADCH(ADCx_SC1n_ADCH_DISABLED);
+
+      osalSysUnlock();
     }
 #endif
+
+    /* If in ready state then disables the ADC clock.*/
+    SIM->SCGC6 &= ~SIM_SCGC6_ADC0;
   }
 }
 

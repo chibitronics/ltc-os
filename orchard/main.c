@@ -33,12 +33,16 @@
 #include "gfx.h"
 
 #include "dv-serialmode.h"
+#include "dv-volts.h"
+#include "dv-oscope.h"
 
 #include "kl02x.h"
 
 struct evt_table orchard_app_events;
 event_source_t refresh_event;
 event_source_t serial_event;
+event_source_t mode_event;
+event_source_t option_event;
 uint8_t serial_init = 0;
 
 static virtual_timer_t led_vt;
@@ -75,50 +79,6 @@ static char current_mode = MODE_SERIAL;
 
 #define REFRESH_RATE  50   // in ms
 
-static void print_mcu_info(void) {
-  uint32_t sdid = SIM->SDID;
-  const char *famid[] = {
-    "KL0%d (low-end)",
-    "KL1%d (basic)",
-    "KL2%d (USB)",
-    "KL3%d (Segment LCD)",
-    "KL4%d (USB and Segment LCD)",
-  };
-  const uint8_t ram[] = {
-    0,
-    1,
-    2,
-    4,
-    8,
-    16,
-    32,
-    64,
-  };
-
-  const uint8_t pins[] = {
-    16,
-    24,
-    32,
-    36,
-    48,
-    64,
-    80,
-  };
-
-  if (((sdid >> 20) & 15) != 1) {
-    chprintf(stream, "Device is not Kinetis KL-series\r\n");
-    return;
-  }
-
-  chprintf(stream, famid[(sdid >> 28) & 15], (sdid >> 24) & 15);
-  chprintf(stream, " with %d kB of ram detected"
-                   " (Rev: %04x  Die: %04x  Pins: %d).\r\n",
-                   ram[(sdid >> 16) & 15],
-                   (sdid >> 12) & 15,
-                   (sdid >> 7) & 31,
-                   pins[(sdid >> 0) & 15]);
-}
-
 static void led_cb(void *arg) {
   (void) arg;
 
@@ -140,17 +100,18 @@ static void refresh_cb(void *arg) {
 static void mode_cb(EXTDriver *extp, expchannel_t channel) {
   (void)extp;
   (void)channel;
+  chSysLockFromISR();
+  chEvtBroadcastI(&mode_event);
+  chSysUnlockFromISR();
 }
 
 
 static void option_cb(EXTDriver *extp, expchannel_t channel) {
   (void)extp;
   (void)channel;
-}
-
-static void adc_celcius_handler(eventid_t id) {
-  (void) id;
-  chprintf(stream, "celcius: %d\n\r", analogReadTemperature());
+  chSysLockFromISR();
+  chEvtBroadcastI(&option_event);
+  chSysUnlockFromISR();
 }
 
 static void refresh_handler(eventid_t id) {
@@ -159,6 +120,38 @@ static void refresh_handler(eventid_t id) {
   switch(current_mode) {
   case MODE_SERIAL:
     updateSerialScreen();
+    break;
+  case MODE_VOLTS:
+    updateVoltsScreen();
+    break;
+  case MODE_OSCOPE:
+    updateOscopeScreen();
+    break;
+  default:
+    break;
+  }
+}
+
+static void option_handler(eventid_t id) {
+  (void) id;
+  
+  switch(current_mode) {
+  case MODE_SERIAL:
+    serial_init = serial_init ? 0 : 1;  // "scroll lock"
+    if( !serial_init  )
+      oledPauseBanner("Serial Paused");
+    else
+      oledPauseBanner("Serial Resumed");
+    break;
+  case MODE_VOLTS:
+    // no modal behavior
+    break;
+  case MODE_OSCOPE:
+    speed_mode = speed_mode ? 0 : 1; // toggle speed mode
+    if( speed_mode ) 
+      oledPauseBanner("High speed");
+    else
+      oledPauseBanner("Low speed");
     break;
   default:
     break;
@@ -170,8 +163,30 @@ static void serial_handler(eventid_t id) {
   dvDoSerial();
 }
 
+static void mode_handler(eventid_t id) {
+  (void) id;
+  switch(current_mode) {
+  case MODE_SERIAL:
+    oledPauseBanner("Wave Mode");
+    serial_init = 0;
+    current_mode = MODE_OSCOPE;
+    break;
+  case MODE_OSCOPE:
+    oledPauseBanner("Volts Mode");
+    current_mode = MODE_VOLTS;
+    break;
+  case MODE_VOLTS:
+    oledPauseBanner("Serial Mode");
+    serial_init = 1;
+    current_mode = MODE_SERIAL;
+    break;
+  default:
+    osalDbgAssert(false, "invalid operating mode");
+  }
+}
+
 static thread_t *evHandler_tp = NULL;
-static THD_WORKING_AREA(waEvHandlerThread, 0x500);
+static THD_WORKING_AREA(waEvHandlerThread, 0x480);
 
 static THD_FUNCTION(evHandlerThread, arg) {
   (void)arg;
@@ -185,16 +200,22 @@ static THD_FUNCTION(evHandlerThread, arg) {
 
   orchardShellInit();
 
-  chprintf(stream, "\r\n\r\nOrchard shell.  Based on build %s\r\n", gitversion);
-  print_mcu_info();
-  chprintf(stream, "free memory at boot: %d bytes\r\n", chCoreGetStatusX());
+  chprintf(stream, "\r\nChibitronics Dataviewer build %s\r\n", gitversion);
+  chprintf(stream, "boot freemem: %d\r\n", chCoreGetStatusX());
 
-  evtTableInit(orchard_app_events, 9);
+  evtTableInit(orchard_app_events, 6);
+
+  chEvtObjectInit(&mode_event);
+  evtTableHook(orchard_app_events, mode_event, mode_handler);
+
+  chEvtObjectInit(&option_event);
+  evtTableHook(orchard_app_events, option_event, option_handler);
 
   chEvtObjectInit(&refresh_event);
   evtTableHook(orchard_app_events, refresh_event, refresh_handler);
 
   chEvtObjectInit(&serial_event);
+  current_mode = MODE_SERIAL;
   evtTableHook(orchard_app_events, serial_event, serial_handler);
 
   extStart(&EXTD1, &ext_config); // enables interrupts on gpios
@@ -205,15 +226,20 @@ static THD_FUNCTION(evHandlerThread, arg) {
 
   //  palWritePad(GPIOB, 11,PAL_HIGH);  // oled_res
   orchardGfxInit();
-  oledOrchardBanner();
+  // oledOrchardBanner();
   
-  chprintf(stream, "free memory after gfx init: %d bytes\r\n", chCoreGetStatusX());
+  chprintf(stream, "after gfx mem: %d bytes\r\n", chCoreGetStatusX());
+
+  // start LED flashing
+  chVTObjectInit(&led_vt);
+  chVTSet(&led_vt, MS2ST(500), led_cb, NULL);
 
   // start refreshing the screen
   chVTObjectInit(&refresh_vt);
   chVTSet(&refresh_vt, MS2ST(REFRESH_RATE), refresh_cb, NULL);
 
   serial_init = 1;
+  oledPauseBanner("Serial Mode");
 
   dvInit();
   while(true) {
@@ -238,9 +264,6 @@ int main(void)
 
   // set this low here in case something crashes later on, at least we have the LED on to indicate power-on
   palWritePad(GPIOA, 6, PAL_LOW); // mcu_led
-
-  chVTObjectInit(&led_vt);
-  chVTSet(&led_vt, MS2ST(500), led_cb, NULL);
 
   evHandler_tp = chThdCreateStatic(waEvHandlerThread, sizeof(waEvHandlerThread), NORMALPRIO + 10, evHandlerThread, NULL);
 

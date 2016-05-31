@@ -5,7 +5,7 @@
 
 # Compiler options here.
 ifeq ($(USE_OPT),)
-  USE_OPT = -O3 -ggdb -fomit-frame-pointer -falign-functions=16 -nostdlib -fstack-protector
+  USE_OPT = -O1 -ggdb -fomit-frame-pointer -falign-functions=16 -nostdlib -fstack-protector
 endif
 
 # C specific options here (added to USE_OPT).
@@ -60,13 +60,13 @@ endif
 # Stack size to be allocated to the Cortex-M process stack. This stack is
 # the stack used by the main() thread.
 ifeq ($(USE_PROCESS_STACKSIZE),)
-  USE_PROCESS_STACKSIZE = 196
+  USE_PROCESS_STACKSIZE = 256
 endif
 
 # Stack size to the allocated to the Cortex-M main/exceptions stack. This
 # stack is used for processing interrupts and exceptions.
 ifeq ($(USE_EXCEPTIONS_STACKSIZE),)
-  USE_EXCEPTIONS_STACKSIZE = 0x80
+  USE_EXCEPTIONS_STACKSIZE = 128
 endif
 
 #
@@ -112,7 +112,7 @@ CSRC = main.c \
        gitversion.c \
        oled.c \
        analog.c \
-       dv-serialmode.c \
+       $(wildcard dv-*.c) \
        $(STARTUPSRC) \
        $(PORTSRC) \
        $(KERNSRC) \

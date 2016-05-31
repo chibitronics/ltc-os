@@ -56,7 +56,7 @@ static size_t write(void *ip, const uint8_t *bp, size_t n) {
 static size_t read(void *ip, uint8_t *bp, size_t n) {
 
   return iqReadTimeout(&((SerialDriver *)ip)->iqueue, bp,
-                       n, TIME_INFINITE);
+                       n, TIME_IMMEDIATE);
 }
 
 static msg_t put(void *ip, uint8_t b) {

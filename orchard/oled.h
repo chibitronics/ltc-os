@@ -7,6 +7,8 @@ void orchardGfxInit(void);
 void orchardGfxStart(void);
 void orchardGfxEnd(void);
 
+void oledPauseBanner(const char *str);
+
 void oledStart(SPIDriver *device);
 void oledStop(SPIDriver *device);
 void oledAcquireBus(void);

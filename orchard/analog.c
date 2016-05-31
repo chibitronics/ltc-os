@@ -8,135 +8,110 @@
 
 #include "chbsem.h"
 
-static adcsample_t mic_sample[MIC_SAMPLE_DEPTH];
-static uint8_t mic_return[MIC_SAMPLE_DEPTH];
+static adcsample_t scope_sample[SCOPE_SAMPLE_DEPTH];
 
-#define ADC_GRPCELCIUS_NUM_CHANNELS   2
-#define ADC_GRPCELCIUS_BUF_DEPTH      1
-static int32_t celcius;
-static adcsample_t celcius_samples[ADC_GRPCELCIUS_NUM_CHANNELS * ADC_GRPCELCIUS_BUF_DEPTH];
+uint16_t *scopeRead(int adc_num, int speed_mode) {
+  msg_t result;
 
-static void adc_temperature_end_cb(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
-  (void)adcp;
-  (void)n;
+  ADCConversionGroup arduinogrp = {
+    0, // circular buffer mode? no.
+    1, // just one channel
+    NULL,  // callback
+    NULL,  // error callback
+    (1 << adc_num),
+    // CFG1 register
+    // SYSCLK = 48MHz.
+    // BUSCLK = SYSCLK / 4 = 12MHz
+    // ADCCLK = SYSCLK / 2 / 1 = 6 MHz
 
-  /*
-   * The bandgap value represents the ADC reading for 1.0V
-   */
-  uint16_t sensor = buffer[0];
-  uint16_t bandgap = buffer[1];
+    // ADLPC = 0 (normal power)
+    // ADLSMP = 0 (short sample time)
+    // ADHSC = 0 (normal conversion sequence)
+    // -> 5 ADCK cycles + 5 bus clock cycles = SFCadder
+    // 20 ADCK cycles per sample
+    
+    speed_mode ?
+    ADCx_CFG1_ADIV(ADCx_CFG1_ADIV_DIV_2) |
+    ADCx_CFG1_ADICLK(ADCx_CFG1_ADIVCLK_BUS_CLOCK_DIV_2) |
+    ADCx_CFG1_MODE(ADCx_CFG1_MODE_8_OR_9_BITS)  // 8 bits per sample
+    :
+    ADCx_CFG1_ADIV(ADCx_CFG1_ADIV_DIV_2) |
+    ADCx_CFG1_ADICLK(ADCx_CFG1_ADIVCLK_BUS_CLOCK_DIV_2) |
+    ADCx_CFG1_MODE(ADCx_CFG1_MODE_12_OR_13_BITS),  // 12 bits per sample
 
-  /*
-   * The v25 value is the voltage reading at 25C, it comes from the ADC
-   * electricals table in the processor manual. V25 is in millivolts.
-   */
-  int32_t v25 = 716;
+    // SC3 register
+    speed_mode ? 
+    0 // 1 sample
+    :
+    ADCx_SC3_AVGE |
+    ADCx_SC3_AVGS(ADCx_SC3_AVGS_AVERAGE_32_SAMPLES) // 32 sample average
 
-  /*
-   * The m value is slope of the temperature sensor values, again from
-   * the ADC electricals table in the processor manual.
-   * M in microvolts per degree.
-   */
-  int32_t m = 1620;
+    //      48 MHz sysclk
+    // /2   24 MHz busclk
+    // /2   12 MHz after prescaler
+    // /2   6 MHz after adiv
+    // /17  353ksps after base sample time @ 12 bps
+    // /1   353ksps with no averaging
+  };
 
-  /*
-   * Divide the temperature sensor reading by the bandgap to get
-   * the voltage for the ambient temperature in millivolts.
-   */
-  int32_t vamb = (sensor * 1000) / bandgap;
+  result = adcConvert(&ADCD1,
+                     &arduinogrp,
+                     scope_sample,
+                     SCOPE_SAMPLE_DEPTH);
+  if (result)
+    return NULL;
 
-  /*
-   * This formula comes from the reference manual.
-   * Temperature is in millidegrees C.
-   */
-  int32_t delta = (((vamb - v25) * 1000000) / m);
-  celcius = 25000 - delta;
-
-  chSysLockFromISR();
-  //  chEvtBroadcastI(&adc_celcius_event);
-  chSysUnlockFromISR();
-}
-
-/*
- * ADC conversion group.
- * Mode:        Linear buffer, 8 samples of 1 channel, SW triggered.
- * Note: this comment above is from chibiOS sample code. I don't actually get
- *  what they mean by "8 samples of 1 channel" because that doesn't look like
- *  what's happening. 
- */
-static const ADCConversionGroup adcgrpcelcius = {
-  false,
-  ADC_GRPCELCIUS_NUM_CHANNELS,
-  adc_temperature_end_cb,
-  NULL,
-  ADC_TEMP_SENSOR | ADC_BANDGAP,
-  /* CFG1 Regiser - ADCCLK = SYSCLK / 16, 16 bits per sample */
-  ADCx_CFG1_ADIV(ADCx_CFG1_ADIV_DIV_8) |
-  ADCx_CFG1_ADICLK(ADCx_CFG1_ADIVCLK_BUS_CLOCK_DIV_2) |
-  ADCx_CFG1_MODE(ADCx_CFG1_MODE_16_BITS),
-  /* SC3 Register - Average 32 readings per sample */
-  ADCx_SC3_AVGE |
-  ADCx_SC3_AVGS(ADCx_SC3_AVGS_AVERAGE_32_SAMPLES)
-};
-
-void analogUpdateTemperature(void) {
-  adcAcquireBus(&ADCD1);
-  adcConvert(&ADCD1, &adcgrpcelcius, celcius_samples, ADC_GRPCELCIUS_BUF_DEPTH);
-  adcReleaseBus(&ADCD1);
-}
-
-int32_t analogReadTemperature() {
-  return celcius;
-}
-
-
-static void adc_mic_end_cb(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
-  (void)adcp;
-  (void)n;
-
-  uint8_t i;
-
-  for( i = 0 ; i < n; i++ ) { 
-    mic_return[i] = (uint8_t) buffer[i];
-  }
-
-  chSysLockFromISR();
-  //  chEvtBroadcastI(&adc_mic_event);
-  chSysUnlockFromISR();
-}
-
-
-/*
- * ADC conversion group.
- * Mode:        Linear buffer, 8 samples of 1 channel, SW triggered.
- */
-static const ADCConversionGroup adcgrpmic = {
-  false,
-  1, // just one channel
-  adc_mic_end_cb,
-  NULL,
-  ADC_DADP1,  // microphone input channel
-  // SYCLK = 48MHz. ADCCLK = SYSCLK / 4 / 2 = 6 MHz
-  ADCx_CFG1_ADIV(ADCx_CFG1_ADIV_DIV_4) |
-  ADCx_CFG1_ADICLK(ADCx_CFG1_ADIVCLK_BUS_CLOCK_DIV_2) |
-  ADCx_CFG1_MODE(ADCx_CFG1_MODE_8_OR_9_BITS),  // 8 bits per sample
-  ADCx_SC3_AVGE |
-  ADCx_SC3_AVGS(ADCx_SC3_AVGS_AVERAGE_32_SAMPLES) // 32 sample average
-  // this should give ~6.25kHz sampling rate
-};
-
-void analogUpdateMic(void) {
-  adcAcquireBus(&ADCD1);
-  adcConvert(&ADCD1, &adcgrpmic, mic_sample, MIC_SAMPLE_DEPTH);
-  adcReleaseBus(&ADCD1);
-}
-
-uint8_t *analogReadMic() {
-  return mic_return;
+  return (uint16_t *)scope_sample;
 }
 
 void analogStart() {
   
 }
 
+uint32_t analogRead(int adc_num) {
+  msg_t result;
+  adcsample_t sample;
+
+  ADCConversionGroup arduinogrp = {
+    0, // circular buffer mode? no.
+    1, // just one channel
+    NULL,  // callback
+    NULL,  // error callback
+    (1 << adc_num),
+    // CFG1 register
+    // SYSCLK = 48MHz.
+    // BUSCLK = SYSCLK / 4 = 12MHz
+    // ADCCLK = SYSCLK / 2 / 1 = 6 MHz
+
+    // ADLPC = 0 (normal power)
+    // ADLSMP = 0 (short sample time)
+    // ADHSC = 0 (normal conversion sequence)
+    // -> 5 ADCK cycles + 5 bus clock cycles = SFCadder
+    // 20 ADCK cycles per sample
+
+    ADCx_CFG1_ADIV(ADCx_CFG1_ADIV_DIV_2) |
+    ADCx_CFG1_ADICLK(ADCx_CFG1_ADIVCLK_BUS_CLOCK_DIV_2) |
+    ADCx_CFG1_MODE(ADCx_CFG1_MODE_12_OR_13_BITS),  // 12 bits per sample
+
+    // SC3 register
+    ADCx_SC3_AVGE |
+    ADCx_SC3_AVGS(ADCx_SC3_AVGS_AVERAGE_32_SAMPLES) // 32 sample average
+
+    //      48 MHz sysclk
+    // /2   24 MHz busclk
+    // /2   12 MHz after prescaler
+    // /2   6 MHz after adiv
+    // /20  300ksps after base sample time @ 12 bps
+    // /32  9.375ksps after averaging by factor of 32
+  };
+
+  result = adcConvert(&ADCD1,
+                     &arduinogrp,
+                     &sample,
+                     1);
+  if (result)
+    sample = 0;
+
+  return (uint32_t) sample;
+}
 

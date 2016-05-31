@@ -110,3 +110,23 @@ void oledOrchardBanner(void) {
   orchardGfxEnd();
 }
 
+void oledPauseBanner(const char *str) {
+
+  coord_t width;
+  coord_t height;
+  font_t font;
+  
+  orchardGfxStart();
+  width = gdispGetWidth();
+  font = gdispOpenFont("DejaVuSans12");
+  height = gdispGetFontMetric(font, fontHeight);
+  
+  gdispFillStringBox(0, height, width, gdispGetFontMetric(font, fontHeight),
+                     str, font, Black, White, justifyCenter);
+  gdispFlush();
+  gdispCloseFont(font);
+  orchardGfxEnd();
+
+  chThdSleepMilliseconds(500);
+
+}
