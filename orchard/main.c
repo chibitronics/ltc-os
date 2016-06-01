@@ -201,6 +201,7 @@ static THD_FUNCTION(evHandlerThread, arg) {
   orchardShellInit();
 
   chprintf(stream, "\r\nChibitronics Dataviewer build %s\r\n", gitversion);
+  chprintf(stream, "Copyright (c) 2016 Chibitronics PTE LTD\r\n", gitversion);
   chprintf(stream, "boot freemem: %d\r\n", chCoreGetStatusX());
 
   evtTableInit(orchard_app_events, 6);
