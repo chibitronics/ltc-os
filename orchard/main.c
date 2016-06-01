@@ -209,8 +209,9 @@ static THD_FUNCTION(demod_thread, arg) {
   sdStart(&SD1, &serialConfig);
   stream = stream_driver;
 
-  printf("\r\n\r\nOrchard audio bootloader, build %s\r\n", gitversion);
-  printf("core free memory : %d bytes\r\n", heap_size());
+  printf("%d bytes free\r\n", heap_size());
+  printf("Copyright (c) 2016 Chibitronics PTE LTD\r\n");
+  printf("LtC build %s\r\n", gitversion);
 
   i2cStart(i2cDriver, &i2c_config);
   adcStart(&ADCD1, &adccfg1);
