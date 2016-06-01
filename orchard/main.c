@@ -209,9 +209,8 @@ static THD_FUNCTION(demod_thread, arg) {
   sdStart(&SD1, &serialConfig);
   stream = stream_driver;
 
-  printf("%d bytes free\r\n", heap_size());
+  printf("%d free\r\n", heap_size());
   printf("Copyright (c) 2016 Chibitronics PTE LTD\r\n");
-  printf("LtC build %s\r\n", gitversion);
 
   i2cStart(i2cDriver, &i2c_config);
   adcStart(&ADCD1, &adccfg1);
@@ -264,6 +263,7 @@ static THD_FUNCTION(demod_thread, arg) {
   PROG_STATR_OFF; // toggle LEDs to indicate we're now out of init
   PROG_STATG_OFF;
 
+  printf("LtC build %s\r\n", gitversion); // emit build number later, so it shows up clearly on dataviewer
 
   if( RESET_LEVEL ) {
     // user did not hold down the reset button, check if app is valid and run it
