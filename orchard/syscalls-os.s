@@ -147,4 +147,5 @@ SysCall_Table:
 .short __gnu_thumb1_case_uhi
 .short doSudo
 .short setSerialSpeed
+.short setThreadName
 .size SysCall_Table, .-SysCall_Table
