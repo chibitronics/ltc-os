@@ -176,3 +176,7 @@ bool mutexTryLock(mutex_t *mp) {
 void mutexUnlock(mutex_t *mp) {
   chMtxUnlock(mp);
 }
+
+void setThreadName(const char *name) {
+  chRegSetThreadName(name);
+}
