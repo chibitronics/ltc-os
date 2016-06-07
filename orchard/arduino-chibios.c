@@ -24,11 +24,21 @@ thread_t *createThread(void *stack, size_t stack_size, int prio,
 }
 
 msg_t suspendThread(thread_reference_t *trp) {
-  return chThdSuspendS(trp);
+  msg_t ret;
+
+  osalSysLock();
+  ret = chThdSuspendS(trp);
+  osalSysUnlock();
+  return ret;
 }
 
 msg_t suspendThreadTimeout(thread_reference_t *trp, systime_t timeout) {
-  return chThdSuspendTimeoutS(trp, timeout);
+  msg_t ret;
+
+  osalSysLock();
+  ret = chThdSuspendTimeoutS(trp, timeout);
+  osalSysUnlock();
+  return ret;
 }
 
 void resumeThread(thread_reference_t *trp, msg_t msg) {
@@ -61,8 +71,8 @@ struct vt_callback {
   void *param;
 };
 
-static struct vt_callback vtcallbacks[4];
-static struct vt_callback scheduled_callbacks[4];
+static struct vt_callback vtcallbacks[3];
+static struct vt_callback scheduled_callbacks[3];
 static uint8_t num_scheduled_callbacks = 0;
 
 int runCallbacks(void) {
