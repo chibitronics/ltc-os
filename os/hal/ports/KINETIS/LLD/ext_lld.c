@@ -64,6 +64,7 @@ EXTDriver EXTD1;
  * The index is the pin number.
  * The result is the channel for that pin.
  */
+#if 0
 #if KINETIS_EXT_PORTA_WIDTH > 0
 uint8_t porta_channel_map[KINETIS_EXT_PORTA_WIDTH];
 #endif
@@ -78,6 +79,7 @@ uint8_t portd_channel_map[KINETIS_EXT_PORTD_WIDTH];
 #endif
 #if KINETIS_EXT_PORTE_WIDTH > 0
 uint8_t porte_channel_map[KINETIS_EXT_PORTE_WIDTH];
+#endif
 #endif
 
 /*===========================================================================*/
@@ -136,6 +138,7 @@ static void ext_lld_exti_irq_disable(void) {
 /* Driver interrupt handlers.                                                */
 /*===========================================================================*/
 
+#if 0
 /*
  * Generic interrupt handler.
  */
@@ -153,6 +156,7 @@ static inline void irq_handler(PORT_TypeDef * const port, const unsigned port_wi
     }
   }
 }
+#endif
 
 /**
  * @brief   PORTA interrupt handler.
@@ -170,8 +174,7 @@ OSAL_IRQ_HANDLER(KINETIS_PORTA_IRQ_VECTOR) {
 
   if (portaISR)
     portaISR();
-  else
-    irq_handler(PORTA, KINETIS_EXT_PORTA_WIDTH, porta_channel_map);
+  PORTA->ISFR = 0xFFFFFFFF;
 
   OSAL_IRQ_EPILOGUE();
 }
@@ -193,8 +196,7 @@ OSAL_IRQ_HANDLER(KINETIS_PORTB_IRQ_VECTOR) {
 
   if (portbISR)
     portbISR();
-  else
-    irq_handler(PORTB, KINETIS_EXT_PORTB_WIDTH, portb_channel_map);
+  PORTB->ISFR = 0xFFFFFFFF;
 
   OSAL_IRQ_EPILOGUE();
 }
@@ -278,6 +280,7 @@ void ext_lld_start(EXTDriver *extp) {
 
     uint32_t mode = extp->config->channels[channel].mode;
     PORT_TypeDef *port = extp->config->channels[channel].port;
+#if 0
     uint32_t pin = extp->config->channels[channel].pin;
 
     /* Initialize the channel map */
@@ -307,6 +310,7 @@ void ext_lld_start(EXTDriver *extp) {
     else
 #endif
     {}
+#endif
 
     if (mode & EXT_CH_MODE_AUTOSTART)
       ext_lld_channel_enable(extp, channel);
