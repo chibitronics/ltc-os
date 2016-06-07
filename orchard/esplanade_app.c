@@ -129,7 +129,7 @@ thread_t *chBootToApp(void) {
 
   esplanadeThread = chThdCreateStatic(_app_header.heap_start,
                            (_app_header.heap_end - _app_header.heap_start) & ~7,
-                           HIGHPRIO,
+                           NORMALPRIO,
                            app_thread,
                            NULL);
 
