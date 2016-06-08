@@ -148,4 +148,8 @@ SysCall_Table:
 .short doSudo
 .short setSerialSpeed
 .short setThreadName
+.short hookSysTick
+.short resumeThreadI
+.short suspendThreadS
+.short suspendThreadTimeoutS
 .size SysCall_Table, .-SysCall_Table

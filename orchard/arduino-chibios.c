@@ -2,6 +2,17 @@
 #include "esplanade_app.h"
 #include "orchard.h"
 
+void (*sysTickHook)(void);
+
+void doSysTick(void) {
+  if (sysTickHook)
+    sysTickHook();
+}
+
+void hookSysTick(void (*newHook)(void)) {
+  sysTickHook = newHook;
+}
+
 void lockSystem(void) {
   osalSysLock();
 }
@@ -23,12 +34,26 @@ thread_t *createThread(void *stack, size_t stack_size, int prio,
   return chThdCreateStatic(stack, stack_size, prio, thr_func, ptr);
 }
 
+msg_t suspendThreadS(thread_reference_t *trp) {
+  msg_t ret;
+
+  ret = chThdSuspendS(trp);
+  return ret;
+}
+
 msg_t suspendThread(thread_reference_t *trp) {
   msg_t ret;
 
   osalSysLock();
   ret = chThdSuspendS(trp);
   osalSysUnlock();
+  return ret;
+}
+
+msg_t suspendThreadTimeoutS(thread_reference_t *trp, systime_t timeout) {
+  msg_t ret;
+
+  ret = chThdSuspendTimeoutS(trp, timeout);
   return ret;
 }
 
@@ -43,6 +68,10 @@ msg_t suspendThreadTimeout(thread_reference_t *trp, systime_t timeout) {
 
 void resumeThread(thread_reference_t *trp, msg_t msg) {
   chThdResume(trp, msg);
+}
+
+void resumeThreadI(thread_reference_t *trp, msg_t msg) {
+  chThdResumeI(trp, msg);
 }
 
 void yieldThread(void) {
@@ -64,7 +93,6 @@ msg_t waitThread(thread_t *tp) {
 void exitThread(msg_t msg) {
   chThdExit(msg);
 }
-
 
 struct vt_callback {
   vtfunc_t func;

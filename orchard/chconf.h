@@ -478,6 +478,8 @@
  */
 #define CH_CFG_SYSTEM_TICK_HOOK() {                                         \
   /* System tick event code here.*/                                         \
+  extern void doSysTick(void);                                              \
+  doSysTick();                                                              \
 }
 
 /**
