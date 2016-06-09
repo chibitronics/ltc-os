@@ -176,8 +176,9 @@ uint32_t getSyscallABI(void) {
 }
 
 uint32_t getSyscallAddr(uint32_t sysCallNum) {
-  extern uint16_t *SysCall_Table;
-  return SysCall_Table[sysCallNum];
+  extern uint16_t SysCall_Table;
+  uint16_t *calls = &SysCall_Table;
+  return calls[sysCallNum] | 1;
 }
 
 void setSerialSpeed(uint32_t speed) {
