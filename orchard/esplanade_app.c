@@ -120,12 +120,26 @@ int appIsValid(void) {
 
 thread_t *chBootToApp(void) {
 
+  int irq_num;
+
   app_start_time = chVTGetSystemTimeX();
 
   memset(_app_header.bss_start, 0,
          _app_header.bss_end - _app_header.bss_start);
   memcpy(_app_header.data_start, _app_header.data_load_start,
          _app_header.data_end - _app_header.data_start);
+
+  /* In order to allow syscalls to happen during ISRs, prioritize the
+   * "svc" handler above all others.
+   * Make everything else have the lowest priority.  If a user wants to
+   * increase priority, they can adjust priorities themselves.
+   */
+  NVIC_SetPriority(SVCall_IRQn, 0);
+  NVIC_SetPriority(PendSV_IRQn, 3);
+  NVIC_SetPriority(SysTick_IRQn, 3);
+  for (irq_num = 0; irq_num < CORTEX_NUM_VECTORS; irq_num++)
+    if (NVIC_GetPriority((IRQn_Type)irq_num) < 3)
+      NVIC_SetPriority((IRQn_Type)irq_num, 3);
 
   esplanadeThread = chThdCreateStatic(_app_header.heap_start,
                            (_app_header.heap_end - _app_header.heap_start) & ~7,
