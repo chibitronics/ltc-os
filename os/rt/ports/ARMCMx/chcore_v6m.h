@@ -348,7 +348,7 @@ static inline void port_unlock(void) {
  */
 static inline void port_lock_from_isr(void) {
 
-  port_lock();
+  //port_lock();
 }
 
 /**
@@ -358,7 +358,7 @@ static inline void port_lock_from_isr(void) {
  */
 static inline void port_unlock_from_isr(void) {
 
-  port_unlock();
+  //port_unlock();
 }
 
 /**
