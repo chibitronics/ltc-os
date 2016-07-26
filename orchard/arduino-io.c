@@ -12,8 +12,8 @@ static int sudo_mode;
 
 /* Pins that can be used when not in "sudo" mode.*/
 static uint8_t normal_mode_pins[] = {
-  D0, D1,
   A0, A1, A2, A3,
+  D4, D5,
   LED_BUILTIN,
   BUTTON_A1, BUTTON_REC, BUTTON_A3,
 };
@@ -23,39 +23,35 @@ int pinToPort(int pin, ioportid_t *port, uint8_t *pad) {
   switch(pin) {
   case A0:
     *port = IOPORT2;
-    *pad = 10;
+    *pad = 13;
     break;
 
+  case BUTTON_A1:
   case A1:
-    *port = IOPORT2;
-    *pad = 11;
+    *port = IOPORT1;
+    *pad = 12;
     break;
 
   case LED_BUILTIN:
   case A2:
     *port = IOPORT1;
-    *pad = 12;
+    *pad = 11;
     break;
 
   case BUTTON_A3:
   case A3:
-    *port = IOPORT2;
-    *pad = 13;
+    *port = IOPORT1;
+    *pad = 10;
     break;
 
-  case A4:
-    *port = IOPORT2;
-    *pad = 5;
-    break;
-
-  case D0:
-    *port = IOPORT2;
-    *pad = 0;
-    break;
-
-  case D1:
+  case D4:
     *port = IOPORT1;
     *pad = 7;
+    break;
+
+  case D5:
+    *port = IOPORT2;
+    *pad = 0;
     break;
 
   case LED_BUILTIN_RGB:
@@ -68,39 +64,34 @@ int pinToPort(int pin, ioportid_t *port, uint8_t *pad) {
     *pad = 5;
     break;
 
+  case BUTTON_REC:
+    *port = IOPORT2;
+    *pad = 3;
+    break;
+
   case LED_BUILTIN_GREEN:
     *port = IOPORT2;
     *pad = 6;
     break;
 
-  case BUTTON_A1:
-    *port = IOPORT1;
-    *pad = 9;
-    break;
-
-  case BUTTON_REC:
+  case UART_TX:
     *port = IOPORT2;
     *pad = 1;
     break;
 
-  case UART_TX:
-    *port = IOPORT2;
-    *pad = 3;
-    break;
-
   case UART_RX:
     *port = IOPORT2;
-    *pad = 4;
+    *pad = 2;
     break;
 
   case SWD_CLK:
     *port = IOPORT1;
-    *pad = 0;
+    *pad = 8;
     break;
 
   case SWD_DIO:
     *port = IOPORT1;
-    *pad = 2;
+    *pad = 9;
     break;
 
   default:
@@ -137,13 +128,13 @@ void pinMode(int pin, enum pin_mode arduino_mode) {
   if (!can_use_pin(pin))
     return;
 
-  /* Disconnect alternate pins for A0, A1, and A3 */
+  /* Disconnect alternate pins for A0, A2, and A3 */
   if (pin == A0)
-    palSetPadMode(IOPORT2, 10, PAL_MODE_UNCONNECTED);
-  if (pin == A1)
-    palSetPadMode(IOPORT2, 11, PAL_MODE_UNCONNECTED);
+    palSetPadMode(IOPORT2, 4, PAL_MODE_UNCONNECTED);
+  if (pin == A2)
+    palSetPadMode(IOPORT1, 9, PAL_MODE_UNCONNECTED);
   if (pin == A3)
-    palSetPadMode(IOPORT2, 2, PAL_MODE_UNCONNECTED);
+    palSetPadMode(IOPORT1, 8, PAL_MODE_UNCONNECTED);
 
   if (arduino_mode == INPUT_PULLUP)
     mode = PAL_MODE_INPUT_PULLUP;
@@ -219,26 +210,26 @@ void analogWrite(int pin, int value) {
     pin |= 0x80;
 
   if (pin == A0) {
-    palSetPadMode(IOPORT1, 8, PAL_MODE_UNCONNECTED);
+    palSetPadMode(IOPORT2, 4, PAL_MODE_UNCONNECTED);
     mode = PAL_MODE_ALTERNATIVE_2;
-    driver = &PWMD1;
+    driver = &PWMD2;
     channel = 1;
   }
   else if (pin == A1) {
+    mode = PAL_MODE_ALTERNATIVE_2;
+    driver = &PWMD2;
+    channel = 0;
+  }
+  else if (pin == A2) {
     palSetPadMode(IOPORT1, 9, PAL_MODE_UNCONNECTED);
     mode = PAL_MODE_ALTERNATIVE_2;
     driver = &PWMD1;
     channel = 0;
   }
-  else if (pin == A2) {
-    mode = PAL_MODE_ALTERNATIVE_2;
-    driver = &PWMD2;
-    channel = 0;
-  }
   else if (pin == A3) {
-    palSetPadMode(IOPORT2, 2, PAL_MODE_UNCONNECTED);
+    palSetPadMode(IOPORT1, 8, PAL_MODE_UNCONNECTED);
     mode = PAL_MODE_ALTERNATIVE_2;
-    driver = &PWMD2;
+    driver = &PWMD1;
     channel = 1;
   }
   else
@@ -265,22 +256,21 @@ void analogReference(enum analog_reference_type type) {
 static int pin_to_adc(int pin) {
 
   if (pin == A0)
-    return ADC_DAD3;
-  if (pin == A1)
-    return ADC_DAD2;
-  if (pin == A2)
-    return ADC_DAD0;
-  if (pin == A3)
     return ADC_AD13;
-  if (pin == A4)
-    return ADC_DAD1;
-  if (pin == A5)
-    return ADC_TEMP_SENSOR;
+  if (pin == A1)
+    return ADC_DAD0;
+  if (pin == A2)
+    return ADC_AD8;
+  if (pin == A3)
+    return ADC_AD9;
+
   if (pin == A6)
-    return ADC_BANDGAP;
+    return ADC_TEMP_SENSOR;
   if (pin == A7)
-    return ADC_VREFSH;
+    return ADC_BANDGAP;
   if (pin == A8)
+    return ADC_VREFSH;
+  if (pin == A9)
     return ADC_VREFSL;
 
   return -1;
@@ -304,7 +294,7 @@ int analogRead(int pin) {
   int adc_num;
 
   /* Allow people to e.g. specify analogRead(0) instead of analogRead(A0).*/
-  if (pin <= 8)
+  if (pin <= 9)
     pin |= 0x80;
 
   adc_num = pin_to_adc(pin);
@@ -345,6 +335,8 @@ int analogRead(int pin) {
     // /4   75ksps after averaging by factor of 4
   };
 
+  // Ignore the return value, as it may not have a real pin,
+  // e.g. if it's measuring the bandgap, or temperature.
   mux_as_adc(pin);
 
   result = adcConvert(&ADCD1,
