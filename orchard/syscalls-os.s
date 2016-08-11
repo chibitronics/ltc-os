@@ -152,4 +152,5 @@ SysCall_Table:
 .short resumeThreadI
 .short suspendThreadS
 .short suspendThreadTimeoutS
+.short avoidIsrLock
 .size SysCall_Table, .-SysCall_Table
