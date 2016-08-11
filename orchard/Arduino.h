@@ -227,9 +227,9 @@ int pinToPort(int pin, ioportid_t *port, uint8_t *pad);
 
 #define LED_BUILTIN       PTA(12)
 #define LED_A2            LED_BUILTIN
-#define BUTTON_A1         PTA(9)
+#define BUTTON_A0         PTB(13)
 #define BUTTON_REC        PTB(1) /* Silkscreened as "Rec" */
-#define BUTTON_A3         PTB(13)
+#define BUTTON_A2         PTB(11)
 #define LED_BUILTIN_RGB   PTA(6)
 
 #define LED_BUILTIN_RED   PTA(5)

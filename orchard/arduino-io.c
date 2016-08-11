@@ -15,32 +15,32 @@ static uint8_t normal_mode_pins[] = {
   A0, A1, A2, A3,
   D4, D5,
   LED_BUILTIN,
-  BUTTON_A1, BUTTON_REC, BUTTON_A3,
+  BUTTON_A0, BUTTON_REC, BUTTON_A2,
 };
 
 int pinToPort(int pin, ioportid_t *port, uint8_t *pad) {
 
   switch(pin) {
+  case BUTTON_A0:
   case A0:
     *port = IOPORT2;
     *pad = 13;
     break;
 
-  case BUTTON_A1:
+  case LED_BUILTIN:
   case A1:
     *port = IOPORT1;
     *pad = 12;
     break;
 
-  case LED_BUILTIN:
+  case BUTTON_A2:
   case A2:
-    *port = IOPORT1;
+    *port = IOPORT2;
     *pad = 11;
     break;
 
-  case BUTTON_A3:
   case A3:
-    *port = IOPORT1;
+    *port = IOPORT2;
     *pad = 10;
     break;
 
