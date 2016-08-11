@@ -26,7 +26,7 @@ void *stream;
 orchard_command_end();
 
 static const SerialConfig serialConfig = {
-  115200,
+  9600,
 };
 
 static thread_t *shell_tp = NULL;
