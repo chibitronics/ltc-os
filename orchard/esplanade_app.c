@@ -149,3 +149,11 @@ thread_t *chBootToApp(void) {
 
   return esplanadeThread;
 }
+
+int avoid_isr_lock;
+
+int avoidIsrLock(int val)
+{
+  avoid_isr_lock = val;
+  return 0;
+}
