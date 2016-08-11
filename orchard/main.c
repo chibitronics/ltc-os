@@ -50,7 +50,7 @@ volatile adcsample_t *bufloc;
 size_t buf_n;
 
 static const SerialConfig serialConfig = {
-  115200,
+  9600,
 };
 
 static const ADCConfig adccfg1 = {
