@@ -256,9 +256,9 @@ static THD_FUNCTION(demod_thread, arg) {
   // not sure what of the above init is assumed by boot to app, so turn it all on
   // even if we just turn it all off later.
 
-  PROG_STATR_ON;
-  PROG_STATG_ON;
-  chThdSleepMilliseconds(500);  // wait for user to let go of the button
+  PROG_STATR_OFF;
+  PROG_STATG_OFF;
+  chThdSleepMilliseconds(350);  // wait for user to let go of the button
   // reset_pulse is nom 2ms wide, so this is good margin
   PROG_STATR_OFF; // toggle LEDs to indicate we're now out of init
   PROG_STATG_OFF;
