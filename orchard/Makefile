@@ -273,10 +273,10 @@ endif
 
 dsptables: dsptable_gen.c esplanade_demod.h
 ifeq ($(USE_VERBOSE_COMPILE),yes)
-	gcc -I. $(IINCDIR) -lm $< -o $@
+	gcc -I. $(IINCDIR) -lm $< -lm -o $@
 else
 	@echo Building DSP table generator $@
-	@gcc -I. $(IINCDIR) -lm $< -o $@
+	@gcc -I. $(IINCDIR) -lm $< -lm -o $@
 endif
 
 # Build a .symbol file, to enable OS/App debugging
