@@ -194,9 +194,9 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
     break;
 
   case APP_UPDATING:
-    PROG_STATR_ON; 
+    PROG_STATG_OFF;
     if( !led_state ) {
-      PROG_STATG_ON;
+      PROG_STATR_ON;
     } else {
       PROG_STATG_OFF;
     }
@@ -286,7 +286,7 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
       err = flashProgram((uint8_t *)(&(storageHdr->complete)), (uint8_t *)&dummy, sizeof(uint32_t));
       UPDATE_UNLOCK;
       astate = APP_UPDATED;
-      PROG_STATG_ON;
+      PROG_STATG_OFF;
       PROG_STATR_OFF; 
       bootToUserApp();
       astate = APP_FAIL;
