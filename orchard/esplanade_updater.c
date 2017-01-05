@@ -320,9 +320,9 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
     PROG_STATG_OFF;
     while(1) {
       PROG_STATR_ON; 
-      chThdSleepMilliseconds(500);
+      chThdSleepMilliseconds(150);
       PROG_STATR_OFF; 
-      chThdSleepMilliseconds(500);
+      chThdSleepMilliseconds(150);
     }
     break;
 
