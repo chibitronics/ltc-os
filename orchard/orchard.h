@@ -1,7 +1,6 @@
 #ifndef __ORCHARD_H__
 #define __ORCHARD_H__
 
-extern const char *gitversion;
 extern struct evt_table orchard_events;
 
 void halt(void);
