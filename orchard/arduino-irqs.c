@@ -17,6 +17,10 @@ extern void (*serialFastISR)(void);
 extern void (*serialISR)(void);
 extern void (*lptmrFastISR)(void);
 extern void (*lptmrISR)(void);
+extern void (*i2c2FastISR)(void);
+extern void (*i2c2ISR)(void);
+
+void (*spiFastISR)(void);
 
 void attachInterrupt(int irq, void (*func)(void), enum irq_mode mode) {
 
@@ -53,6 +57,16 @@ void attachInterrupt(int irq, void (*func)(void), enum irq_mode mode) {
 
     case LPTMR_IRQ:
       lptmrISR = func;
+      break;
+
+    case I2C2_IRQ:
+      i2c2ISR = func;
+      break;
+
+    /* Note: reuses fast ISR here */
+    case SPI_IRQ:
+      spiFastISR = func;
+      break;
   }
   return;
 }
@@ -90,10 +104,22 @@ void attachFastInterrupt(int irq, void (*func)(void)) {
     case LPTMR_IRQ:
       lptmrFastISR = func;
       break;
+
+    case I2C2_IRQ:
+      i2c2FastISR = func;
+      break;
+
+    case SPI_IRQ:
+      spiFastISR = func;
+      break;
   }
   return;
 }
 
 void detachFastInterrupt(int irq) {
   attachFastInterrupt(irq, NULL);
+}
+
+/* SPI handler */
+OSAL_IRQ_HANDLER(Vector68) {
 }
