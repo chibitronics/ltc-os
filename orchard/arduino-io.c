@@ -10,16 +10,21 @@
 
 /* Soft PWM for D4 and D5, set to -1 to disable. */
 /* If the threshold is above these, output high. Otherwise, output low.  Set to -1 to disable*/
-static int32_t soft_pwm[2] = {-1, -1};
+static int16_t soft_pwm[2] = {-1, -1};
+
+/* Whether users can access "advanced" features, such as Red/Green LEDs.*/
+static uint8_t sudo_mode;
+
+#define SOFT_PWM_CYCLE 64
+#define SOFT_PWM_CYCLE_MULTIPLIER 16
+
+static uint8_t soft_pwm_counter = SOFT_PWM_CYCLE;
 
 /* Soft PWM timer object */
 static thread_t *soft_pwm_thread;
 
 /* Virtual timer for disabling the tone object */
 virtual_timer_t tone_timer;
-
-/* Whether users can access "advanced" features, such as Red/Green LEDs.*/
-static uint8_t sudo_mode;
 
 /* Pins that can be used when not in "sudo" mode.*/
 static const uint8_t normal_mode_pins[] = {
@@ -33,48 +38,72 @@ void arduinoIoInit(void) {
   chVTObjectInit(&tone_timer);
 }
 
-int pinToPort(int pin, ioportid_t *port, uint8_t *pad) {
-
-  switch(pin) {
-
+static int canonicalize_pin(int pin) {
+  switch (pin) {
   case LED_BUILTIN:
   case A0:
   case D0:
+  case 0:
+    return 0;
+
+  case A1:
+  case D1:
+  case 1:
+    return 1;
+
+  case A2:
+  case D2:
+  case 2:
+    return 2;
+
+  case A3:
+  case D3:
+  case 3:
+    return 3;
+
+  case A4:
+  case D4:
+  case 4:
+    return 4;
+
+  case A5:
+  case D5:
+  case 5:
+    return 5;
+
+  default:
+    return pin;
+  }
+}
+
+int pinToPort(int pin, ioportid_t *port, uint8_t *pad) {
+
+  switch(canonicalize_pin(pin)) {
   case 0:
     *port = IOPORT2;
     *pad = 10;
     break;
 
-  case A1:
-  case D1:
   case 1:
     *port = IOPORT2;
     *pad = 11;
     break;
 
-  case A2:
-  case D2:
   case 2:
     *port = IOPORT1;
     *pad = 12;
     break;
 
-  case A3:
-  case D3:
   case 3:
     *port = IOPORT2;
     *pad = 13;
     break;
 
-  case A4:
-  case D4:
   case 4:
     *port = IOPORT2;
     *pad = 0;
     break;
 
-  case A5:
-  case D5:
   case 5:
     *port = IOPORT1;
     *pad = 7;
@@ -226,18 +255,13 @@ static const PWMConfig pwmcfg = {
   },
 };
 
-#define SOFT_PWM_CYCLE 64
-#define SOFT_PWM_CYCLE_MULTIPLIER 16
-
-static uint32_t soft_pwm_counter = SOFT_PWM_CYCLE;
-
 void softPwmTick(void) {
 
   /* If both timers are stopped, unhook ourselves. */
   if ((soft_pwm[0] == -1) && (soft_pwm[1] == -1)) {
-    extern void (*lptmrFastISR)(void);
-    stopLptmr(void);
-    lptmrFastISR = NULL;
+    writeb(0, SPI0_C1);
+    detachFastInterrupt(SPI_IRQ);
+    return;
   }
 
   if (soft_pwm_counter <= soft_pwm[0])
@@ -253,18 +277,25 @@ void softPwmTick(void) {
     writel((1 << 0), FGPIOB_PCOR);
   }
 
-  /* Clear the TCF bit, which lets the timer continue.*/
-  writel(LPTMR_CSR_TCF | LPTMR_CSR_TIE | LPTMR_CSR_TEN, LPTMR0_CSR);
+  /* Write one byte out, to trigger the SPI, which will call us back in 1/7000 Hz.*/
+  writeb(0xff, SPI0_D);
 }
 
 static void soft_pwm_start(void) {
-  extern void (*lptmrFastISR)(void);
   if (!soft_pwm_thread) {
     soft_pwm_thread = (void *)1;
-    lptmrFastISR = softPwmTick;
+    attachFastInterrupt(SPI_IRQ, softPwmTick);
 
-    /* The "pin" and "port" numbers don't matter, since we're hooking the ISR */
-    startLptmr(0, 0, 5000);
+    /* Ungate SPI block */
+    SIM->SCGC4 |= SIM_SCGC4_SPI0;
+
+    nvicEnableVector(SPI0_IRQn, KINETIS_SPI_SPI0_IRQ_PRIORITY);
+
+    /* Run it at 50 kHz, which will give us one byte every ~7 kHz */
+    writeb(0x8, SPI0_BR); // Divide 47 MHz clock by 512
+
+    // Enable the SPI system, in master mode, with an interrupt on "Empty".
+    writeb(SPIx_C1_SPE | SPIx_C1_MSTR | SPIx_C1_SPTIE, SPI0_C1);
   }
 }
 
@@ -279,19 +310,14 @@ void analogWrite(int pin, int value) {
   if (pinToPort(pin, &port, &pad))
     return;
 
-  switch (pin) {
-  case A0:
-  case D0:
+  switch (canonicalize_pin(pin)) {
   case 0:
-  case LED_BUILTIN:
     palSetPadMode(IOPORT1, 8, PAL_MODE_UNCONNECTED);
     mode = PAL_MODE_ALTERNATIVE_2;
     driver = &PWMD1;
     channel = 1;
     break;
 
-  case A1:
-  case D1:
   case 1:
     palSetPadMode(IOPORT1, 9, PAL_MODE_UNCONNECTED);
     mode = PAL_MODE_ALTERNATIVE_2;
@@ -299,16 +325,12 @@ void analogWrite(int pin, int value) {
     channel = 0;
     break;
 
-  case A2:
-  case D2:
   case 2:
     mode = PAL_MODE_ALTERNATIVE_2;
     driver = &PWMD2;
     channel = 0;
     break;
 
-  case A3:
-  case D3:
   case 3:
     palSetPadMode(IOPORT2, 4, PAL_MODE_UNCONNECTED);
     mode = PAL_MODE_ALTERNATIVE_2;
@@ -316,8 +338,6 @@ void analogWrite(int pin, int value) {
     channel = 1;
     break;
 
-  case A4:
-  case D4:
   case 4:
     if (value > 255)
       value = 255;
@@ -327,8 +347,6 @@ void analogWrite(int pin, int value) {
     soft_pwm_start();
     return; /* Return, don't enable PWM since we're faking it */
 
-  case A5:
-  case D5:
   case 5:
     if (value > 255)
       value = 255;
@@ -363,34 +381,22 @@ void analogReference(enum analog_reference_type type) {
 
 static int pin_to_adc(int pin) {
 
-  switch (pin) {
-  case A0:
-  case D0:
+  switch (canonicalize_pin(pin)) {
   case 0:
     return ADC_AD9;
 
-  case A1:
-  case D1:
   case 1:
     return ADC_AD8;
 
-  case A2:
-  case D2:
   case 2:
     return ADC_DAD0;
 
-  case A3:
-  case D3:
   case 3:
     return ADC_AD13;
 
-  case A4:
-  case D4:
   case 4:
     return ADC_AD6;
 
-  case A5:
-  case D5:
   case 5:
     return ADC_AD7;
 
