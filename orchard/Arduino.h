@@ -201,6 +201,11 @@ long randomSeed(unsigned long seed);
 int pinToPort(int pin, ioportid_t *port, uint8_t *pad);
 void arduinoIoInit(void);
 
+void attachFastInterrupt(int irq, void (*func)(void));
+void detachInterrupt(int irq);
+void attachInterrupt(int irq, void (*func)(void), enum irq_mode mode);
+void detachFastInterrupt(int irq);
+
 /* Bits and Bytes */
 #define lowByte(w) ((uint8_t) ((w) & 0xff))
 #define highByte(w) ((uint8_t) ((w) >> 8))
