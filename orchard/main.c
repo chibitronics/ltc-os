@@ -19,6 +19,7 @@
 #include "printf.h"
 
 #include "orchard.h"
+#include "gitversion.h"
 
 #include "esplanade_analog.h"
 #include "esplanade_demod.h"
