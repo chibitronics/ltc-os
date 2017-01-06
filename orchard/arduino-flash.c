@@ -1,7 +1,6 @@
 #include "hal.h"
 #include "flash.h"
 
-
 int8_t flashErase(uint32_t sectorOffset, uint16_t sectorCount) {
   uint8_t ret;
 
