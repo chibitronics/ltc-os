@@ -110,7 +110,6 @@ LDSCRIPT= $(STARTUPLD)/KL02P20.ld
 CSRC = main.c \
        esplanade_demod.c \
        orchard-vectors.c \
-       gitversion.c \
        esplanade_analog.c \
        esplanade_updater.c \
        esplanade_mac.c \
@@ -256,7 +255,7 @@ include $(RULESPATH)/rules.mk
 #misra:
 #	@lint-nt -v -w3 $(DEFS) pclint/co-gcc.lnt pclint/au-misra3.lnt pclint/waivers.lnt $(IINCDIR) $(CSRC) &> misra.txt
 
-gitversion.c: $(CHIBIOS)/.git/HEAD $(CHIBIOS)/.git/index
+gitversion.h: $(CHIBIOS)/.git/HEAD $(CHIBIOS)/.git/index
 	echo "const char *gitversion = \"$(shell git rev-parse HEAD)\";" > $@
 
 dsptables.h: dsptables
