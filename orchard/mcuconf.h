@@ -69,7 +69,7 @@
 /*
  * SPI system settings.
  */
-#define KINETIS_SPI_USE_SPI0                    TRUE
+#define KINETIS_SPI_USE_SPI0                    FALSE
 #define KINETIS_SPI_USE_SPI1                    FALSE
 #define KINETIS_SPI_SPI0_IRQ_PRIORITY           3
 #define KINETIS_SPI_SPI1_IRQ_PRIORITY           3
