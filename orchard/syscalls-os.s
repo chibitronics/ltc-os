@@ -115,11 +115,11 @@ SysCall_Table:
 .short randomSeed
 .short i2cTransceive
 .short i2cSetupSlave
-.short usbSetup
-.short usbSend
-.short usbReceive
-.short usbAttach
-.short usbDetach
+.short 0
+.short 0
+.short 0
+.short 0
+.short 0
 .short createThread
 .short exitThread
 .short suspendThread
