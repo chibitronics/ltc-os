@@ -122,6 +122,8 @@ thread_t *chBootToApp(void) {
 
   int irq_num;
 
+  arduinoIoInit();
+
   app_start_time = chVTGetSystemTimeX();
 
   memset(_app_header.bss_start, 0,

@@ -199,6 +199,7 @@ static inline long random(long max) {
 long randomSeed(unsigned long seed);
 
 int pinToPort(int pin, ioportid_t *port, uint8_t *pad);
+void arduinoIoInit(void);
 
 /* Bits and Bytes */
 #define lowByte(w) ((uint8_t) ((w) & 0xff))
@@ -216,26 +217,30 @@ int pinToPort(int pin, ioportid_t *port, uint8_t *pad);
 #define A1 0x81
 #define A2 0x82
 #define A3 0x83
+#define A4 0x84 /* Actually a digital pin */
+#define A5 0x85 /* Actually a digital pin */
 #define A6 0x86 /* Temperature sensor */
 #define A7 0x87 /* Voltage sensor */
 #define A8 0x88 /* VDD voltage value */
 #define A9 0x89 /* VCC voltage value */
+#define A10 0x8a /* Audio pin */
 
 /* Digital pins */
-#define D4 0x84
-#define D5 0x85
+#define D0 0xa0
+#define D1 0xa1
+#define D2 0xa2
+#define D3 0xa3
+#define D4 0xa4
+#define D5 0xa5
 
 #define LED_BUILTIN       PTA(12)
-#define LED_A2            LED_BUILTIN
-#define BUTTON_A0         PTB(13)
-#define BUTTON_REC        PTB(1) /* Silkscreened as "Rec" */
-#define BUTTON_A2         PTB(11)
 #define LED_BUILTIN_RGB   PTA(6)
 
 #define LED_BUILTIN_RED   PTA(5)
 #define LED_BUILTIN_GREEN PTB(6)
-#define UART_TX           PTB(3)
-#define UART_RX           PTB(4)
+#define AUDIO_IN          PTB(5)
+#define UART_TX           PTB(2)
+#define UART_RX           PTB(1)
 #define SWD_CLK           PTA(0)
 #define SWD_DIO           PTA(2)
 

@@ -1,57 +1,83 @@
 #include "hal.h"
 #include "adc.h"
-
 #include "Arduino.h"
 #include "kl02.h"
 #include "memio.h"
 #include "printf.h"
 #include "lptmr.h"
 
+#include "esplanade_app.h" // for app_heap
+
+/* Soft PWM for D4 and D5, set to -1 to disable. */
+/* If the threshold is above these, output high. Otherwise, output low.  Set to -1 to disable*/
+static int32_t soft_pwm[2] = {-1, -1};
+
+/* Soft PWM timer object */
+static thread_t *soft_pwm_thread;
+
+/* Virtual timer for disabling the tone object */
+virtual_timer_t tone_timer;
+
 /* Whether users can access "advanced" features, such as Red/Green LEDs.*/
-static int sudo_mode;
+static uint8_t sudo_mode;
 
 /* Pins that can be used when not in "sudo" mode.*/
-static uint8_t normal_mode_pins[] = {
-  A0, A1, A2, A3,
-  D4, D5,
+static const uint8_t normal_mode_pins[] = {
+  0, 1, 2, 3, 4, 5,
+  A0, A1, A2, A3, A4, A5,
+  D0, D1, D2, D3, D4, D5,
   LED_BUILTIN,
-  BUTTON_A0, BUTTON_REC, BUTTON_A2,
 };
+
+void arduinoIoInit(void) {
+  chVTObjectInit(&tone_timer);
+}
 
 int pinToPort(int pin, ioportid_t *port, uint8_t *pad) {
 
   switch(pin) {
-  case BUTTON_A0:
-  case A0:
-    *port = IOPORT2;
-    *pad = 13;
-    break;
 
   case LED_BUILTIN:
-  case A1:
-    *port = IOPORT1;
-    *pad = 12;
-    break;
-
-  case BUTTON_A2:
-  case A2:
-    *port = IOPORT2;
-    *pad = 11;
-    break;
-
-  case A3:
+  case A0:
+  case D0:
+  case 0:
     *port = IOPORT2;
     *pad = 10;
     break;
 
-  case D4:
-    *port = IOPORT1;
-    *pad = 7;
+  case A1:
+  case D1:
+  case 1:
+    *port = IOPORT2;
+    *pad = 11;
     break;
 
-  case D5:
+  case A2:
+  case D2:
+  case 2:
+    *port = IOPORT1;
+    *pad = 12;
+    break;
+
+  case A3:
+  case D3:
+  case 3:
+    *port = IOPORT2;
+    *pad = 13;
+    break;
+
+  case A4:
+  case D4:
+  case 4:
     *port = IOPORT2;
     *pad = 0;
+    break;
+
+  case A5:
+  case D5:
+  case 5:
+    *port = IOPORT1;
+    *pad = 7;
     break;
 
   case LED_BUILTIN_RGB:
@@ -59,14 +85,29 @@ int pinToPort(int pin, ioportid_t *port, uint8_t *pad) {
     *pad = 6;
     break;
 
+  case UART_TX:
+    *port = IOPORT2;
+    *pad = 2;
+    break;
+
+  case UART_RX:
+    *port = IOPORT2;
+    *pad = 1;
+    break;
+
+  case SWD_CLK:
+    *port = IOPORT1;
+    *pad = 0;
+    break;
+
+  case SWD_DIO:
+    *port = IOPORT1;
+    *pad = 2;
+    break;
+
   case LED_BUILTIN_RED:
     *port = IOPORT1;
     *pad = 5;
-    break;
-
-  case BUTTON_REC:
-    *port = IOPORT2;
-    *pad = 3;
     break;
 
   case LED_BUILTIN_GREEN:
@@ -74,24 +115,9 @@ int pinToPort(int pin, ioportid_t *port, uint8_t *pad) {
     *pad = 6;
     break;
 
-  case UART_TX:
+  case AUDIO_IN:
     *port = IOPORT2;
-    *pad = 1;
-    break;
-
-  case UART_RX:
-    *port = IOPORT2;
-    *pad = 2;
-    break;
-
-  case SWD_CLK:
-    *port = IOPORT1;
-    *pad = 8;
-    break;
-
-  case SWD_DIO:
-    *port = IOPORT1;
-    *pad = 9;
+    *pad = 5;
     break;
 
   default:
@@ -128,13 +154,13 @@ void pinMode(int pin, enum pin_mode arduino_mode) {
   if (!can_use_pin(pin))
     return;
 
-  /* Disconnect alternate pins for A0, A2, and A3 */
+  /* Disconnect alternate pins for A0, A1, and A3 */
   if (pin == A0)
-    palSetPadMode(IOPORT2, 4, PAL_MODE_UNCONNECTED);
-  if (pin == A2)
+    palSetPadMode(IOPORT1, 8, PAL_MODE_UNCONNECTED);
+  if (pin == A1)
     palSetPadMode(IOPORT1, 9, PAL_MODE_UNCONNECTED);
   if (pin == A3)
-    palSetPadMode(IOPORT1, 8, PAL_MODE_UNCONNECTED);
+    palSetPadMode(IOPORT2, 4, PAL_MODE_UNCONNECTED);
 
   if (arduino_mode == INPUT_PULLUP)
     mode = PAL_MODE_INPUT_PULLUP;
@@ -160,6 +186,12 @@ void digitalWrite(int pin, int value) {
   /* Don't let users access illegal pins.*/
   if (!can_use_pin(pin))
     return;
+
+  /* Disable the running PWM, if one exists */
+  if ((pin == D4) || (pin == A4) || (pin == 4))
+    soft_pwm[0] = -1;
+  if ((pin == D5) || (pin == A5) || (pin == 5))
+    soft_pwm[1] = -1;
 
   palWritePad(port, pad, !!value);
 }
@@ -194,6 +226,48 @@ static const PWMConfig pwmcfg = {
   },
 };
 
+#define SOFT_PWM_CYCLE 64
+#define SOFT_PWM_CYCLE_MULTIPLIER 16
+
+static uint32_t soft_pwm_counter = SOFT_PWM_CYCLE;
+
+void softPwmTick(void) {
+
+  /* If both timers are stopped, unhook ourselves. */
+  if ((soft_pwm[0] == -1) && (soft_pwm[1] == -1)) {
+    extern void (*lptmrFastISR)(void);
+    stopLptmr(void);
+    lptmrFastISR = NULL;
+  }
+
+  if (soft_pwm_counter <= soft_pwm[0])
+    writel((1 << 0), FGPIOB_PSOR);
+
+  if (soft_pwm_counter <= soft_pwm[1])
+    writel((1 << 7), FGPIOA_PSOR);
+
+  soft_pwm_counter--;
+  if (soft_pwm_counter == 0) {
+    soft_pwm_counter = SOFT_PWM_CYCLE;
+    writel((1 << 7), FGPIOA_PCOR);
+    writel((1 << 0), FGPIOB_PCOR);
+  }
+
+  /* Clear the TCF bit, which lets the timer continue.*/
+  writel(LPTMR_CSR_TCF | LPTMR_CSR_TIE | LPTMR_CSR_TEN, LPTMR0_CSR);
+}
+
+static void soft_pwm_start(void) {
+  extern void (*lptmrFastISR)(void);
+  if (!soft_pwm_thread) {
+    soft_pwm_thread = (void *)1;
+    lptmrFastISR = softPwmTick;
+
+    /* The "pin" and "port" numbers don't matter, since we're hooking the ISR */
+    startLptmr(0, 0, 5000);
+  }
+}
+
 void analogWrite(int pin, int value) {
 
   ioportid_t port;
@@ -205,36 +279,70 @@ void analogWrite(int pin, int value) {
   if (pinToPort(pin, &port, &pad))
     return;
 
-  /* Allow people to specify analogWrite(0) instead of analogWrite(A0).*/
-  if (pin <= 8)
-    pin |= 0x80;
-
-  if (pin == A0) {
-    palSetPadMode(IOPORT2, 4, PAL_MODE_UNCONNECTED);
-    mode = PAL_MODE_ALTERNATIVE_2;
-    driver = &PWMD2;
-    channel = 1;
-  }
-  else if (pin == A1) {
-    mode = PAL_MODE_ALTERNATIVE_2;
-    driver = &PWMD2;
-    channel = 0;
-  }
-  else if (pin == A2) {
-    palSetPadMode(IOPORT1, 9, PAL_MODE_UNCONNECTED);
-    mode = PAL_MODE_ALTERNATIVE_2;
-    driver = &PWMD1;
-    channel = 0;
-  }
-  else if (pin == A3) {
+  switch (pin) {
+  case A0:
+  case D0:
+  case 0:
+  case LED_BUILTIN:
     palSetPadMode(IOPORT1, 8, PAL_MODE_UNCONNECTED);
     mode = PAL_MODE_ALTERNATIVE_2;
     driver = &PWMD1;
     channel = 1;
-  }
-  else
+    break;
+
+  case A1:
+  case D1:
+  case 1:
+    palSetPadMode(IOPORT1, 9, PAL_MODE_UNCONNECTED);
+    mode = PAL_MODE_ALTERNATIVE_2;
+    driver = &PWMD1;
+    channel = 0;
+    break;
+
+  case A2:
+  case D2:
+  case 2:
+    mode = PAL_MODE_ALTERNATIVE_2;
+    driver = &PWMD2;
+    channel = 0;
+    break;
+
+  case A3:
+  case D3:
+  case 3:
+    palSetPadMode(IOPORT2, 4, PAL_MODE_UNCONNECTED);
+    mode = PAL_MODE_ALTERNATIVE_2;
+    driver = &PWMD2;
+    channel = 1;
+    break;
+
+  case A4:
+  case D4:
+  case 4:
+    if (value > 255)
+      value = 255;
+    if (value < 0)
+      value = 0;
+    soft_pwm[0] = (value * SOFT_PWM_CYCLE) / 256;
+    soft_pwm_start();
+    return; /* Return, don't enable PWM since we're faking it */
+
+  case A5:
+  case D5:
+  case 5:
+    if (value > 255)
+      value = 255;
+    if (value < 0)
+      value = 0;
+    soft_pwm[1] = (value * SOFT_PWM_CYCLE) / 256;
+    soft_pwm_start();
+    return; /* Return, don't enable PWM since we're faking it */
+
+  default:
     /* Invalid channel */
     return;
+    break;
+  }
 
   palSetPadMode(port, pad, mode);
 
@@ -255,25 +363,55 @@ void analogReference(enum analog_reference_type type) {
 
 static int pin_to_adc(int pin) {
 
-  if (pin == A0)
-    return ADC_AD13;
-  if (pin == A1)
-    return ADC_DAD0;
-  if (pin == A2)
-    return ADC_AD8;
-  if (pin == A3)
+  switch (pin) {
+  case A0:
+  case D0:
+  case 0:
     return ADC_AD9;
 
-  if (pin == A6)
+  case A1:
+  case D1:
+  case 1:
+    return ADC_AD8;
+
+  case A2:
+  case D2:
+  case 2:
+    return ADC_DAD0;
+
+  case A3:
+  case D3:
+  case 3:
+    return ADC_AD13;
+
+  case A4:
+  case D4:
+  case 4:
+    return ADC_AD6;
+
+  case A5:
+  case D5:
+  case 5:
+    return ADC_AD7;
+
+  case A6:
     return ADC_TEMP_SENSOR;
-  if (pin == A7)
+
+  case A7:
     return ADC_BANDGAP;
-  if (pin == A8)
+
+  case A8:
     return ADC_VREFSH;
-  if (pin == A9)
+
+  case A9:
     return ADC_VREFSL;
 
-  return -1;
+  case A10:
+    return ADC_DAD1;
+
+  default:
+    return -1;
+  }
 }
 
 static void mux_as_adc(int pin) {
@@ -292,10 +430,6 @@ int analogRead(int pin) {
   msg_t result;
   adcsample_t sample;
   int adc_num;
-
-  /* Allow people to e.g. specify analogRead(0) instead of analogRead(A0).*/
-  if (pin <= 9)
-    pin |= 0x80;
 
   adc_num = pin_to_adc(pin);
 
@@ -348,8 +482,6 @@ int analogRead(int pin) {
 
   return sample;
 }
-
-virtual_timer_t tone_timer;
 
 /* Timer callback.  Called from a virtual timer to stop the tone after
  * a certain duration.
