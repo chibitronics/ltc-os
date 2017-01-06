@@ -21,7 +21,7 @@
 
 __attribute__((aligned(4)))
 extern struct app_header _app_header;
-static memory_heap_t app_heap;
+memory_heap_t app_heap;
 thread_t *esplanadeThread;
 
 extern systime_t app_start_time;

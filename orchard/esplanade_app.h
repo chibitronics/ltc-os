@@ -31,5 +31,6 @@ thread_t *chBootToApp(void);
 int appIsValid(void);
 
 extern thread_t *esplanadeThread;
+extern memory_heap_t app_heap;
 
 #endif
