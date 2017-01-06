@@ -99,8 +99,8 @@ struct vt_callback {
   void *param;
 };
 
-static struct vt_callback vtcallbacks[3];
-static struct vt_callback scheduled_callbacks[3];
+static struct vt_callback vtcallbacks[2];
+static struct vt_callback scheduled_callbacks[2];
 static uint8_t num_scheduled_callbacks = 0;
 
 int runCallbacks(void) {
