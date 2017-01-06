@@ -1,4 +1,4 @@
-gitversion.c
+gitversion.h
 build/
 debug/
 .dep/
