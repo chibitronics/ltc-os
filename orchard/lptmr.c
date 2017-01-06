@@ -6,8 +6,8 @@
 
 #define KINETIS_LPTMR0_HANDLER  VectorB0
 
-static int lptmr_enabled = 0;
-static int lptmr_running = 0;
+static uint8_t lptmr_enabled = 0;
+static uint8_t lptmr_running = 0;
 static uint32_t lptmr_rate = 0;
 static ioportid_t lptmr_port;
 static uint8_t lptmr_pad;
