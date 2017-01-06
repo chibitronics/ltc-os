@@ -277,6 +277,8 @@ endif
 # Build a .symbol file, to enable OS/App debugging
 POST_MAKE_ALL_RULE_HOOK: $(BUILDDIR)/$(PROJECT).symbol
 
+PRE_MAKE_ALL_RULE_HOOK: dsptables.h gitversion.h
+
 # Suppress a cryptic, harmless warning about copying mstack
 %.symbol: %.elf
 ifeq ($(USE_VERBOSE_COMPILE),yes)
