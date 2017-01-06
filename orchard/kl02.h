@@ -41,6 +41,12 @@
 #if !defined(SPI0_BASE) /* Don't re-define these from another implementation */
 #define SPI0_BASE               ((unsigned long)0x40076000)
 #endif
+#define SPI0_C1                 0x40076000
+#define SPI0_C2                 0x40076001
+#define SPI0_BR                 0x40076002
+#define SPI0_S                  0x40076003
+#define SPI0_D                  0x40076005
+#define SPI0_M                  0x40076007
 
 #if !defined(PMC_BASE) /* Don't re-define these from another implementation */
 #define PMC_BASE                ((unsigned long)0x4007D000)
