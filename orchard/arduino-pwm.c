@@ -72,8 +72,14 @@ static void soft_pwm_start(void) {
     /* Enable the SPI system, in master mode, with an interrupt on "Empty". */
     writeb(SPIx_C1_SPE | SPIx_C1_MSTR | SPIx_C1_SPTIE, SPI0_C1);
 
-    /* Run it at 50 kHz, which will give us one byte every ~7 kHz */
-    writeb(0x8, SPI0_BR); // Divide 47 MHz clock by 512
+    /* Run SPI at 50 kHz, which will give us a ~5.8 kHz ISR */
+    //writeb(0x8, SPI0_BR); // Divide 47 MHz clock by 512
+
+    /* Run SPI at 187.5 kHz, which will give us a ~23.4 kHz ISR */
+    writeb(0x6, SPI0_BR); // Divide 47 MHz clock by 128
+
+    /* Run SPI at 1.5 MHz, which will give us a 187.5 kHz ISR */
+    //writeb(0x3, SPI0_BR); // Divide 47 MHz clock by 16
 
     /* Enable the vector only once the device has been configured */
     nvicEnableVector(SPI0_IRQn, KINETIS_SPI_SPI0_IRQ_PRIORITY);
