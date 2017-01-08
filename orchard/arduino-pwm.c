@@ -5,7 +5,6 @@
 #include "memio.h"
 
 #define SOFT_PWM_CYCLE 64
-#define SOFT_PWM_CYCLE_MULTIPLIER 16
 
 /* Soft PWM for D4 and D5, set to -1 to disable. */
 /* If the threshold is above these, output high. Otherwise, output low.  Set to -1 to disable*/
