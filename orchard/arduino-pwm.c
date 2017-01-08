@@ -93,8 +93,8 @@ void analogWrite(int pin, int value) {
     return;
 
   /* Clamp the value to between 0 and 255, for the principle of least surprise */
-  if (value > 255)
-    value = 255;
+  if (value > ARDUINO_MAX)
+    value = ARDUINO_MAX;
   if (value < 0)
     value = 0;
 
