@@ -136,6 +136,7 @@ CSRC = main.c \
        arduino-io.c \
        arduino-irqs.c \
        arduino-math.c \
+       arduino-pwm.c \
        arduino-time.c \
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global

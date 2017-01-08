@@ -8,20 +8,10 @@
 
 #include "esplanade_app.h" // for app_heap
 
-/* Soft PWM for D4 and D5, set to -1 to disable. */
-/* If the threshold is above these, output high. Otherwise, output low.  Set to -1 to disable*/
-static int16_t soft_pwm[2] = {-1, -1};
-
 /* Whether users can access "advanced" features, such as Red/Green LEDs.*/
 static uint8_t sudo_mode;
 
-#define SOFT_PWM_CYCLE 64
-#define SOFT_PWM_CYCLE_MULTIPLIER 16
-
-static uint8_t soft_pwm_counter = SOFT_PWM_CYCLE;
-
-/* Soft PWM timer object */
-static thread_t *soft_pwm_thread;
+extern int32_t soft_pwm[2];
 
 /* Virtual timer for disabling the tone object */
 virtual_timer_t tone_timer;
@@ -38,7 +28,7 @@ void arduinoIoInit(void) {
   chVTObjectInit(&tone_timer);
 }
 
-static int canonicalize_pin(int pin) {
+int canonicalizePin(int pin) {
   switch (pin) {
   case LED_BUILTIN:
   case A0:
@@ -78,7 +68,7 @@ static int canonicalize_pin(int pin) {
 
 int pinToPort(int pin, ioportid_t *port, uint8_t *pad) {
 
-  switch(canonicalize_pin(pin)) {
+  switch(canonicalizePin(pin)) {
   case 0:
     *port = IOPORT2;
     *pad = 10;
@@ -156,7 +146,7 @@ int pinToPort(int pin, ioportid_t *port, uint8_t *pad) {
   return 0;
 }
 
-static int can_use_pin(int pin) {
+int canUsePin(int pin) {
 
   unsigned int i;
 
@@ -180,7 +170,7 @@ void pinMode(int pin, enum pin_mode arduino_mode) {
     return;
 
   /* Don't let users access illegal pins.*/
-  if (!can_use_pin(pin))
+  if (!canUsePin(pin))
     return;
 
   /* Disconnect alternate pins for A0, A1, and A3 */
@@ -213,7 +203,7 @@ void digitalWrite(int pin, int value) {
     return;
 
   /* Don't let users access illegal pins.*/
-  if (!can_use_pin(pin))
+  if (!canUsePin(pin))
     return;
 
   /* Disable the running PWM, if one exists */
@@ -234,143 +224,10 @@ int digitalRead(int pin) {
     return 0;
 
   /* Don't let users access illegal pins.*/
-  if (!can_use_pin(pin))
+  if (!canUsePin(pin))
     return 0;
 
   return palReadPad(port, pad) ? HIGH : LOW;
-}
-
-/* Analog IO */
-#define ARDUINO_MAX 1024 /* Arduino PWM values go from 0 to 1024 */
-#define PWM_DIVISOR 16
-#define PWM_FREQUENCY (KINETIS_SYSCLK_FREQUENCY / PWM_DIVISOR)
-#define PWM_PERIOD (PWM_FREQUENCY / (2 * ARDUINO_MAX)) /* Two cycles per seocnd */
-static const PWMConfig pwmcfg = {
-  PWM_FREQUENCY,                            /* 500 Hz PWM clock frequency.   */
-  PWM_PERIOD,                                 /* Initial PWM period 1S.       */
-  NULL,
-  {
-    {PWM_OUTPUT_ACTIVE_HIGH, NULL},
-    {PWM_OUTPUT_ACTIVE_HIGH, NULL},
-  },
-};
-
-void softPwmTick(void) {
-
-  /* If both timers are stopped, unhook ourselves. */
-  if ((soft_pwm[0] == -1) && (soft_pwm[1] == -1)) {
-    writeb(0, SPI0_C1);
-    detachFastInterrupt(SPI_IRQ);
-    return;
-  }
-
-  if (soft_pwm_counter <= soft_pwm[0])
-    writel((1 << 0), FGPIOB_PSOR);
-
-  if (soft_pwm_counter <= soft_pwm[1])
-    writel((1 << 7), FGPIOA_PSOR);
-
-  soft_pwm_counter--;
-  if (soft_pwm_counter == 0) {
-    soft_pwm_counter = SOFT_PWM_CYCLE;
-    writel((1 << 7), FGPIOA_PCOR);
-    writel((1 << 0), FGPIOB_PCOR);
-  }
-
-  /* Write one byte out, to trigger the SPI, which will call us back in 1/7000 Hz.*/
-  writeb(0xff, SPI0_D);
-}
-
-static void soft_pwm_start(void) {
-  if (!soft_pwm_thread) {
-    soft_pwm_thread = (void *)1;
-    attachFastInterrupt(SPI_IRQ, softPwmTick);
-
-    /* Ungate SPI block */
-    SIM->SCGC4 |= SIM_SCGC4_SPI0;
-
-    nvicEnableVector(SPI0_IRQn, KINETIS_SPI_SPI0_IRQ_PRIORITY);
-
-    /* Run it at 50 kHz, which will give us one byte every ~7 kHz */
-    writeb(0x8, SPI0_BR); // Divide 47 MHz clock by 512
-
-    // Enable the SPI system, in master mode, with an interrupt on "Empty".
-    writeb(SPIx_C1_SPE | SPIx_C1_MSTR | SPIx_C1_SPTIE, SPI0_C1);
-  }
-}
-
-void analogWrite(int pin, int value) {
-
-  ioportid_t port;
-  uint8_t pad;
-  uint8_t channel;
-  iomode_t mode;
-  PWMDriver *driver = NULL;
-
-  if (pinToPort(pin, &port, &pad))
-    return;
-
-  switch (canonicalize_pin(pin)) {
-  case 0:
-    palSetPadMode(IOPORT1, 8, PAL_MODE_UNCONNECTED);
-    mode = PAL_MODE_ALTERNATIVE_2;
-    driver = &PWMD1;
-    channel = 1;
-    break;
-
-  case 1:
-    palSetPadMode(IOPORT1, 9, PAL_MODE_UNCONNECTED);
-    mode = PAL_MODE_ALTERNATIVE_2;
-    driver = &PWMD1;
-    channel = 0;
-    break;
-
-  case 2:
-    mode = PAL_MODE_ALTERNATIVE_2;
-    driver = &PWMD2;
-    channel = 0;
-    break;
-
-  case 3:
-    palSetPadMode(IOPORT2, 4, PAL_MODE_UNCONNECTED);
-    mode = PAL_MODE_ALTERNATIVE_2;
-    driver = &PWMD2;
-    channel = 1;
-    break;
-
-  case 4:
-    if (value > 255)
-      value = 255;
-    if (value < 0)
-      value = 0;
-    soft_pwm[0] = (value * SOFT_PWM_CYCLE) / 256;
-    soft_pwm_start();
-    return; /* Return, don't enable PWM since we're faking it */
-
-  case 5:
-    if (value > 255)
-      value = 255;
-    if (value < 0)
-      value = 0;
-    soft_pwm[1] = (value * SOFT_PWM_CYCLE) / 256;
-    soft_pwm_start();
-    return; /* Return, don't enable PWM since we're faking it */
-
-  default:
-    /* Invalid channel */
-    return;
-    break;
-  }
-
-  palSetPadMode(port, pad, mode);
-
-  /* Start the driver, if necessary. */
-  if (driver->state != PWM_READY)
-    pwmStart(driver, &pwmcfg);
-
-  pwmEnableChannel(driver, channel, value * PWM_PERIOD / ARDUINO_MAX);
-
-  return;
 }
 
 void analogReference(enum analog_reference_type type) {
@@ -381,7 +238,7 @@ void analogReference(enum analog_reference_type type) {
 
 static int pin_to_adc(int pin) {
 
-  switch (canonicalize_pin(pin)) {
+  switch (canonicalizePin(pin)) {
   case 0:
     return ADC_AD9;
 
@@ -507,7 +364,7 @@ void tone(int pin, unsigned int frequency, unsigned long duration) {
     return;
 
   /* Don't let users access illegal pins.*/
-  if (!can_use_pin(pin))
+  if (!canUsePin(pin))
     return;
 
   /* Ensure the pin is an output */
