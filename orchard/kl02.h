@@ -25,10 +25,26 @@
 #if !defined(I2C0_BASE) /* Don't re-define these from another implementation */
 #define I2C0_BASE               ((unsigned long)0x40066000)
 #endif
+#define I2C0_A1                 0x40066000
+#define I2C0_F                  0x40066001
+#define I2C0_C1                 0x40066002
+#define I2C0_S                  0x40066003
+#define I2C0_D                  0x40066004
+#define I2C0_C2                 0x40066005
+#define I2C0_FLT                0x40066006
+#define I2C0_RA                 0x40066007
 
 #if !defined(I2C1_BASE) /* Don't re-define these from another implementation */
 #define I2C1_BASE               ((unsigned long)0x40067000)
 #endif
+#define I2C1_A1                 0x40067000
+#define I2C1_F                  0x40067001
+#define I2C1_C1                 0x40067002
+#define I2C1_S                  0x40067003
+#define I2C1_D                  0x40067004
+#define I2C1_C2                 0x40067005
+#define I2C1_FLT                0x40067006
+#define I2C1_RA                 0x40067007
 
 #if !defined(UART0_BASE) /* Don't re-define these from another implementation */
 #define UART0_BASE              ((unsigned long)0x4006A000)
