@@ -19,7 +19,7 @@ extern void (*lptmrFastISR)(void);
 extern void (*lptmrISR)(void);
 
 void (*spiFastISR)(void);
-void (*i2c2FastISR)(void);
+void (*i2c0FastISR)(void);
 
 void attachInterrupt(int irq, void (*func)(void), enum irq_mode mode) {
 
@@ -59,8 +59,8 @@ void attachInterrupt(int irq, void (*func)(void), enum irq_mode mode) {
       break;
 
     /* Note: reuses fast ISR here */
-    case I2C2_IRQ:
-      i2c2FastISR = func;
+    case I2C0_IRQ:
+      i2c0FastISR = func;
       break;
 
     /* Note: reuses fast ISR here */
@@ -105,8 +105,8 @@ void attachFastInterrupt(int irq, void (*func)(void)) {
       lptmrFastISR = func;
       break;
 
-    case I2C2_IRQ:
-      i2c2FastISR = func;
+    case I2C0_IRQ:
+      i2c0FastISR = func;
       break;
 
     case SPI_IRQ:
@@ -127,7 +127,7 @@ OSAL_IRQ_HANDLER(Vector68) {
 }
 
 /* I2C2 handler */
-OSAL_IRQ_HANDLER(Vector64) {
-  if (i2c2FastISR)
-    i2c2FastISR();
+OSAL_IRQ_HANDLER(Vector60) {
+  if (i2c0FastISR)
+    i2c0FastISR();
 }
