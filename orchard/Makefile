@@ -138,6 +138,7 @@ CSRC = main.c \
        arduino-math.c \
        arduino-pwm.c \
        arduino-time.c \
+       arduino-tone.c \
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
