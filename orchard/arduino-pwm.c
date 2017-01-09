@@ -5,6 +5,10 @@
 #include "memio.h"
 
 #define SOFT_PWM_CYCLE 64
+#define SOFT_TONE
+
+/* The rate at which the soft PWM runs */
+#define SOFT_PWM_FREQUENCY 23437
 
 /* Soft PWM for D4 and D5, set to -1 to disable. */
 /* If the threshold is above these, output high. Otherwise, output low.  Set to -1 to disable*/
@@ -14,6 +18,8 @@ static uint16_t soft_pwm_counter = SOFT_PWM_CYCLE;
 
 /* Soft PWM timer object */
 static uint8_t soft_pwm_running;
+
+static void (*soft_pwm_hook)(void);
 
 /* Analog IO */
 #define ARDUINO_MAX 255 /* Arduino PWM values go from 0 to 255 */
@@ -33,7 +39,9 @@ static const PWMConfig pwmcfg = {
 void softPwmTick(void) {
 
   /* If both timers are stopped, unhook ourselves. */
-  if ((soft_pwm[0] == -1) && (soft_pwm[1] == -1)) {
+  if ((soft_pwm[0] == -1)
+   && (soft_pwm[1] == -1)
+   && (!soft_pwm_hook)) {
     writeb(0, SPI0_C1);
     nvicDisableVector(SPI0_IRQn);
     detachFastInterrupt(SPI_IRQ);
@@ -41,10 +49,10 @@ void softPwmTick(void) {
     return;
   }
 
-  if (soft_pwm_counter <= soft_pwm[0])
+  if (soft_pwm_counter == soft_pwm[0])
     writel((1 << 0), FGPIOB_PSOR);
 
-  if (soft_pwm_counter <= soft_pwm[1])
+  if (soft_pwm_counter == soft_pwm[1])
     writel((1 << 7), FGPIOA_PSOR);
 
   soft_pwm_counter--;
@@ -54,7 +62,12 @@ void softPwmTick(void) {
     writel((1 << 0), FGPIOB_PCOR);
   }
 
-  /* Read the S register to reset the TIEF register, allowing transmit to happen.*/
+  if (soft_pwm_hook)
+    soft_pwm_hook();
+
+  /* Read the S register to reset the TIEF bit,
+   * allowing transmit to happen.
+   */
   (void)readb(SPI0_S);
 
   /* Write one byte out, to trigger the SPI, which will call us back in 1/7000 Hz.*/
@@ -157,4 +170,12 @@ void analogWrite(int pin, int value) {
   pwmEnableChannel(driver, channel, value * PWM_PERIOD / ARDUINO_MAX);
 
   return;
+}
+
+void hookSoftPwm(void (*new_soft_pwm_hook)(void)) {
+  soft_pwm_hook = new_soft_pwm_hook;
+
+  /* If there's actually a hook now, kick off the timer */
+  if (soft_pwm_hook)
+   soft_pwm_start();
 }
