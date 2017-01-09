@@ -115,7 +115,7 @@ SysCall_Table:
 .short randomSeed
 .short i2cTransceive
 .short i2cSetupSlave
-.short 0
+.short hookSoftPwm
 .short 0
 .short 0
 .short 0
