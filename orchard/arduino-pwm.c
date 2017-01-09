@@ -146,12 +146,19 @@ void analogWrite(int pin, int value) {
 
   case 4:
     soft_pwm[0] = (value * SOFT_PWM_CYCLE) / 256;
+
+    /* Round up, if the value got truncated to 0 */
+    if (value && !soft_pwm[0])
+      soft_pwm[0] = 1;
     palSetPadMode(port, pad, PAL_MODE_OUTPUT_PUSHPULL);
     soft_pwm_start();
     return; /* Return, don't enable PWM since we're faking it */
 
   case 5:
     soft_pwm[1] = (value * SOFT_PWM_CYCLE) / 256;
+    /* Round up, if the value got truncated to 0 */
+    if (value && !soft_pwm[1])
+      soft_pwm[1] = 1;
     palSetPadMode(port, pad, PAL_MODE_OUTPUT_PUSHPULL);
     soft_pwm_start();
     return; /* Return, don't enable PWM since we're faking it */
