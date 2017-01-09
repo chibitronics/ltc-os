@@ -185,18 +185,8 @@ static void serve_interrupt(I2CDriver *i2cp) {
 
 OSAL_IRQ_HANDLER(KINETIS_I2C0_IRQ_VECTOR) {
 
-  if (i2cFastISR) {
-    i2cFastISR();
-    return;
-  }
-
   OSAL_IRQ_PROLOGUE();
-
-  if (i2cISR)
-    i2cISR();
-  else
-    serve_interrupt(&I2CD1);
-
+  serve_interrupt(&I2CD1);
   OSAL_IRQ_EPILOGUE();
 }
 
@@ -207,8 +197,18 @@ OSAL_IRQ_HANDLER(KINETIS_I2C0_IRQ_VECTOR) {
 /* FIXME: KL2x has I2C1 on Vector64; K2x don't have I2C1! */
 OSAL_IRQ_HANDLER(Vector64) {
 
+  if (i2cFastISR) {
+    i2cFastISR();
+    return;
+  }
+
   OSAL_IRQ_PROLOGUE();
-  serve_interrupt(&I2CD2);
+
+  if (i2cISR)
+    i2cISR();
+  else
+    serve_interrupt(&I2CD2);
+
   OSAL_IRQ_EPILOGUE();
 }
 
