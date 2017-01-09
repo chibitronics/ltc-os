@@ -4,7 +4,6 @@
 #include "kl02.h"
 #include "memio.h"
 #include "printf.h"
-#include "lptmr.h"
 
 #include "esplanade_app.h" // for app_heap
 
@@ -13,9 +12,6 @@ static uint8_t sudo_mode;
 
 extern int32_t soft_pwm[2];
 
-/* Virtual timer for disabling the tone object */
-virtual_timer_t tone_timer;
-
 /* Pins that can be used when not in "sudo" mode.*/
 static const uint8_t normal_mode_pins[] = {
   0, 1, 2, 3, 4, 5,
@@ -23,10 +19,6 @@ static const uint8_t normal_mode_pins[] = {
   D0, D1, D2, D3, D4, D5,
   LED_BUILTIN,
 };
-
-void arduinoIoInit(void) {
-  chVTObjectInit(&tone_timer);
-}
 
 int canonicalizePin(int pin) {
   switch (pin) {
@@ -344,46 +336,6 @@ int analogRead(int pin) {
     sample = 0;
 
   return sample;
-}
-
-/* Timer callback.  Called from a virtual timer to stop the tone after
- * a certain duration.
- */
-static void stop_tone(void *par) {
-
-  noTone((uint32_t)par);
-}
-
-void tone(int pin, unsigned int frequency, unsigned long duration) {
-
-
-  ioportid_t port;
-  uint8_t pad;
-
-  if (pinToPort(pin, &port, &pad))
-    return;
-
-  /* Don't let users access illegal pins.*/
-  if (!canUsePin(pin))
-    return;
-
-  /* Ensure the pin is an output */
-  palSetPadMode(port, pad, PAL_MODE_OUTPUT_PUSHPULL);
-
-  /* Start up the low-power timer, which directly drives the port. */
-  startLptmr(port, pad, frequency);
-
-  /* Set up a timer callback to stop the tone. */
-  chVTSet(&tone_timer, MS2ST(duration), stop_tone, (void *)pin);
-
-  return;
-}
-
-void noTone(int pin) {
-
-  (void)pin;
-  stopLptmr();
-  return;
 }
 
 /* Simple communication protocols */
