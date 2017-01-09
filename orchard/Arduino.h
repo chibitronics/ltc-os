@@ -251,8 +251,8 @@ void detachFastInterrupt(int irq);
 
 /* Interrupts */
 
-#define I2C_IRQ           8
-#define I2C2_IRQ          9
+#define I2C0_IRQ          8
+#define I2C_IRQ           9
 #define SPI_IRQ           10
 #define SERIAL_IRQ        12
 #define ADC_IRQ           15
