@@ -31,6 +31,8 @@
 
 #include "kl02.h"
 
+#include "Arduino.h"
+
 #define BOOT_AFTER_DELAY FALSE
 
 #include <string.h>
@@ -297,6 +299,7 @@ THD_TABLE_END
  */
 int main(void)
 {
+  int i;
   blcrt_init();
   /*
    * System initializations.
@@ -332,6 +335,13 @@ int main(void)
   NVIC_EnableIRQ(PendSV_IRQn);
   NVIC_EnableIRQ(SysTick_IRQn);
   analogStop();
+  
+  // set all pins to "0" state to prevent floating light confusion
+  for( i = 0; i < 6; i++ ) {
+    pinMode(i, OUTPUT);
+    digitalWrite(i, 0);
+  }
+  
   chBootToApp();
 #endif
 
