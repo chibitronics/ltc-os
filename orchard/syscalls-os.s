@@ -116,8 +116,8 @@ SysCall_Table:
 .short i2cTransceive
 .short i2cSetupSlave
 .short hookSoftPwm
-.short 0
-.short 0
+.short getOsVersion
+.short getHwVersion
 .short 0
 .short 0
 .short createThread
