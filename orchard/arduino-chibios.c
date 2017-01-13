@@ -209,3 +209,11 @@ void mutexUnlock(mutex_t *mp) {
 void setThreadName(const char *name) {
   chRegSetThreadName(name);
 }
+
+uint32_t getOsVersion(void) {
+  return LTC_OS_VERSION;
+}
+
+uint32_t getHwVersion(void) {
+  return LTC_HW_VERSION;
+}
