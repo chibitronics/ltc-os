@@ -14,7 +14,7 @@ extern volatile uint8_t dataReadyFlag;
 extern volatile adcsample_t *bufloc;
 extern size_t buf_n;
 
-static void analog_fast_isr(void) {
+static int analog_fast_isr(void) {
 
   /* Read the sample into the buffer */
   mic_sample[adc_current_index++] = *adc_ra;//adcp->adc->RA;
@@ -37,6 +37,9 @@ static void analog_fast_isr(void) {
     buf_n = MIC_SAMPLE_DEPTH / 2;
     dataReadyFlag++;
   }
+
+  // Return 0 to indicate we don't want the normal handler to fire
+  return 0;
 }
 
 static void adc_mic_end_cb(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
