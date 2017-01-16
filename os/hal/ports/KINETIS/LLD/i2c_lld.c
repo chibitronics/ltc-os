@@ -27,7 +27,7 @@
 
 #if HAL_USE_I2C || defined(__DOXYGEN__)
 
-void (*i2cFastISR)(void);
+int (*i2cFastISR)(void);
 void (*i2cISR)(void);
 
 /*===========================================================================*/
@@ -198,8 +198,8 @@ OSAL_IRQ_HANDLER(KINETIS_I2C0_IRQ_VECTOR) {
 OSAL_IRQ_HANDLER(Vector64) {
 
   if (i2cFastISR) {
-    i2cFastISR();
-    return;
+    if (!i2cFastISR())
+      return;
   }
 
   OSAL_IRQ_PROLOGUE();
