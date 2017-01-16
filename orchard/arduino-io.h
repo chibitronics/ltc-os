@@ -4,5 +4,6 @@
 int canonicalizePin(int pin);
 int pinToPort(int pin, ioportid_t *port, uint8_t *pad);
 int canUsePin(int pin);
+void arduinoIoInit(void);
 
 #endif /* _ARDUINO_IO_H */
