@@ -280,6 +280,17 @@ static void mux_as_adc(int pin) {
   palSetPadMode(port, pad, PAL_MODE_INPUT_ANALOG);
 }
 
+/* Analog stuff */
+#define SYSTEM_ANALOG_RESOLUTION 12
+static uint8_t analog_read_resolution = SYSTEM_ANALOG_RESOLUTION;
+
+void analogReadResolution(int bits) {
+  if ((bits < 0) || (bits > 31))
+    return;
+
+  analog_read_resolution = bits;
+}
+
 int analogRead(int pin) {
 
   msg_t result;
@@ -334,6 +345,12 @@ int analogRead(int pin) {
                      1);
   if (result)
     sample = 0;
+
+  // Shift the result up or down to match the requested resolution.
+  if (analog_read_resolution > SYSTEM_ANALOG_RESOLUTION)
+    sample >>= (analog_read_resolution - SYSTEM_ANALOG_RESOLUTION);
+  else if (analog_read_resolution < SYSTEM_ANALOG_RESOLUTION)
+    sample <<= (SYSTEM_ANALOG_RESOLUTION - analog_read_resolution);
 
   return sample;
 }
