@@ -36,7 +36,7 @@ static const PWMConfig pwmcfg = {
   },
 };
 
-void softPwmTick(void) {
+int softPwmTick(void) {
 
   /* If both timers are stopped, unhook ourselves. */
   if ((soft_pwm[0] == -1)
@@ -46,7 +46,7 @@ void softPwmTick(void) {
     nvicDisableVector(SPI0_IRQn);
     detachFastInterrupt(SPI_IRQ);
     soft_pwm_running = 0;
-    return;
+    return 1;
   }
 
   if (soft_pwm_counter == soft_pwm[0])
@@ -72,6 +72,9 @@ void softPwmTick(void) {
 
   /* Write one byte out, to trigger the SPI, which will call us back in 1/7000 Hz.*/
   writeb(0xff, SPI0_D);
+
+  /* Allow the normal handler to run */
+  return 1;
 }
 
 static void soft_pwm_start(void) {
