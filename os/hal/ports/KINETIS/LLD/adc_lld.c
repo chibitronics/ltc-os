@@ -24,7 +24,7 @@
 
 #include "hal.h"
 
-void (*adcFastISR)(void);
+int (*adcFastISR)(void);
 void (*adcISR)(void);
 
 #if HAL_USE_ADC || defined(__DOXYGEN__)
@@ -94,8 +94,8 @@ static void calibrate(ADCDriver *adcp) {
  */
 OSAL_IRQ_HANDLER(KINETIS_ADC0_IRQ_VECTOR) {
   if (adcFastISR) {
-    adcFastISR();
-    return;
+    if (!adcFastISR())
+      return;
   }
 
   OSAL_IRQ_PROLOGUE();

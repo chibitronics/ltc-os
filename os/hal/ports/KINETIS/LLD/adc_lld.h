@@ -335,7 +335,7 @@ extern "C" {
    * The FastISR operates outside of ChibiOS, and is thus faster, though
    * in general it can't call any ChibiOS code.
    */
-  extern void (*adcFastISR)(void);
+  extern int (*adcFastISR)(void);
   extern void (*adcISR)(void);
 #ifdef __cplusplus
 }
