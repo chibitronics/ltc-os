@@ -44,7 +44,10 @@ void tone(int pin, unsigned int frequency, unsigned long duration) {
 }
 
 void noTone(int pin) {
-  (void)pin;
+
   stopLptmr();
+
+  // Set the pin LOW to prevent speaker burnout
+  digitalWrite(pin, LOW);
   return;
 }
