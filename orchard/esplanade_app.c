@@ -18,6 +18,7 @@
 
 #include "hal.h"
 #include "esplanade_app.h"
+#include "arduino-io.h"
 
 __attribute__((aligned(4)))
 extern struct app_header _app_header;
