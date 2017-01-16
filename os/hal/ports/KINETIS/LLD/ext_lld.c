@@ -26,9 +26,9 @@
 
 #if HAL_USE_EXT || defined(__DOXYGEN__)
 
-void (*portaFastISR)(void);
+int (*portaFastISR)(void);
 void (*portaISR)(void);
-void (*portbFastISR)(void);
+int (*portbFastISR)(void);
 void (*portbISR)(void);
 
 /*===========================================================================*/
@@ -166,8 +166,8 @@ static inline void irq_handler(PORT_TypeDef * const port, const unsigned port_wi
 #if defined(KINETIS_PORTA_IRQ_VECTOR) && KINETIS_EXT_PORTA_WIDTH > 0
 OSAL_IRQ_HANDLER(KINETIS_PORTA_IRQ_VECTOR) {
   if (portaFastISR) {
-    portaFastISR();
-    return;
+    if (!portaFastISR())
+      return;
   }
 
   OSAL_IRQ_PROLOGUE();
@@ -188,8 +188,8 @@ OSAL_IRQ_HANDLER(KINETIS_PORTA_IRQ_VECTOR) {
 #if defined(KINETIS_PORTB_IRQ_VECTOR) && KINETIS_EXT_PORTB_WIDTH > 0
 OSAL_IRQ_HANDLER(KINETIS_PORTB_IRQ_VECTOR) {
   if (portbFastISR) {
-    portbFastISR();
-    return;
+    if (!portbFastISR())
+      return;
   }
 
   OSAL_IRQ_PROLOGUE();
