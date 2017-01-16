@@ -12,10 +12,10 @@ static uint32_t lptmr_rate = 0;
 static ioportid_t lptmr_port;
 static uint8_t lptmr_pad;
 
-void (*lptmrFastISR)(void);
+int (*lptmrFastISR)(void);
 void (*lptmrISR)(void);
 
-#define RATE 234000000/88
+#define RATE 1360000 /* Sourced from 4 MHz IRC via a /2 divider, but slower somehow by 66%? */
 static void lptmr_enable(void) {
 
   if (lptmr_enabled)
@@ -27,7 +27,7 @@ static void lptmr_enable(void) {
   /* Reset the LPTMR block */
   writel(0, LPTMR0_CSR);
 
-  /* Select fast internal reference clock */
+  /* Select fast internal reference clock (4 MHz) */
   writeb(readb(MCG_C2) | (1 << 0), MCG_C2);
 
   /* Enable MCGIRCLK */
@@ -38,6 +38,9 @@ static void lptmr_enable(void) {
 
   /* Use MCGIRCLK in bypass mode */
   writel((0 << 3) | (1 << 2) | (0 << 0), LPTMR0_PSR);
+
+  /* Use MCGIRCLK with a divide-by-two */
+  //writel((0 <<3) | (0 << 2) | (0 << 0), LPTMR0_PSR);
 
   NVIC_EnableIRQ(28);
   writel(LPTMR_CSR_TIE, LPTMR0_CSR);
@@ -70,7 +73,7 @@ void startLptmr(ioportid_t port, uint8_t pad, uint32_t rate_hz) {
 
 void stopLptmr(void) {
 
-  if( !lptmr_running )
+  if (!lptmr_running)
     return;
 
   lptmr_running = 0;
@@ -79,8 +82,8 @@ void stopLptmr(void) {
 
 OSAL_IRQ_HANDLER(KINETIS_LPTMR0_HANDLER) {
   if (lptmrFastISR) {
-    lptmrFastISR();
-    return;
+    if (!lptmrFastISR())
+      return;
   }
 
   OSAL_IRQ_PROLOGUE();
