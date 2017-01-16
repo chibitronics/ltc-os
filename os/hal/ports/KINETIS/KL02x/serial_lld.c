@@ -27,7 +27,7 @@
 
 #if HAL_USE_SERIAL || defined(__DOXYGEN__)
 
-void (*serialFastISR)(void);
+int (*serialFastISR)(void);
 void (*serialISR)(void);
 
 #include "kl02x.h"
@@ -211,8 +211,8 @@ static void configure_uart(UARTLP_TypeDef *uart, const SerialConfig *config)
 OSAL_IRQ_HANDLER(Vector70) {
 
   if (serialFastISR) {
-    serialFastISR();
-    return;
+    if (!serialFastISR())
+      return;
   }
     
   OSAL_IRQ_PROLOGUE();
