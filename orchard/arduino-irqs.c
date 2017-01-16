@@ -1,25 +1,27 @@
 #include "hal.h"
 #include "Arduino.h"
 
-extern void (*portaFastISR)(void);
+extern int (*portaFastISR)(void);
 extern void (*portaISR)(void);
-extern void (*portbFastISR)(void);
+extern int (*portbFastISR)(void);
 extern void (*portbISR)(void);
-extern void (*pwm0FastISR)(void);
+extern int (*pwm0FastISR)(void);
 extern void (*pwm0ISR)(void);
-extern void (*pwm1FastISR)(void);
+extern int (*pwm1FastISR)(void);
 extern void (*pwm1ISR)(void);
-extern void (*adcFastISR)(void);
+extern int (*adcFastISR)(void);
 extern void (*adcISR)(void);
-extern void (*i2cFastISR)(void);
+extern int (*i2cFastISR)(void);
 extern void (*i2cISR)(void);
-extern void (*serialFastISR)(void);
+extern int (*serialFastISR)(void);
 extern void (*serialISR)(void);
-extern void (*lptmrFastISR)(void);
+extern int (*lptmrFastISR)(void);
 extern void (*lptmrISR)(void);
 
-void (*spiFastISR)(void);
-void (*i2c0FastISR)(void);
+int (*spiFastISR)(void);
+int (*i2c0FastISR)(void);
+void (*spiISR)(void);
+void (*i2c0ISR)(void);
 
 void attachInterrupt(int irq, void (*func)(void), enum irq_mode mode) {
 
@@ -75,7 +77,7 @@ void detachInterrupt(int irq) {
   attachInterrupt(irq, NULL, 0);
 }
 
-void attachFastInterrupt(int irq, void (*func)(void)) {
+void attachFastInterrupt(int irq, int (*func)(void)) {
   switch(irq) {
     case PORTA_IRQ:
       portaFastISR = func;

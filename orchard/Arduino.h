@@ -201,7 +201,7 @@ long randomSeed(unsigned long seed);
 int pinToPort(int pin, ioportid_t *port, uint8_t *pad);
 void arduinoIoInit(void);
 
-void attachFastInterrupt(int irq, void (*func)(void));
+void attachFastInterrupt(int irq, int (*func)(void));
 void detachInterrupt(int irq);
 void attachInterrupt(int irq, void (*func)(void), enum irq_mode mode);
 void detachFastInterrupt(int irq);
