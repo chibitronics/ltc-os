@@ -262,5 +262,6 @@ void detachFastInterrupt(int irq);
 #define LPTMR_IRQ         28
 #define PORTA_IRQ         30
 #define PORTB_IRQ         31
+#define NOT_AN_INTERRUPT  -1
 
 #endif /* __ARDUINO_KOSAGI_H__ */

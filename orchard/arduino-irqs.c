@@ -62,12 +62,12 @@ void attachInterrupt(int irq, void (*func)(void), enum irq_mode mode) {
 
     /* Note: reuses fast ISR here */
     case I2C0_IRQ:
-      i2c0FastISR = func;
+      i2c0ISR = func;
       break;
 
     /* Note: reuses fast ISR here */
     case SPI_IRQ:
-      spiFastISR = func;
+      spiISR = func;
       break;
   }
   return;
@@ -122,14 +122,32 @@ void detachFastInterrupt(int irq) {
   attachFastInterrupt(irq, NULL);
 }
 
+int digitalPinToInterrupt(int pin) {
+  ioportid_t port;
+  uint8_t pad;
+  pinToPort(pin, &port, &pad);
+
+  if (port == IOPORT1)
+    return PORTA_IRQ;
+  else if (port == IOPORT2)
+    return PORTB_IRQ;
+  return NOT_AN_INTERRUPT;
+}
+
 /* SPI handler */
 OSAL_IRQ_HANDLER(Vector68) {
   if (spiFastISR)
-    spiFastISR();
+    if (!spiFastISR())
+      return;
+  if (spiISR)
+    spiISR();
 }
 
 /* I2C2 handler */
 OSAL_IRQ_HANDLER(Vector60) {
   if (i2c0FastISR)
-    i2c0FastISR();
+    if (!i2c0FastISR())
+      return;
+  if (i2c0ISR)
+    i2c0ISR();
 }
