@@ -211,7 +211,7 @@ static THD_FUNCTION(demod_thread, arg) {
   stream = stream_driver;
 
   printf("%d free\r\n", heap_size());
-  printf("Copyright (c) 2016 Chibitronics PTE LTD\r\n");
+  printf("Copyright (c) 2017 Chibitronics PTE LTD\r\n");
 
   i2cStart(i2cDriver, &i2c_config);
   adcStart(&ADCD1, &adccfg1);
