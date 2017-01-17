@@ -124,6 +124,7 @@ thread_t *chBootToApp(void) {
   int irq_num;
 
   arduinoIoInit();
+  arduinoToneInit();
 
   app_start_time = chVTGetSystemTimeX();
 

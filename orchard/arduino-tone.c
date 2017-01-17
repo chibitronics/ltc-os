@@ -6,7 +6,7 @@
 /* Virtual timer for disabling the tone object */
 virtual_timer_t tone_timer;
 
-void arduinoIoInit(void) {
+void arduinoToneInit(void) {
   chVTObjectInit(&tone_timer);
 }
 
