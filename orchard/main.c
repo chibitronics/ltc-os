@@ -130,18 +130,18 @@ void demod_loop(void) {
     // replace the code in this #if bracket with the storage flashing code
     if (pkt.header.type == PKTTYPE_DATA) {
       pkt_len = DATA_LEN;
-      tfp_printf( "\n\r data packet:" );
+      printf("\n\r data packet:");
     }
     else {
-      tfp_printf( "\n\r control packet:" );
+      printf("\n\r control packet:");
       pkt_len = CTRL_LEN;
     }
 
     for (i = 0; i < 16; i++) { // abridged dump
       if (i % 32 == 0) {
-        tfp_printf( "\n\r" );
+        printf( "\n\r" );
       }
-      tfp_printf( "%02x", ((uint8_t *)&pkt)[i] /* isprint(pktBuf[i]) ? pktBuf[i] : '.'*/ );
+      printf("%02x", ((uint8_t *)&pkt)[i] /* isprint(pktBuf[i]) ? pktBuf[i] : '.'*/);
     }
 
     // check hash
@@ -153,11 +153,11 @@ void demod_loop(void) {
     /* The hash is always the last element of the packet, regardless of type. */
     txhash = ((uint32_t *)(((void *)&pkt) + pkt_len))[-1];
 
-    tfp_printf(" tx: %08x rx: %08x\n\r", txhash, hash);
+    printf(" tx: %08x rx: %08x\n\r", txhash, hash);
     if (txhash != hash)
-      tfp_printf( " fail\n\r" );
+      printf(" fail\n\r");
     else
-      tfp_printf( " pass\n\r" );
+      printf(" pass\n\r");
 
     pktReady = 0; // we've extracted packet data, so clear the buffer flag
 #else
