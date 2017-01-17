@@ -155,6 +155,7 @@ SysCall_Table:
 .short hookSoftPwm
 .short getOsVersion
 .short getHwVersion
+.short getGitVersion
 .short digitalPinToInterrupt
 .short analogReadResolution
 .short canonicalizePin
