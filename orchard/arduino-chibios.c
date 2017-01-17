@@ -182,15 +182,6 @@ uint32_t getSyscallAddr(uint32_t sysCallNum) {
   return calls[sysCallNum] | 1;
 }
 
-void setSerialSpeed(uint32_t speed) {
-  SerialConfig serialConfig = {
-    speed,
-  };
-
-  sdStop(&SD1);
-  sdStart(&SD1, &serialConfig);
-}
-
 void mutexInit(mutex_t *mp) {
   chMtxObjectInit(mp);
 }

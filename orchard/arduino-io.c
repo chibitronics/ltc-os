@@ -378,3 +378,33 @@ int analogRead(int pin) {
 void doSudo(void) {
   sudo_mode = 1;
 }
+
+void setSerialSpeed(uint32_t speed) {
+  ioportid_t port;
+  uint8_t pad;
+  iomode_t mode;
+  SerialConfig serialConfig = {
+    speed,
+  };
+
+  sdStop(&SD1);
+
+  /* On boot, we mux the two pins to GPIO outputs and drive
+   * them low, to simulate USB disconnect.
+   * Since we're setting the serial speed now, we obviously
+   * want to use the pins as part of a serial port.
+   * Remux them as UART.
+   */
+
+  pinToPort(UART_TX, &port, &pad);
+  mode = PAL_MODE_ALTERNATIVE_3;
+  palSetPadMode(port, pad, mode);
+  palWritePad(port, pad, 0);
+
+  pinToPort(UART_RX, &port, &pad);
+  mode = PAL_MODE_ALTERNATIVE_3;
+  palSetPadMode(port, pad, mode);
+  palWritePad(port, pad, 0);
+
+  sdStart(&SD1, &serialConfig);
+}
