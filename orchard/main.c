@@ -19,7 +19,6 @@
 #include "printf.h"
 
 #include "orchard.h"
-#include "gitversion.h"
 
 #include "esplanade_analog.h"
 #include "esplanade_demod.h"
@@ -263,8 +262,6 @@ static THD_FUNCTION(demod_thread, arg) {
   // reset_pulse is nom 2ms wide, so this is good margin
   PROG_STATR_OFF; // toggle LEDs to indicate we're now out of init
   PROG_STATG_OFF;
-
-  printf("LtC build %s\r\n", gitversion); // emit build number later, so it shows up clearly on dataviewer
 
   if( RESET_LEVEL ) {
     // user did not hold down the reset button, check if app is valid and run it
