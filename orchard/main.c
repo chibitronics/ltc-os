@@ -166,12 +166,6 @@ void demod_loop(void) {
   }
 }
 
-static size_t heap_size(void) {
-  extern uint32_t __heap_base__;
-  extern uint32_t __heap_end__;
-  return (size_t) (&__heap_end__ - &__heap_base__);
-}
-
 /* Initialize the bootloader setup */
 int blbss_len;
 static void blcrt_init(void) {
@@ -208,9 +202,6 @@ static THD_FUNCTION(demod_thread, arg) {
   // init the serial interface
   sdStart(&SD1, &serialConfig);
   stream = stream_driver;
-
-  printf("%d free\r\n", heap_size());
-  printf("Copyright (c) 2017 Chibitronics PTE LTD\r\n");
 
   i2cStart(i2cDriver, &i2c_config);
   adcStart(&ADCD1, &adccfg1);
