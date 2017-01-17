@@ -171,6 +171,8 @@ ASMSRC += $(STARTUPASM) $(PORTASM) $(OSALASM) \
           hardfault_handler.s memmanage_handler.s \
           usagefault_handler.s busfault_handler.s \
           syscalls-os.s \
+          $(CHIBIOS)/os/hal/lib/streams/chprintf_fix_va.s \
+
 
 INCDIR = $(STARTUPINC) $(KERNINC) $(PORTINC) $(OSALINC) \
          $(HALINC) $(PLATFORMINC) $(BOARDINC) $(TESTINC) \
