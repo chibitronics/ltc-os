@@ -27,9 +27,13 @@
  * @{
  */
 
+#define CHPRINTF_USE_FLOAT TRUE
 #include "hal.h"
 #include "chprintf.h"
 #include "memstreams.h"
+char * qfp_float2str(float f,char*s,unsigned int fmt);
+void *memcpy(void *dest, const void *src, size_t n);
+void va_arg_align_if_necessary(void *ptr);
 
 #define MAX_FILLER 11
 #define FLOAT_PRECISION 9
@@ -73,11 +77,52 @@ char *ch_ltoa(char *p, long num, unsigned radix) {
 }
 
 #if CHPRINTF_USE_FLOAT
+/*
 static const long pow10[FLOAT_PRECISION] = {
     10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000
 };
+*/
+__attribute__((noinline))
+static char *ftoa(char *p, float f, int width, unsigned long precision) {
+  /*
+  * fmt is format control word:
+  * b7..b0: number of significant figures
+  * b15..b8: -(minimum exponent printable in F format)
+  * b23..b16: maximum exponent printable in F format-1
+  * b24: output positive mantissas with ' '
+  * b25: output positive mantissas with '+'
+  * b26: output positive exponents with ' '
+  * b27: output positive exponents with '+'
+  * b28: suppress traling zeros in fraction
+  * b29: fixed-point output: b7..0 give number of decimal places
+  * default: 0x18060406
+  * Note that if b28 is set (as it is in the default format value) the code will
+  * write the trailing decimal point and zeros to the output buffer before truncating
+  * the string. Thus it is essential that the output buffer is large enough to accommodate
+  * these characters temporarily.
+  */
+  uint32_t fmt = 0x18000000;
+  uint32_t fmt_add = 0;
 
-static char *ftoa(char *p, double num, unsigned long precision) {
+  /* Formatted "%fX.Y" */
+  /*
+  if (width > 0)
+    fmt_add |= (width << 8) | (width << 23);
+  */
+  fmt_add = 0x60400;
+
+  if (precision > 0)
+    fmt_add |= precision;
+  else
+    fmt_add |= 0x6;
+
+  if (!fmt_add)
+    fmt_add |= 0x60406;
+
+  fmt |= fmt_add;
+
+  return qfp_float2str(f, p, fmt);
+  /*
   long l;
 
   if ((precision == 0) || (precision > FLOAT_PRECISION))
@@ -89,6 +134,7 @@ static char *ftoa(char *p, double num, unsigned long precision) {
   *p++ = '.';
   l = (long)((num - l) * precision);
   return long_to_string_with_divisor(p, l, 10, precision / 10);
+  */
 }
 #endif
 
@@ -118,6 +164,7 @@ static char *ftoa(char *p, double num, unsigned long precision) {
  *
  * @api
  */
+#define FLOAT_TEMP_TYPE uint32_t
 int chvprintf(BaseSequentialStream *chp, const char *fmt, va_list ap) {
   char *p, *s, c, filler;
   int i, precision, width;
@@ -126,6 +173,7 @@ int chvprintf(BaseSequentialStream *chp, const char *fmt, va_list ap) {
   long l;
 #if CHPRINTF_USE_FLOAT
   float f;
+  FLOAT_TEMP_TYPE ftemp;
   char tmpbuf[2*MAX_FILLER + 1];
 #else
   char tmpbuf[MAX_FILLER + 1];
@@ -217,12 +265,17 @@ int chvprintf(BaseSequentialStream *chp, const char *fmt, va_list ap) {
       break;
 #if CHPRINTF_USE_FLOAT
     case 'f':
-      f = (float) va_arg(ap, double);
+      va_arg_align_if_necessary(&ap);
+      ftemp = va_arg(ap, FLOAT_TEMP_TYPE);
+      // We're passed 64-bit 'doubles', but on this system we ignore the
+      // bottom 32-bits.  So simply discard them.
+      (void)va_arg(ap, void *); 
+      memcpy(&f, ((void *)&ftemp), sizeof(f));
       if (f < 0) {
         *p++ = '-';
         f = -f;
       }
-      p = ftoa(p, f, precision);
+      p = ftoa(p, f, width, precision);
       break;
 #endif
     case 'X':
