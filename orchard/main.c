@@ -30,6 +30,8 @@
 
 #include "kl02.h"
 
+void disconnectUsb(void);
+
 #define BOOT_AFTER_DELAY FALSE
 
 #include <string.h>
@@ -296,7 +298,8 @@ int main(void)
 
   halInit();
   chSysInit();
-  
+  disconnectUsb();
+
   /* Clear the onboard LED to prevent us from blinding people. */
   {
     extern void ledUpdate(uint32_t num_leds, void *pixels, uint32_t mask,
