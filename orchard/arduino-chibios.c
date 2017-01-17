@@ -1,6 +1,7 @@
 #include "hal.h"
 #include "esplanade_app.h"
 #include "orchard.h"
+#include "gitversion.h"
 
 void (*sysTickHook)(void);
 
@@ -216,4 +217,8 @@ uint32_t getOsVersion(void) {
 
 uint32_t getHwVersion(void) {
   return LTC_HW_VERSION;
+}
+
+const char * getGitVersion(void) {
+  return gitversion;
 }
