@@ -59,10 +59,7 @@ long random(long min, long max)
     max = temp;
   }
 
-  const int range = max - min;
-
-  printf("Range: %d\n", range);
-  int rand_val = random_at_most(range);
+  int rand_val = random_at_most(max - min);
 
   add_entropy(min);
   add_entropy(max);
