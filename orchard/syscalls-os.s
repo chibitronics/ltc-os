@@ -102,10 +102,6 @@ SysCall_Table:
 .short detachFastInterrupt
 .short tone
 .short noTone
-.short shiftOut
-.short shiftIn
-.short pulseIn
-.short pulseInLong
 .short millis
 .short micros
 .short delay
@@ -115,11 +111,6 @@ SysCall_Table:
 .short randomSeed
 .short i2cTransceive
 .short i2cSetupSlave
-.short hookSoftPwm
-.short getOsVersion
-.short getHwVersion
-.short 0
-.short 0
 .short createThread
 .short exitThread
 .short suspendThread
@@ -152,5 +143,11 @@ SysCall_Table:
 .short resumeThreadI
 .short suspendThreadS
 .short suspendThreadTimeoutS
-.short avoidIsrLock
+.short hookSoftPwm
+.short getOsVersion
+.short getHwVersion
+.short digitalPinToInterrupt
+.short analogReadResolution
+.short canonicalizePin
+.short MurmurHash3_x86_32
 .size SysCall_Table, .-SysCall_Table
