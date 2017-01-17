@@ -102,7 +102,7 @@ naninf: @ r4=0 for Inf, otherwise NaN
 @ Overall accuracy is sufficient to print all exactly-representable integers up to 10^8 correctly
 @ in 0x18160408 format.
 @ 
-@ void float2str(float f,char*s,unsigned int fmt) {
+@ char * float2str(float f,char*s,unsigned int fmt) {
 
 qfp_float2str:
  push {r4-r7,r14}
@@ -541,6 +541,7 @@ qfp_float2str:
 
 @   }
 
+ mov r0, r1
  pop {r4-r7,r15}
 
 

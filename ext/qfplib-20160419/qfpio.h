@@ -23,7 +23,7 @@
   extern "C" {
 #endif
 
-extern void qfp_float2str(float f,char*s,unsigned int fmt);
+extern char * qfp_float2str(float f,char*s,unsigned int fmt);
 extern int qfp_str2float(float*f,char*p,char**endptr);
 
 #ifdef __cplusplus
