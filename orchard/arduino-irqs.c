@@ -22,6 +22,8 @@ int (*spiFastISR)(void);
 int (*i2c0FastISR)(void);
 void (*spiISR)(void);
 void (*i2c0ISR)(void);
+int (*pmcFastISR)(void);
+void (*pmcISR)(void);
 
 void attachInterrupt(int irq, void (*func)(void), enum irq_mode mode) {
 
@@ -60,14 +62,16 @@ void attachInterrupt(int irq, void (*func)(void), enum irq_mode mode) {
       lptmrISR = func;
       break;
 
-    /* Note: reuses fast ISR here */
     case I2C0_IRQ:
       i2c0ISR = func;
       break;
 
-    /* Note: reuses fast ISR here */
     case SPI_IRQ:
       spiISR = func;
+      break;
+
+    case PMC_IRQ:
+      pmcISR = func;
       break;
   }
   return;
@@ -114,6 +118,10 @@ void attachFastInterrupt(int irq, int (*func)(void)) {
     case SPI_IRQ:
       spiFastISR = func;
       break;
+
+    case PMC_IRQ:
+      pmcFastISR = func;
+      break;
   }
   return;
 }
@@ -134,6 +142,18 @@ int digitalPinToInterrupt(int pin) {
   return NOT_AN_INTERRUPT;
 }
 
+void enableInterrupt(int irq) {
+  NVIC_EnableIRQ(irq);
+}
+
+void disableInterrupt(int irq) {
+  NVIC_DisableIRQ(irq);
+}
+
+void setInterruptPriority(int irq, int priority) {
+  NVIC_SetPriority(irq, priority);
+}
+
 /* SPI handler */
 OSAL_IRQ_HANDLER(Vector68) {
   if (spiFastISR)
@@ -150,4 +170,13 @@ OSAL_IRQ_HANDLER(Vector60) {
       return;
   if (i2c0ISR)
     i2c0ISR();
+}
+
+/* PMC handler */
+OSAL_IRQ_HANDLER(Vector58) {
+  if (pmcFastISR)
+    if (!pmcFastISR())
+      return;
+  if (pmcISR)
+    pmcISR();
 }
