@@ -26,6 +26,10 @@ void tone(int pin, unsigned int frequency, unsigned long duration) {
   if (pinToPort(pin, &port, &pad))
     return;
 
+  /* Don't allow absurd frequencies */
+  if (frequency > 65536)
+    return;
+
   /* Don't let users access illegal pins.*/
   if (!canUsePin(pin))
     return;
