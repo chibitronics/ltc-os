@@ -307,9 +307,9 @@ typedef struct
 #define pal_lld_writepad(port, pad, bit)    \
   do {                                      \
     if (bit == PAL_HIGH)                    \
-      port->PDOR |= ((uint32_t) 1 << pad);  \
+      port->PSOR = ((uint32_t) 1 << pad);   \
     else                                    \
-      port->PDOR &= ~((uint32_t) 1 << pad); \
+      port->PCOR = ((uint32_t) 1 << pad);   \
   } while(0)
 
 /**
