@@ -44,7 +44,6 @@ void *stream;
 
 #define DEBUG_STREAMING  0
 #define OSCOPE_PROFILING 0
-uint8_t screenpos = 0;
 
 // global flag, careful of sync issues when multi-threaded...
 volatile uint8_t dataReadyFlag = 0;
