@@ -59,6 +59,9 @@ unsigned long simple_strtoul(const char *cp, char **endp, unsigned int base) {
 
   unsigned long result = 0, value;
 
+  if (!cp)
+    return 0;
+    
   if (*cp == '0') {
     cp++;
     if ((*cp == 'x') && _isxdigit(cp[1])) {
@@ -161,6 +164,9 @@ void *memcpy(void *dest, const void *src, size_t n) {
 char *strncpy(char *dest, const char *src, size_t n) {
   size_t i;
 
+  if (!dest || !src)
+    return 0;
+
   for (i = 0; i < n && src[i] != '\0'; i++)
     dest[i] = src[i];
   for ( ; i < n; i++)
@@ -171,6 +177,9 @@ char *strncpy(char *dest, const char *src, size_t n) {
 
 char *strcpy(char *dest, const char *src) {
   size_t i;
+
+  if (!dest || !src)
+    return 0;
 
   for (i = 0; src[i] != '\0'; i++)
     dest[i] = src[i];
@@ -188,6 +197,12 @@ char *strchr(const char *s, int c) {
 }
 
 int strncmp(const char *s1, const char *s2, size_t n) {
+  if ((!s1) && (!s2))
+    return 0;
+  if (!s1)
+    return -1;
+  if (!s2)
+    return 1;
   for (; *s1 == *s2; s1++,s2++)
     if ( *s1 == '\0' || --n <=0)
       return 0;
@@ -200,7 +215,9 @@ int strcmp(const char *s1, const char *s2) {
 
 size_t strlen(const char *s) {
   int i = 0;
-  while(s[i])
+  if (!s)
+    return 0;
+  while (s[i])
     i++;
   return i;
 }
@@ -209,6 +226,13 @@ int memcmp(const void *s1, const void *s2, size_t n)
 {
   unsigned char u1, u2;
 
+  if (!s1 && !s2)
+    return 0;
+  if (!s1)
+    return -1;
+  if (!s2)
+    return 1;
+    
   for ( ; n-- ; s1++, s2++) {
     u1 = * (unsigned char *) s1;
     u2 = * (unsigned char *) s2;
