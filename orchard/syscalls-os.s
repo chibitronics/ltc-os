@@ -160,4 +160,8 @@ SysCall_Table:
 .short analogReadResolution
 .short canonicalizePin
 .short MurmurHash3_x86_32
+.short enableTimer
+.short enableInterrupt
+.short disableInterrupt
+.short setInterruptPriority
 .size SysCall_Table, .-SysCall_Table
