@@ -67,6 +67,28 @@
 #if !defined(PMC_BASE) /* Don't re-define these from another implementation */
 #define PMC_BASE                ((unsigned long)0x4007D000)
 #endif
+#define PMC_LVDSC1              0x4007d000
+/*
+#define PMC_LVDSC1_LVDF         (1 << 7)
+#define PMC_LVDSC1_LVDACK       (1 << 6)
+#define PMC_LVDSC1_LVDIE        (1 << 5)
+#define PMC_LVDSC1_LVDRE        (1 << 4)
+#define PMC_LVDSC1_LVDV         (1 << 0)
+*/
+#define PMC_LVDSC2              0x4007d001
+/*
+#define PMC_LVDSC2_LVWF         (1 << 7)
+#define PMC_LVDSC2_LVWACK       (1 << 6)
+#define PMC_LVDSC2_LVWIE        (1 << 5)
+#define PMC_LVDSC2_LVWV         (1 << 0)
+*/
+#define PMC_REGSC               0x4007d002
+/*
+#define PMC_REGSC_BGEN          (1 << 4)
+#define PMC_REGSC_ACKISO        (1 << 3)
+#define PMC_REGSC_REGONS        (1 << 2)
+#define PMC_REGSC_BGBE          (1 << 0)
+*/
 
 #if !defined(SMC_BASE) /* Don't re-define these from another implementation */
 #define SMC_BASE                ((unsigned long)0x4007E000)
@@ -86,7 +108,15 @@
 #define MCG_C4 0x40064003
 #define MCG_C6 0x40064005
 #define MCG_S 0x40064006
-#define MCG_SC 0x40064007
+#define MCG_SC 0x40064008
+/*
+#define MCG_SC_ATME             (1 << 7)
+#define MCG_SC_ATMS             (1 << 6)
+#define MCG_SC_ATMF             (1 << 5)
+#define MCG_SC_FLTPRSRV         (1 << 4)
+#define MCG_SC_FCRDIV           (1 << 1)
+#define MCF_SC_LOCS0            (1 << 0)
+*/
 #define MCG_ATCVH 0x4006400A
 #define MCG_ATCVL 0x4006400B
 
@@ -305,6 +335,14 @@
 #define LPTMR_PSR_PRESCALE (1 << 3)
 #define LPTMR_PSR_PBYP (1 << 2)
 #define LPTMR_PSR_PCS (1 << 0)
+#define LPTMR_PSR_PCS_CLK0 (0 << 0)
+#define LPTMR_PSR_PCS_CLK1 (1 << 0)
+#define LPTMR_PSR_PCS_CLK2 (2 << 0)
+#define LPTMR_PSR_PCS_CLK3 (3 << 0)
+#define LPTMR_PSR_PCS_MCGIRCLK (0 << 0)
+#define LPTMR_PSR_PCS_LPO (1 << 0)
+#define LPTMR_PSR_PCS_ERCLK32K (2 << 0)
+#define LPTMR_PSR_PCS_OSCERCLK (3 << 0)
 #define LPTMR0_CMR  0x40040008
 #define LPTMR0_CNR  0x4004000C
 
