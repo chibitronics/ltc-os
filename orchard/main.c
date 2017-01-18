@@ -299,7 +299,6 @@ int main(void)
 
   halInit();
   chSysInit();
-  disconnectUsb();
 
   /* Clear the onboard LED to prevent us from blinding people. */
   {
