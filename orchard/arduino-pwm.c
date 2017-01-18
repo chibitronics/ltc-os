@@ -189,3 +189,9 @@ void hookSoftPwm(void (*new_soft_pwm_hook)(void)) {
   if (soft_pwm_hook)
    soft_pwm_start();
 }
+
+void enableTimer(int timer_number) {
+  void enableLptmr(void);
+  if (timer_number == 1)
+    enableLptmr();
+}
