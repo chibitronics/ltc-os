@@ -168,8 +168,8 @@ void demod_loop(void) {
 }
 
 /* Initialize the bootloader setup */
-int blbss_len;
 static void blcrt_init(void) {
+  int blbss_len;
   /* Variables defined by the linker */
   extern uint32_t _textbldata_start;
   extern uint32_t _bldata_start;
