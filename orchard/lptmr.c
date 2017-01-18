@@ -8,15 +8,29 @@
 
 static uint8_t lptmr_enabled = 0;
 static uint8_t lptmr_running = 0;
+static uint8_t lptmr_pad;
 static uint32_t lptmr_rate = 0;
 static ioportid_t lptmr_port;
-static uint8_t lptmr_pad;
 
 int (*lptmrFastISR)(void);
 void (*lptmrISR)(void);
 
-#define RATE 1360000 /* Sourced from 4 MHz IRC via a /2 divider, but slower somehow by 66%? */
-static void lptmr_enable(void) {
+static void calibrate_irc(void) {
+
+  const uint32_t expected_count = 21 * ((KINETIS_SYSCLK_MAX / 4) / 4000000) * 256;
+  writeb((expected_count >> 8) & 0xff, MCG_ATCVH);
+  writeb((expected_count >> 0) & 0xff, MCG_ATCVL);
+
+  /* Select 4 MHz IRC */
+  writeb(MCG_SC_ATMS, MCG_SC);
+  writeb(MCG_SC_ATMS | MCG_SC_ATME, MCG_SC);
+
+  while (readb(MCG_SC) & MCG_SC_ATME)
+    ;
+}
+
+#define RATE 2000000 /* Sourced from 4 MHz IRC via a /2 divider */
+void enableLptmr(void) {
 
   if (lptmr_enabled)
     return;
@@ -27,20 +41,25 @@ static void lptmr_enable(void) {
   /* Reset the LPTMR block */
   writel(0, LPTMR0_CSR);
 
+  calibrate_irc();
+
   /* Select fast internal reference clock (4 MHz) */
-  writeb(readb(MCG_C2) | (1 << 0), MCG_C2);
+  writeb(readb(MCG_C2) | MCG_C2_IRCS, MCG_C2);
 
   /* Enable MCGIRCLK */
-  writeb(readb(MCG_C1) | (1 << 1), MCG_C1);
+  writeb(readb(MCG_C1) | MCG_C1_IRCLKEN, MCG_C1);
 
   /* Use the 32 kHz crystal in bypass mode */
-  //writel((1 << 2) | (2 << 0), LPTMR0_PSR);
+  //writel(LPTMR_PSR_PBYP | LPTMR_PSR_PCS_ERCLK32K, LPTMR0_PSR);
 
   /* Use MCGIRCLK in bypass mode */
-  writel((0 << 3) | (1 << 2) | (0 << 0), LPTMR0_PSR);
+  writel(LPTMR_PSR_PBYP | LPTMR_PSR_PCS_MCGIRCLK, LPTMR0_PSR);
+
+  /* Use OSCERCLK in bypass mode */
+  //writel(LPTMR_PSR_PBYP | LPTMR_PSR_PCS_OSCERCLK, LPTMR0_PSR);
 
   /* Use MCGIRCLK with a divide-by-two */
-  //writel((0 <<3) | (0 << 2) | (0 << 0), LPTMR0_PSR);
+  //writel((0 <<3) | LPTMR_PSR_PCS_MCGIRCLK, LPTMR0_PSR);
 
   NVIC_EnableIRQ(28);
   writel(LPTMR_CSR_TIE, LPTMR0_CSR);
@@ -56,7 +75,7 @@ void startLptmr(ioportid_t port, uint8_t pad, uint32_t rate_hz) {
 
   lptmr_rate = RATE/rate_hz;
 
-  lptmr_enable();
+  enableLptmr();
 
   /* If the timer hasn't been enabled, update the period field and start it.
    * NOTE: If the timer is already going, we don't change the port/pad,
