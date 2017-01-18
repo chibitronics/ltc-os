@@ -198,7 +198,7 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
     if( !led_state ) {
       PROG_STATR_ON;
     } else {
-      PROG_STATG_OFF;
+      PROG_STATR_OFF;
     }
     led_state = !led_state;
 
