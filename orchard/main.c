@@ -29,8 +29,8 @@
 #include "murmur3.h"
 
 #include "kl02.h"
-
 #include "Arduino.h"
+#include "memio.h"
 
 #define BOOT_AFTER_DELAY FALSE
 
@@ -308,7 +308,10 @@ int main(void)
     uint32_t pixel = 0;
     ledUpdate(1, &pixel, (1 << 6), FGPIOA_PSOR, FGPIOA_PCOR);
   }
-  
+
+  /* Enable the 1V bandgap */
+  writeb(PMC_REGSC_BGBE, PMC_REGSC);
+
   // these lights both start "on"; differentiates crashes in boot from a bad power cable
   PROG_STATR_ON;
   PROG_STATG_ON;
