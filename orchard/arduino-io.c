@@ -24,22 +24,6 @@ void arduinoIoInit(void) {
   return;
 }
 
-void disconnectUsb(void) {
-  ioportid_t port;
-  uint8_t pad;
-  iomode_t mode;
-
-  pinToPort(UART_TX, &port, &pad);
-  mode = PAL_MODE_OUTPUT_PUSHPULL;
-  palSetPadMode(port, pad, mode);
-  palWritePad(port, pad, 0);
-
-  pinToPort(UART_RX, &port, &pad);
-  mode = PAL_MODE_OUTPUT_PUSHPULL;
-  palSetPadMode(port, pad, mode);
-  palWritePad(port, pad, 0);
-}
-
 int canonicalizePin(int pin) {
   switch (pin) {
   case LED_BUILTIN:
