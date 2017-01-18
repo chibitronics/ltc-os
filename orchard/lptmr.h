@@ -3,5 +3,6 @@
 
 void startLptmr(ioportid_t port, uint8_t pad, uint32_t rate_hz);
 void stopLptmr(void);
+void enableLptmr(void);
 
 #endif /* __LPTMR_H__ */
