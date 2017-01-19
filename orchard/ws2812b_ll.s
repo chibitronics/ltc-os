@@ -46,8 +46,9 @@ fbptr   .req r1  // frame buffer pointer
 	// r5 is the test value for the top bit of current pixel
 	// r6 is the loop counter for bit number in a pixel
 	// r7 is current pointer to the pixel array
-	
-ledUpdate:	
+
+.func ledUpdate
+ledUpdate:
 	// r0  uint8_t *fb
 	// r1  uint32_t	len
 	push {r4-r7,lr}     // Save the other parameters we'll use
@@ -68,121 +69,28 @@ looptop:
 	
 pixloop:
 	str bitmask, [eset]   // start with bit set
-	nop // equalize looptop path
-	nop
-	nop
-	nop
-	nop
-	nop
+	bl wait_6_cycles
 pixloop_fromtop:	
 	lsl curpix, #1
 	bcs oneBranch
 	
 	// zero path -- so far, 5 cycles high
-	nop
-	nop
-	nop
-	nop
-	nop
-	
-	nop
-	nop
-	nop
-	nop
+	bl wait_9_cycles
 	
 	str bitmask, [eclr]
-	nop
-	nop
-	nop
-	nop
-	nop
-	
-	nop
-	nop
-	nop
-	nop
-	nop
-	
-	nop
-	nop
-	nop
-	nop
-	nop
-	
-	nop
-	nop
-	nop
-	nop
-	nop
-	
-	nop
-	nop
-	nop
-	nop
-	nop
-	
-	nop
-	nop
-	nop
-	nop
-	nop
+	bl wait_15_cycles
+	bl wait_15_cycles
 	
 	nop
 	b  pixEpilogue
 
 oneBranch:	
 	// one path
-	nop
-	nop
-	nop
-	nop
-	nop
-	
-	nop
-	nop
-	nop
-	nop
-	nop
-	
-	nop
-	nop
-	nop
-	nop
-	nop
-	
-	nop
-	nop
-	nop
-	nop
-	nop
-	
-	nop
-	nop
-	nop
-	nop
-	nop
-	
-	nop
-	nop
+	bl wait_15_cycles
+	bl wait_12_cycles
 	
 	str bitmask, [eclr]
-	nop
-	nop
-	nop
-	nop
-	nop
-	
-	nop
-	nop
-	nop
-	nop
-	nop
-	
-	nop
-	nop
-	nop
-	nop
-	nop
+	bl wait_15_cycles
 	
 	nop
 	
@@ -198,7 +106,20 @@ pixEpilogue:
 exit:	
 	
 	pop {r4-r7,pc}
-	
+
+wait_15_cycles:
+	b wait_12_cycles
+wait_12_cycles:
+	b wait_9_cycles
+wait_9_cycles:
+	b wait_6_cycles
+wait_6_cycles:
+	bx lr
+
+.endfunc
+.type ledUpdate, %function
+.size ledUpdate, .-ledUpdate
+
 .balign 4
 PORTESET:	
 .word FGPIOA_PSOR
