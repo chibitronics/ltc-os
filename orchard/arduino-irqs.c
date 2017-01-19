@@ -150,6 +150,18 @@ void disableInterrupt(int irq) {
   NVIC_DisableIRQ(irq);
 }
 
+void NVIC_SetPriority(IRQn_Type IRQn, uint32_t priority)
+{
+  if((int32_t)(IRQn) < 0) {
+    SCB->SHP[_SHP_IDX(IRQn)] = ((uint32_t)(SCB->SHP[_SHP_IDX(IRQn)] & ~(0xFFUL << _BIT_SHIFT(IRQn))) |
+       (((priority << (8 - __NVIC_PRIO_BITS)) & (uint32_t)0xFFUL) << _BIT_SHIFT(IRQn)));
+  }
+  else {
+    NVIC->IP[_IP_IDX(IRQn)]  = ((uint32_t)(NVIC->IP[_IP_IDX(IRQn)]  & ~(0xFFUL << _BIT_SHIFT(IRQn))) |
+       (((priority << (8 - __NVIC_PRIO_BITS)) & (uint32_t)0xFFUL) << _BIT_SHIFT(IRQn)));
+  }
+}
+
 void setInterruptPriority(int irq, int priority) {
   NVIC_SetPriority(irq, priority);
 }
