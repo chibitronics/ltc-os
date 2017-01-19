@@ -265,6 +265,8 @@ int chvprintf(BaseSequentialStream *chp, const char *fmt, va_list ap) {
       break;
 #if CHPRINTF_USE_FLOAT
     case 'f':
+      // Doubles are padded with four bytes of data, but va_arg doesn't
+      // seem to understand this.
       va_arg_align_if_necessary(&ap);
       ftemp = va_arg(ap, FLOAT_TEMP_TYPE);
       // We're passed 64-bit 'doubles', but on this system we ignore the
