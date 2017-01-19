@@ -4,7 +4,7 @@
 
 #define MAX_TRIES 100
 #ifndef RAND_MAX
-#define RAND_MAX 4294967295
+#define RAND_MAX 2147483647
 #endif
 
 static long long rand_val;
