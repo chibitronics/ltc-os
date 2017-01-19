@@ -113,6 +113,13 @@ void analogWrite(int pin, int value) {
   if (pinToPort(pin, &port, &pad))
     return;
 
+  /* If the pin is an input, don't write to it.*/
+  if ((palGetPadMode(port, pad) == PAL_MODE_INPUT)
+   || (palGetPadMode(port, pad) == PAL_MODE_INPUT_PULLUP)
+   || (palGetPadMode(port, pad) == PAL_MODE_INPUT_PULLDOWN)
+   || (palGetPadMode(port, pad) == PAL_MODE_INPUT_ANALOG))
+    return;
+
   /* Clamp the value to between 0 and 255, for the principle of least surprise */
   if (value > ARDUINO_MAX)
     value = ARDUINO_MAX;
