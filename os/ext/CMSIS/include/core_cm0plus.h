@@ -747,7 +747,8 @@ __STATIC_INLINE void NVIC_ClearPendingIRQ(IRQn_Type IRQn)
     \param [in]      IRQn  Interrupt number.
     \param [in]  priority  Priority to set.
  */
-__STATIC_INLINE void NVIC_SetPriority(IRQn_Type IRQn, uint32_t priority)
+void NVIC_SetPriority(IRQn_Type IRQn, uint32_t priority);
+/*
 {
   if((int32_t)(IRQn) < 0) {
     SCB->SHP[_SHP_IDX(IRQn)] = ((uint32_t)(SCB->SHP[_SHP_IDX(IRQn)] & ~(0xFFUL << _BIT_SHIFT(IRQn))) |
@@ -758,6 +759,7 @@ __STATIC_INLINE void NVIC_SetPriority(IRQn_Type IRQn, uint32_t priority)
        (((priority << (8 - __NVIC_PRIO_BITS)) & (uint32_t)0xFFUL) << _BIT_SHIFT(IRQn)));
   }
 }
+*/
 
 
 /** \brief  Get Interrupt Priority
