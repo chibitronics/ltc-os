@@ -56,7 +56,7 @@ ledUpdate:
 	mov bit, #3         // use bit temp for multiply
 	mul stop, bit       // mult by 3 for RGB
 	add stop, fbptr     // add in the fptr to finalize stop computation value
-	
+
 	///////////////////////
 looptop:
 	str bitmask, [eset]   // start with bit set
@@ -64,49 +64,58 @@ looptop:
 	ldrb curpix, [fbptr]      // load the word at the pointer location to r4
 	lsl curpix, curpix, #24  // shift left by 24 so the carry pops out
 	add fbptr, fbptr, #1
-	// above is 5 cycles
-	b pixloop_fromtop // 7 total
-	
+	// above is 6 cycles, plus two cycles from hitting the end of a pixel
+	b pixloop_fromtop // 10 total
+
+// Each pixel is 1.25 uS.  At our clock rate, that's
+// 71-72 cycles for pixloop.
 pixloop:
+	// Add in the two cycles from the jump to looptop,
+	// to make both branches equal length.
+	nop
+	nop
 	str bitmask, [eset]   // start with bit set
 	bl wait_6_cycles
-pixloop_fromtop:	
+	nop
+
+pixloop_fromtop:
+	// 62 cycles remaining
 	lsl curpix, #1
 	bcs oneBranch
-	
-	// zero path -- so far, 5 cycles high
-	bl wait_9_cycles
-	
-	str bitmask, [eclr]
-	bl wait_15_cycles
-	bl wait_15_cycles
-	
-	nop
-	b  pixEpilogue
 
-oneBranch:	
-	// one path
-	bl wait_15_cycles
-	bl wait_12_cycles
-	
+zeroBranch:
+	bl wait_6_cycles
+	nop
 	str bitmask, [eclr]
 	bl wait_15_cycles
-	
-	nop
-	
+	bl wait_15_cycles
+	b pixEpilogue
+
+oneBranch:
+	// 59 cycles to burn
+	// one path -- so far, 14 cycles high
+
+	bl wait_15_cycles
+	bl wait_18_cycles
+	str bitmask, [eclr]
+
+	b pixEpilogue
+
 pixEpilogue:
+	bl wait_6_cycles
 	sub bit, bit, #1
 	bne pixloop
 
 	cmp fbptr, stop
 	bne looptop
-	
+
 	b exit
 	
-exit:	
-	
+exit:
 	pop {r4-r7,pc}
 
+wait_18_cycles:
+	b wait_15_cycles
 wait_15_cycles:
 	b wait_12_cycles
 wait_12_cycles:
