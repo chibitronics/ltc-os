@@ -3,7 +3,6 @@
 #include "Arduino.h"
 #include "kl02.h"
 #include "memio.h"
-#include "printf.h"
 
 #include "esplanade_app.h" // for app_heap
 
@@ -15,45 +14,89 @@ extern int32_t soft_pwm[2];
 /* Pins that can be used when not in "sudo" mode.*/
 static const uint8_t normal_mode_pins[] = {
   0, 1, 2, 3, 4, 5,
-  A0, A1, A2, A3, A4, A5,
-  D0, D1, D2, D3, D4, D5,
-  LED_BUILTIN,
 };
+
+uint32_t palGetPadMode(ioportid_t port, uint8_t pad) {
+  PORT_TypeDef *portcfg = NULL;
+
+  if (port == IOPORT1)
+    portcfg = PORTA;
+  else if (port == IOPORT2)
+    portcfg = PORTB;
+  else
+    return (uint32_t)-1;
+
+  switch (portcfg->PCR[pad] & PORTx_PCRn_MUX_MASK) {
+  case PORTx_PCRn_MUX(0):
+    return PAL_MODE_INPUT_ANALOG;
+  case PORTx_PCRn_MUX(2):
+    return PAL_MODE_ALTERNATIVE_2;
+  case PORTx_PCRn_MUX(3):
+    return PAL_MODE_ALTERNATIVE_3;
+  case PORTx_PCRn_MUX(4):
+    return PAL_MODE_ALTERNATIVE_4;
+  case PORTx_PCRn_MUX(5):
+    return PAL_MODE_ALTERNATIVE_5;
+  case PORTx_PCRn_MUX(6):
+    return PAL_MODE_ALTERNATIVE_6;
+  case PORTx_PCRn_MUX(7):
+    return PAL_MODE_ALTERNATIVE_7;
+  case PORTx_PCRn_MUX(1):
+    if (port->PDDR & ((uint32_t) 1 << pad))
+      return PAL_MODE_OUTPUT_PUSHPULL;
+
+    switch (portcfg->PCR[pad] & (PORTx_PCRn_PE | PORTx_PCRn_PS)) {
+    case (PORTx_PCRn_PE | PORTx_PCRn_PS):
+      return PAL_MODE_INPUT_PULLUP;
+    case PORTx_PCRn_PE:
+      case PAL_MODE_INPUT_PULLDOWN:
+    default:
+      return PAL_MODE_INPUT;
+    }
+  default:
+    return PAL_MODE_UNCONNECTED;
+  }
+}
 
 void arduinoIoInit(void) {
   return;
 }
 
 int canonicalizePin(int pin) {
+
+  /* Convert D0..DF to A0..AF.*/
+  if ((pin >= 0xa0) && (pin <= 0xaf))
+    pin -= 0x20;
+
+  /* Convert A0..Af to 0..F.*/
+  if ((pin >= 0x80) && (pin <= 0x8f))
+    pin -= 0x80;
+
   switch (pin) {
-  case LED_BUILTIN:
-  case A0:
-  case D0:
+  case PTB(10):
+  case PTA(8): /* also LED_BUILTIN */
   case 0:
     return 0;
 
-  case A1:
-  case D1:
+  case PTB(11):
+  case PTA(9):
   case 1:
     return 1;
 
-  case A2:
-  case D2:
+  case PTA(12):
   case 2:
     return 2;
 
-  case A3:
-  case D3:
+  case PTB(13):
+  case PTB(4):
   case 3:
     return 3;
 
-  case A4:
-  case D4:
+  case PTB(0):
   case 4:
     return 4;
 
-  case A5:
-  case D5:
+  case PTA(7):
   case 5:
     return 5;
 
@@ -149,6 +192,7 @@ int canUsePin(int pin) {
   if (sudo_mode)
     return 1;
 
+  pin = canonicalizePin(pin);
   for (i = 0; i < sizeof(normal_mode_pins); i++)
     if (normal_mode_pins[i] == pin)
       return 1;
@@ -202,12 +246,17 @@ void digitalWrite(int pin, int value) {
   if (!canUsePin(pin))
     return;
 
+  /* Mux this pin as an output, if it's set as ALTERNATIVE_2 (i.e. PWM) */
+  if (palGetPadMode(port, pad) == PAL_MODE_ALTERNATIVE_2)
+    palSetPadMode(port, pad, PAL_MODE_OUTPUT_PUSHPULL);
+
   /* Disable the running PWM, if one exists */
   if ((pin == D4) || (pin == A4) || (pin == 4))
     soft_pwm[0] = -1;
   if ((pin == D5) || (pin == A5) || (pin == 5))
     soft_pwm[1] = -1;
 
+  /* Write the value out the pad.*/
   palWritePad(port, pad, !!value);
 }
 
@@ -219,7 +268,18 @@ int digitalRead(int pin) {
   if (pinToPort(pin, &port, &pad))
     return 0;
 
-  /* Don't let users access illegal pins.*/
+  switch(palGetPadMode(port, pad)) {
+    case PAL_MODE_INPUT_ANALOG:
+      palSetPadMode(port, pad, PAL_MODE_INPUT);
+    case PAL_MODE_INPUT:
+    case PAL_MODE_INPUT_PULLUP:
+    case PAL_MODE_INPUT_PULLDOWN:
+      break;
+    default:
+      return 0;
+  }
+
+    /* Don't let users access illegal pins.*/
   if (!canUsePin(pin))
     return 0;
 
@@ -273,17 +333,6 @@ static int pin_to_adc(int pin) {
   }
 }
 
-static void mux_as_adc(int pin) {
-
-  ioportid_t port;
-  uint8_t pad;
-
-  if (pinToPort(pin, &port, &pad))
-    return;
-
-  palSetPadMode(port, pad, PAL_MODE_INPUT_ANALOG);
-}
-
 /* Analog stuff */
 #define SYSTEM_ANALOG_RESOLUTION 12
 static uint8_t analog_read_resolution = SYSTEM_ANALOG_RESOLUTION;
@@ -300,6 +349,23 @@ int analogRead(int pin) {
   msg_t result;
   adcsample_t sample;
   int adc_num;
+  ioportid_t port;
+  uint8_t pad;
+
+  /* If we have a valid pin here, ensure it's muxed as an input
+   * or as an analog device.*/
+  if (!pinToPort(pin, &port, &pad)) {
+    switch(palGetPadMode(port, pad)) {
+    case PAL_MODE_INPUT:
+    case PAL_MODE_INPUT_PULLUP:
+    case PAL_MODE_INPUT_PULLDOWN:
+      palSetPadMode(port, pad, PAL_MODE_INPUT_ANALOG); /* fall through */
+    case PAL_MODE_INPUT_ANALOG:
+      break;
+    default:
+      return 0;
+    }
+  }
 
   adc_num = pin_to_adc(pin);
 
@@ -339,9 +405,6 @@ int analogRead(int pin) {
     // /4   75ksps after averaging by factor of 4
   };
 
-  // Ignore the return value, as it may not have a real pin,
-  // e.g. if it's measuring the bandgap, or temperature.
-  mux_as_adc(pin);
 
   result = adcConvert(&ADCD1,
                      &arduinogrp,
@@ -381,14 +444,10 @@ void setSerialSpeed(uint32_t speed) {
    */
 
   pinToPort(UART_TX, &port, &pad);
-  mode = PAL_MODE_ALTERNATIVE_3;
-  palSetPadMode(port, pad, mode);
-  palWritePad(port, pad, 0);
+  palSetPadMode(port, pad, PAL_MODE_ALTERNATIVE_3);
 
   pinToPort(UART_RX, &port, &pad);
-  mode = PAL_MODE_ALTERNATIVE_3;
-  palSetPadMode(port, pad, mode);
-  palWritePad(port, pad, 0);
+  palSetPadMode(port, pad, PAL_MODE_ALTERNATIVE_3);
 
   sdStart(&SD1, &serialConfig);
 }
