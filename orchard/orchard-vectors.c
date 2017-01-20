@@ -13,6 +13,8 @@
 /*lint -save -e9075 [8.4] All symbols are invoked from asm context.*/
 
 register void *stack_pointer asm("sp");
+__attribute__((noreturn))
+void errorCondition(void);
 
 /* When an exception occurs, the hardware "stacks" these values:*/
 struct arm_context {
@@ -32,6 +34,7 @@ void HardFault_Handler_C(struct arm_context *context, bool is_irq) {
   (void)context;
   (void)is_irq; /* Set to 1 if called from an IRQ context */
   asm("bkpt #0");
+  errorCondition();
 }
 
 /*lint -save -e9075 [8.4] All symbols are invoked from asm context.*/
@@ -41,6 +44,7 @@ void MemManage_Handler_C(struct arm_context *context, bool is_irq) {
   (void)is_irq; /* Set to 1 if called from an IRQ context */
   /* Break into the debugger */
   asm("bkpt #0");
+  errorCondition();
 }
 
 /*lint -save -e9075 [8.4] All symbols are invoked from asm context.*/
@@ -49,6 +53,7 @@ void BusFault_Handler_C(struct arm_context *context, bool is_irq) {
   (void)context;
   (void)is_irq; /* Set to 1 if called from an IRQ context */
   asm("bkpt #0");
+  errorCondition();
 }
 
 /*lint -save -e9075 [8.4] All symbols are invoked from asm context.*/
@@ -57,12 +62,13 @@ void UsageFault_Handler_C(struct arm_context *context, bool is_irq) {
   (void)context;
   (void)is_irq; /* Set to 1 if called from an IRQ context */
   asm("bkpt #0");
+  errorCondition();
 }
 
 uintptr_t __stack_chk_guard = 0x12345678;
 __attribute__((noreturn))
 void __stack_chk_fail(void) {
   chSysHalt("Stack check fail");
-  while(1);
+  errorCondition();
 }
 
