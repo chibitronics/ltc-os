@@ -208,7 +208,7 @@ void pinMode(int pin, enum pin_mode arduino_mode) {
   uint8_t pad;
   iomode_t mode;
 
-  if (pinToPort(pin, &port, &pad))
+  if (pinToPort(pin, &port, &pad) < 0)
     return;
 
   /* Don't let users access illegal pins.*/
@@ -241,7 +241,7 @@ void digitalWrite(int pin, int value) {
   ioportid_t port;
   uint8_t pad;
 
-  if (pinToPort(pin, &port, &pad))
+  if (pinToPort(pin, &port, &pad) < 0)
     return;
 
   /* Don't let users access illegal pins.*/
@@ -267,7 +267,7 @@ int digitalRead(int pin) {
   ioportid_t port;
   uint8_t pad;
 
-  if (pinToPort(pin, &port, &pad))
+  if (pinToPort(pin, &port, &pad) < 0)
     return 0;
 
   switch(palGetPadMode(port, pad)) {
@@ -356,7 +356,7 @@ int analogRead(int pin) {
 
   /* If we have a valid pin here, ensure it's muxed as an input
    * or as an analog device.*/
-  if (!pinToPort(pin, &port, &pad)) {
+  if (pinToPort(pin, &port, &pad) >= 0) {
     switch(palGetPadMode(port, pad)) {
     case PAL_MODE_INPUT:
     case PAL_MODE_INPUT_PULLUP:
