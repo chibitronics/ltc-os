@@ -431,7 +431,6 @@ void doSudo(void) {
 void setSerialSpeed(uint32_t speed) {
   ioportid_t port;
   uint8_t pad;
-  iomode_t mode;
   SerialConfig serialConfig = {
     speed,
   };
