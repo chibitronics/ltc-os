@@ -4,10 +4,10 @@
 #include "flash.h"
 #include "esplanade_demod.h" // for references to tx block length
 
-#define PROG_STATR_ON   GPIOA->PCOR |= (1 << 5)
-#define PROG_STATR_OFF  GPIOA->PSOR |= (1 << 5)
-#define PROG_STATG_ON   GPIOB->PCOR |= (1 << 6)
-#define PROG_STATG_OFF  GPIOB->PSOR |= (1 << 6)
+#define PROG_STATR_ON   GPIOA->PCOR = (1 << 5)
+#define PROG_STATR_OFF  GPIOA->PSOR = (1 << 5)
+#define PROG_STATG_ON   GPIOB->PCOR = (1 << 6)
+#define PROG_STATG_OFF  GPIOB->PSOR = (1 << 6)
 #define RESET_LEVEL     GPIOB->PDIR &= (1 << 7)
 
 // naming conventions:
