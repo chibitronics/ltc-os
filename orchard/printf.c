@@ -279,7 +279,7 @@ static void putcp(void* p,char c)
 
 
 
-void tfp_sprintf(char* s,char *fmt, ...)
+void tfp_sprintf(char* s,const char *fmt, ...)
 {
   va_list va;
   va_start(va,fmt);
