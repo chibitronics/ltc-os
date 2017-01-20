@@ -159,6 +159,7 @@ SysCall_Table:
 .short digitalPinToInterrupt
 .short analogReadResolution
 .short canonicalizePin
+.short pinToPort
 .short MurmurHash3_x86_32
 .short enableTimer
 .short enableInterrupt
