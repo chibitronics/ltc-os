@@ -242,8 +242,6 @@ ULIBDIR =
 ULIBS = lib/libstdc++-armv6-m.a \
         lib/libaeabi-cortexm0.a \
         lib/libunaligned-funcs.a \
-        lib/libmemmove.a \
-        lib/libmemcpy.a \
         lib/libcrtbegin.a \
 
 #
