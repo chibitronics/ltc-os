@@ -417,9 +417,9 @@ int analogRead(int pin) {
 
   // Shift the result up or down to match the requested resolution.
   if (analog_read_resolution > SYSTEM_ANALOG_RESOLUTION)
-    sample >>= (analog_read_resolution - SYSTEM_ANALOG_RESOLUTION);
+    sample <<= (analog_read_resolution - SYSTEM_ANALOG_RESOLUTION);
   else if (analog_read_resolution < SYSTEM_ANALOG_RESOLUTION)
-    sample <<= (SYSTEM_ANALOG_RESOLUTION - analog_read_resolution);
+    sample >>= (SYSTEM_ANALOG_RESOLUTION - analog_read_resolution);
 
   return sample;
 }
