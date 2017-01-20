@@ -64,15 +64,17 @@ void arduinoIoInit(void) {
 
 int canonicalizePin(int pin) {
 
-  /* Convert D0..DF to A0..AF.*/
-  if ((pin >= 0xa0) && (pin <= 0xaf))
-    pin -= 0x20;
+  int masked_pin = pin;
 
-  /* Convert A0..Af to 0..F.*/
-  if ((pin >= 0x80) && (pin <= 0x8f))
-    pin -= 0x80;
+  /* Convert D0..D15 to 0..15.*/
+  if ((masked_pin & 0xa0) == 0xa0)
+    masked_pin &= ~0xa0;
 
-  switch (pin) {
+  /* Convert A0..A15 to 0..15.*/
+  if ((masked_pin & 0x80) == 0x80)
+    masked_pin &= ~0x80;
+
+  switch (masked_pin) {
   case PTB(10):
   case PTA(8): /* also LED_BUILTIN */
   case 0:
