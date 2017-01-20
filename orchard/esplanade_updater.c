@@ -26,21 +26,6 @@
 
 extern void *memcpy_aligned(void *dst, const void *src, size_t length);
 
-__attribute__((noreturn))
-void errorCondition(void) {
-  // hang in a red flashing loop to indicate a link problem; requires hard reset to boot out of it
-  PROG_STATG_OFF;
-  int i;
-  while(1) {
-    PROG_STATR_ON;
-    for (i = 0; i < 1000000; i++)
-      asm("nop");
-    PROG_STATR_OFF;
-    for (i = 0; i < 1000000; i++)
-      asm("nop");
-  }
-}
-
 /*
   Facts:
   -  The KL02 has 1k sectors.

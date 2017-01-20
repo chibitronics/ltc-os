@@ -32,6 +32,25 @@ static const ADCConfig adccfg1 = {
     true
 };
 
+__attribute__((noreturn))
+void errorCondition(void) {
+#ifdef NDEBUG
+#warning "Building code with debugging enabled"
+  asm("bkpt #0");
+#endif
+  // hang in a red flashing loop to indicate a link problem; requires hard reset to boot out of it
+  PROG_STATG_OFF;
+  int i;
+  while(1) {
+    PROG_STATR_ON;
+    for (i = 0; i < 1000000; i++)
+      asm("nop");
+    PROG_STATR_OFF;
+    for (i = 0; i < 1000000; i++)
+      asm("nop");
+  }
+}
+
 void ArduinoInit(void) {
 
   adcStart(&ADCD1, &adccfg1);
