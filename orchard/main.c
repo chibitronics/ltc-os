@@ -281,7 +281,6 @@ THD_TABLE_END
  */
 int main(void)
 {
-  int i;
   blcrt_init();
   /*
    * System initializations.
@@ -322,9 +321,12 @@ int main(void)
   analogStop();
   
   // set all pins to "0" state to prevent floating light confusion
-  for( i = 0; i < 6; i++ ) {
-    pinMode(i, OUTPUT);
-    digitalWrite(i, 0);
+  {
+    int i;
+    for (i = 0; i < 6; i++) {
+      pinMode(i, OUTPUT);
+      digitalWrite(i, 0);
+    }
   }
   
   chBootToApp();
