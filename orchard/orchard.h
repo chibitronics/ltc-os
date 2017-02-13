@@ -5,8 +5,8 @@ extern struct evt_table orchard_events;
 
 void halt(void);
 
-/* Version 1.8.5 */
-#define LTC_OS_VERSION 0x00010805
+/* Version 1.8.6 */
+#define LTC_OS_VERSION 0x00010806
 
 /* LTC board, PVT, 1, no patches */
 #define LTC_HW_VERSION 0x00030100
