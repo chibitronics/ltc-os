@@ -309,13 +309,15 @@ int main(void)
   PROG_STATG_ON;
 
 #if defined(_CHIBIOS_RT_)
-  volatile thread_t *demod_thread_p;
-  demod_thread_p = chThdCreateStatic(waDemodThread, sizeof(waDemodThread),
-                                     HIGHPRIO, demod_thread, NULL);
-  /* Wait for thread to exit */
-  while (demod_thread_p->p_state != CH_STATE_FINAL)
-    ;
-  demod_thread_p = NULL;
+  {
+    volatile thread_t *demod_thread_p;
+    demod_thread_p = chThdCreateStatic(waDemodThread, sizeof(waDemodThread),
+                                       HIGHPRIO, demod_thread, NULL);
+    /* Wait for thread to exit */
+    while (demod_thread_p->p_state != CH_STATE_FINAL)
+      ;
+    demod_thread_p = NULL;
+  }
   NVIC_EnableIRQ(PendSV_IRQn);
   NVIC_EnableIRQ(SysTick_IRQn);
   analogStop();
