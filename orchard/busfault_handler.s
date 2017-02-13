@@ -2,6 +2,8 @@
     .global BusFault_Handler
     .func BusFault_Handler
 BusFault_Handler:
+
+#ifdef ENABLE_BKPT
     mov r7, lr
     mov r6, #4
     tst r7, r6
@@ -22,6 +24,10 @@ busfault_handler_psp:
     mov sp, r0          // Restore the stack pointer so "bt" works
 
     ldr r2, =BusFault_Handler_C
+    bx r2
+#endif /* ENABLE_BKPT */
+
+    ldr r2, =errorCondition
     bx r2
     .endfunc
     .type BusFault_Handler, %function
