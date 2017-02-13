@@ -196,15 +196,10 @@ bl_symbol_bss(
 static THD_FUNCTION(demod_thread, arg) {
   (void)arg;
 
-  GPIOB->PSOR |= (1 << 6);   // red off
-  GPIOB->PCOR |= (1 << 7);   // green on
-  GPIOB->PSOR |= (1 << 10);  // blue off
-
   // init the serial interface
   sdStart(&SD1, &serialConfig);
   stream = stream_driver;
 
-  i2cStart(i2cDriver, &i2c_config);
   adcStart(&ADCD1, &adccfg1);
   analogStart();
   demodInit();
