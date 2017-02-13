@@ -165,4 +165,6 @@ SysCall_Table:
 .short enableInterrupt
 .short disableInterrupt
 .short setInterruptPriority
+.short chThdCreateFromHeap
+.short errorCondition
 .size SysCall_Table, .-SysCall_Table
