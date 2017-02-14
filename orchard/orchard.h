@@ -1,8 +1,8 @@
 #ifndef __ORCHARD_H__
 #define __ORCHARD_H__
 
-/* Version 1.8.6 */
-#define LTC_OS_VERSION 0x00010806
+/* Version 1.8.7 */
+#define LTC_OS_VERSION 0x00010807
 
 /* LTC board, PVT, 1, no patches */
 #define LTC_HW_VERSION 0x00030100
