@@ -281,7 +281,6 @@ THD_TABLE_END
  */
 int main(void)
 {
-  blcrt_init();
   /*
    * System initializations.
    * - HAL initialization, this also initializes the configured device drivers
@@ -292,6 +291,11 @@ int main(void)
 
   halInit();
   chSysInit();
+
+  /* Initialize the bootloader's CRT, including setting up
+   * bl_symbol_data and zeroing out bl_symbol_bss.
+   */
+  blcrt_init();
 
   /* Clear the onboard LED to prevent us from blinding people. */
   {
