@@ -130,6 +130,13 @@ void FSKdemod(demod_sample_t *samples, uint32_t nb, put_bit_func put_bit)
     //fwrite(&tempo, 1, sizeof(s16), fout);
 
     newsample = sum > 0;
+#if 0     // report demodulator discriminator status to an IO pin to monitor signal quality
+    palSetPadMode(IOPORT1, 12, PAL_MODE_OUTPUT_PUSHPULL);
+    if( newsample )
+      GPIOA->PSOR |= (1 << 12);   // sets to high
+    else
+      GPIOA->PCOR |= (1 << 12);   // clears to low
+#endif
 
     /* baud PLL synchronisation : when we see a transition of
        frequency, we tend to modify the baud phase so that it is
