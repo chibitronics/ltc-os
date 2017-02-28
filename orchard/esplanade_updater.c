@@ -92,14 +92,7 @@ extern void *memcpy_aligned(void *dst, const void *src, size_t length);
   Also, once program is successful, automatically start the app. woot!
  */
 
-typedef enum states {
-  APP_IDLE      = 0,
-  APP_GOT_ID    = 1, // (unused state)
-  APP_UPDATING  = 2, // keep circulating here until all blocks received
-  APP_UPDATED   = 3, // check if all blocks are good in this state
-  APP_FAIL      = 4, // app failed to boot
-} app_state;
-static app_state astate = APP_IDLE;
+app_state astate = APP_IDLE;
 
 bl_symbol(static const storage_header *storageHdr) =
     (const storage_header *) STORAGE_START;

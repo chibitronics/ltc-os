@@ -8,6 +8,11 @@
 #include "esplanade_demod.h"
 #include "dsptables.h"
 
+#include "esplanade_mac.h"
+#include "esplanade_updater.h"
+extern app_state astate; // bring this in to know when to switch baud state
+#include "printf.h"
+
 bl_symbol_bss(demod_sample_t dm_buf[DMBUF_DEPTH]);
 bl_symbol_bss(static FSK_demod_state fsk_state);
 
@@ -100,6 +105,43 @@ int32_t FSK_core(demod_sample_t *b) {
 }
 #endif
 
+bl_symbol_bss(static uint32_t runcount = 0);
+// the run length is 4000 "0"'s for a pilot tone
+#define RUN_THRESH  1500
+bl_symbol_bss(static uint32_t lbr_time = 0);
+bl_symbol_bss(static uint16_t holdover = 0);
+#define HOLDOVER_THRESH 80 // number of 1's we can get in a run of 1500+ before we declare a loss and reset mode
+#define LBR_HOLDOUT  48000  // time measured in samples until we timeout (~3s)
+extern adcsample_t *mic_sample;
+void adc_mic_end_cb(ADCDriver *adcp, adcsample_t *buffer, size_t n);
+
+static const ADCConversionGroup adcgrplbr = {
+  true, // circular buffer mode
+  1, // just one channel
+  adc_mic_end_cb,  // callback
+  NULL,  // error callback
+  ADC_DAD1,  // microphone input channel
+  ADCx_CFG1_ADIV(ADCx_CFG1_ADIV_DIV_8) |
+  ADCx_CFG1_ADICLK(ADCx_CFG1_ADIVCLK_BUS_CLOCK_DIV_2) |
+  ADCx_CFG1_MODE(ADCx_CFG1_MODE_12_OR_13_BITS),  // 12 bits per sample
+  ADCx_SC3_ADCO |   // continuous conversions
+  ADCx_SC3_AVGE |
+  ADCx_SC3_AVGS(ADCx_SC3_AVGS_AVERAGE_4_SAMPLES) // 4 sample average
+};
+static const ADCConversionGroup adcgrphbr = {
+  true, // circular buffer mode
+  1, // just one channel
+  adc_mic_end_cb,  // callback
+  NULL,  // error callback
+  ADC_DAD1,  // microphone input channel
+  ADCx_CFG1_ADIV(ADCx_CFG1_ADIV_DIV_2) |
+  ADCx_CFG1_ADICLK(ADCx_CFG1_ADIVCLK_BUS_CLOCK_DIV_2) |
+  ADCx_CFG1_MODE(ADCx_CFG1_MODE_12_OR_13_BITS),  // 12 bits per sample
+  ADCx_SC3_ADCO |   // continuous conversions
+  ADCx_SC3_AVGE |
+  ADCx_SC3_AVGS(ADCx_SC3_AVGS_AVERAGE_4_SAMPLES) // 4 sample average
+};
+
 void FSKdemod(demod_sample_t *samples, uint32_t nb, put_bit_func put_bit)
 {
   int32_t newsample;
@@ -130,6 +172,54 @@ void FSKdemod(demod_sample_t *samples, uint32_t nb, put_bit_func put_bit)
     //fwrite(&tempo, 1, sizeof(s16), fout);
 
     newsample = sum > 0;
+
+    // figure out the ratio of 0:1
+    if( sum < 0 ) {
+      runcount++;       // received a 0, count it
+    } else {
+      // received a 1
+      if( runcount < RUN_THRESH ) {
+	// if we're less than the threshold, just reset the count & holdover
+	runcount = 0;
+	holdover = 0;
+      } else {
+	// we're over the threshold, so deglitch
+	if( holdover > HOLDOVER_THRESH ) {
+	  runcount = 0;
+	  holdover = 0;
+	} else {
+	  holdover++;
+	}
+      }
+    }
+
+    // runcount is monotonically increasing or reset to zero,
+    // so we encounter this condition exactly once per proper preamble
+    if( runcount == RUN_THRESH ) {
+      lbr_time = 1;
+      printf("LBR\r\n");
+      // invoke LBR mode
+      //      ADCD1.adc->CFG1 = (ADCD1.adc->CFG1 & ~ADCx_CFG1_ADIV_MASK) | ADCx_CFG1_ADIV(ADCx_CFG1_ADIV_DIV_8);
+      adcStop(&ADCD1);
+      adcStartConversion(&ADCD1, &adcgrplbr, mic_sample, MIC_SAMPLE_DEPTH);
+    }
+
+    if( astate == APP_IDLE ) {
+      if( lbr_time > 0 )
+	lbr_time++;
+      if( lbr_time > LBR_HOLDOUT ) {
+	// restore HBR mode
+	printf("HBR\r\n");
+	adcStop(&ADCD1);
+	adcStartConversion(&ADCD1, &adcgrphbr, mic_sample, MIC_SAMPLE_DEPTH);
+	// ADCD1.adc->CFG1 = (ADCD1.adc->CFG1 & ~ADCx_CFG1_ADIV_MASK) | ADCx_CFG1_ADIV(ADCx_CFG1_ADIV_DIV_2);
+	runcount = 0;
+	holdover = 0;
+	lbr_time = 0;
+      }
+    }
+
+
 #if 0     // report demodulator discriminator status to an IO pin to monitor signal quality
     palSetPadMode(IOPORT1, 12, PAL_MODE_OUTPUT_PUSHPULL);
     if( newsample )

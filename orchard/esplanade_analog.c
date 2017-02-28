@@ -6,7 +6,7 @@
 #include "esplanade_analog.h"
 #include "esplanade_demod.h"
 
-bl_symbol_bss(static adcsample_t mic_sample[MIC_SAMPLE_DEPTH]);
+bl_symbol_bss(adcsample_t mic_sample[MIC_SAMPLE_DEPTH]);
 bl_symbol_bss(static uint32_t adc_current_index);
 bl_symbol_bss(static const volatile uint32_t *adc_ra);
 
@@ -42,7 +42,7 @@ static int analog_fast_isr(void) {
   return 0;
 }
 
-static void adc_mic_end_cb(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
+void adc_mic_end_cb(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
   (void)adcp;
   (void)buffer;
   (void)n;
@@ -72,7 +72,7 @@ static const ADCConversionGroup adcgrpmic = {
   // -> 5 ADCK cycles + 5 bus clock cycles = SFCadder
   // 20 ADCK cycles per sample
   
-  ADCx_CFG1_ADIV(ADCx_CFG1_ADIV_DIV_8) | ///////////////////////changed
+  ADCx_CFG1_ADIV(ADCx_CFG1_ADIV_DIV_2) |
   ADCx_CFG1_ADICLK(ADCx_CFG1_ADIVCLK_BUS_CLOCK_DIV_2) |
   ADCx_CFG1_MODE(ADCx_CFG1_MODE_12_OR_13_BITS),  // 12 bits per sample
   

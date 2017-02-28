@@ -66,4 +66,13 @@ typedef struct storage_header_ram_ {
 // this is the call made to process an incoming packet, once it has been received
 int8_t updaterPacketProcess(demod_pkt_t *pkt);
 
+typedef enum states {
+  APP_IDLE      = 0,
+  APP_GOT_ID    = 1, // (unused state)
+  APP_UPDATING  = 2, // keep circulating here until all blocks received
+  APP_UPDATED   = 3, // check if all blocks are good in this state
+  APP_FAIL      = 4, // app failed to boot
+} app_state;
+
+
 #endif // __ORCHARD_STORAGE__
