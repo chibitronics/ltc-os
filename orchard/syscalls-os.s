@@ -113,8 +113,8 @@ SysCall_Table:
 .short 0
 .short random
 .short randomSeed
-.short i2cTransceive
-.short i2cSetupSlave
+.short 0
+.short 0
 .short 0
 .short 0
 .short 0

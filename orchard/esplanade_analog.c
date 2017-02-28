@@ -72,7 +72,7 @@ static const ADCConversionGroup adcgrpmic = {
   // -> 5 ADCK cycles + 5 bus clock cycles = SFCadder
   // 20 ADCK cycles per sample
   
-  ADCx_CFG1_ADIV(ADCx_CFG1_ADIV_DIV_2) |
+  ADCx_CFG1_ADIV(ADCx_CFG1_ADIV_DIV_8) | ///////////////////////changed
   ADCx_CFG1_ADICLK(ADCx_CFG1_ADIVCLK_BUS_CLOCK_DIV_2) |
   ADCx_CFG1_MODE(ADCx_CFG1_MODE_12_OR_13_BITS),  // 12 bits per sample
   

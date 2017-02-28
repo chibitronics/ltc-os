@@ -28,12 +28,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 extern void *stream;
 
+
 void init_printf(void* putp,void (*putf) (void*,char)) {
   (void)putp;
   (void)putf;
 
   return;
-}
+  }
 
 int printf(const char *fmt, ...) {
   va_list ap;

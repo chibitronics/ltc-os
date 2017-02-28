@@ -146,7 +146,7 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
   uint32_t hash;
   static uint8_t led_state = 0;
 
-  //printf("S%d ", (uint8_t) astate);
+  printf("*S%d ", (uint8_t) astate);
   switch (astate) {
   case APP_IDLE:
     PROG_STATG_OFF;
@@ -160,7 +160,7 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
     MurmurHash3_x86_32((uint8_t *)cpkt, sizeof(*cpkt) - sizeof(cpkt->hash),
                        MURMUR_SEED_BLOCK, &hash);
     if (hash != cpkt->hash) {
-      //printf("%08x != 0x%08x\r\n", cpkt->hash, hash);
+      printf("%08x .!= 0x%08x\r\n", cpkt->hash, hash);
       break;
     }
 
@@ -222,7 +222,14 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
     MurmurHash3_x86_32((uint8_t *)dpkt, sizeof(*dpkt) - sizeof(dpkt->hash),
                        MURMUR_SEED_BLOCK, &hash);
     if (hash != dpkt->hash) {
-      //printf("%08x != 0x%08x\r\n", dpkt->hash, hash);
+      printf("%08x != 0x%08x\r\n", dpkt->hash, hash);
+      int i;
+      for( i = 0; i < 256; i++ ) {
+	if( (i % 16) == 0 )
+	  printf("\n\r");
+	printf( "%02x ", dpkt->payload[i] );
+      }
+      printf("\n\r");
       break;
     }
 
@@ -246,16 +253,16 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
       UPDATE_LOCK;
       err = flashProgram((uint8_t *)&dummy, (uint8_t *)(&(storageHdr->blockmap[block])), sizeof(uint32_t));
       UPDATE_UNLOCK;
-      //printf( "\n\r P%d b%d", (uint8_t) block, err );
+      printf( "\n\r P%d b%d", (uint8_t) block, err );
 
       // only program if the blockmap says it's not been programmed
       UPDATE_LOCK;
       err = flashProgram(dpkt->payload, (uint8_t *) (STORAGE_PROGRAM_OFFSET + (block * BLOCK_SIZE)), BLOCK_SIZE);
       UPDATE_UNLOCK;
-      //printf( " d%d", err );
+      printf( " d%d", err );
     }
     else {
-      //printf( " _%d", (uint8_t) block ); // redundant block received
+      printf( " _%d", (uint8_t) block ); // redundant block received
     }
 
     /* Now check if the entire block map, within the range of the
@@ -292,8 +299,8 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
       astate = APP_FAIL;
     }
     else {
-      //printf( "\n\r Transfer complete but corrupted. Erase & retry.\n\r" );
-      //printf( "\n\r Source hash: %08x local hash: %08x\n\r", storageHdr->fullhash, hash );
+      printf( "\n\r Transfer complete but corrupted. Erase & retry.\n\r" );
+      printf( "\n\r Source hash: %08x local hash: %08x\n\r", storageHdr->fullhash, hash );
 
       /* Hash check failed. Something went wrong. Just nuke all of storage
        * and bring us back to a virgin state.

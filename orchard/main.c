@@ -115,10 +115,24 @@ void demod_loop(void) {
       for (i = sizeof(pkt.header);
            i < sizeof(pkt.data_pkt) - sizeof(pkt.data_pkt.hash);
            i++) {
+	/*	
         if ((i % 16) == 7)
           ((uint8_t *)&pkt)[i] ^= 0x55;
         else if ((i % 16) == 15)
           ((uint8_t *)&pkt)[i] ^= 0xAA;
+	*/
+	/*
+        if (((i % 16) == 7) || ((i % 16) == 4))
+          ((uint8_t *)&pkt)[i] ^= 0x55;
+        else if (((i % 16) == 15) || ((i % 16) == 12))
+          ((uint8_t *)&pkt)[i] ^= 0xAA;
+	*/
+	if( (i % 3) == 0 )
+          ((uint8_t *)&pkt)[i] ^= 0x35;
+	if( (i % 3) == 1 )
+          ((uint8_t *)&pkt)[i] ^= 0xac;
+	if( (i % 3) == 2 )
+          ((uint8_t *)&pkt)[i] ^= 0x95;
       }
     }
 
@@ -258,7 +272,7 @@ static THD_FUNCTION(demod_thread, arg) {
       chThdExit(0);
     }
   }
-
+  
   PROG_STATG_OFF;  // indicate we're waiting for code upload
   PROG_STATR_ON; 
   
