@@ -24,6 +24,8 @@
 #define UPDATE_UNLOCK
 #endif
 
+#define DEBUG 0
+
 extern void *memcpy_aligned(void *dst, const void *src, size_t length);
 
 /*
@@ -139,6 +141,8 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
   uint32_t hash;
   static uint8_t led_state = 0;
 
+  //  if( astate == APP_IDLE )
+  //    printf("\n\r"); // CR on entering idle state
   printf("*S%d ", (uint8_t) astate);
   switch (astate) {
   case APP_IDLE:
@@ -153,7 +157,7 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
     MurmurHash3_x86_32((uint8_t *)cpkt, sizeof(*cpkt) - sizeof(cpkt->hash),
                        MURMUR_SEED_BLOCK, &hash);
     if (hash != cpkt->hash) {
-      printf("%08x .!= 0x%08x\r\n", cpkt->hash, hash);
+      printf("%08x .!= 0x%08x\n\r", cpkt->hash, hash);
       break;
     }
 
@@ -215,7 +219,8 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
     MurmurHash3_x86_32((uint8_t *)dpkt, sizeof(*dpkt) - sizeof(dpkt->hash),
                        MURMUR_SEED_BLOCK, &hash);
     if (hash != dpkt->hash) {
-      printf("%08x != 0x%08x\r\n", dpkt->hash, hash);
+      printf("%08x != 0x%08x\n\r", dpkt->hash, hash);
+#if DEBUG
       int i;
       for( i = 0; i < 256; i++ ) {
 	if( (i % 16) == 0 )
@@ -223,6 +228,7 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
 	printf( "%02x ", dpkt->payload[i] );
       }
       printf("\n\r");
+#endif
       break;
     }
 
@@ -246,13 +252,18 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
       UPDATE_LOCK;
       err = flashProgram((uint8_t *)&dummy, (uint8_t *)(&(storageHdr->blockmap[block])), sizeof(uint32_t));
       UPDATE_UNLOCK;
-      printf( "\n\r P%d b%d", (uint8_t) block, err );
+      printf( "\n\r P%d", (uint8_t) block );
+#if DEBUG
+      printf( "\n\r P%d e%d", (uint8_t) block, err );
+#endif
 
       // only program if the blockmap says it's not been programmed
       UPDATE_LOCK;
       err = flashProgram(dpkt->payload, (uint8_t *) (STORAGE_PROGRAM_OFFSET + (block * BLOCK_SIZE)), BLOCK_SIZE);
       UPDATE_UNLOCK;
-      printf( " d%d", err );
+#if DEBUG
+      printf( " E%d", err );
+#endif
     }
     else {
       printf( " _%d", (uint8_t) block ); // redundant block received
@@ -272,8 +283,10 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
       if (storageHdr->blockmap[i] == 0xFFFFFFFF)
         alldone = 0;
     }
-    if(!alldone)
+    if(!alldone) {
+      printf( "~" );
       break;  // stay in app-updating state
+    }
 
     /* Now that it's claimed to be done, do a full hash check
      * and confirm this /actually/ worked.
@@ -287,13 +300,14 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
       UPDATE_UNLOCK;
       astate = APP_UPDATED;
       PROG_STATG_OFF;
-      PROG_STATR_OFF; 
+      PROG_STATR_OFF;
+      printf( "\n\rgo!\n\r" );
       bootToUserApp();
       astate = APP_FAIL;
     }
     else {
-      printf( "\n\r Transfer complete but corrupted. Erase & retry.\n\r" );
-      printf( "\n\r Source hash: %08x local hash: %08x\n\r", storageHdr->fullhash, hash );
+      printf( "\n\r Bad hash\n\r" );
+      printf( " sent: %08x\n\r got: %08x\n\r", storageHdr->fullhash, hash );
 
       /* Hash check failed. Something went wrong. Just nuke all of storage
        * and bring us back to a virgin state.
@@ -311,11 +325,13 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
     PROG_STATG_ON;
     PROG_STATR_OFF; 
 
+    printf( "\n\rgo!\n\r" );
     bootToUserApp();
     astate = APP_FAIL;
     break;
 
   case APP_FAIL:
+    printf( "\n\rfail.\n\r" );
     errorCondition();
 
   default:

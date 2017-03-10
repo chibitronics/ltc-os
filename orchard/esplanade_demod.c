@@ -197,7 +197,7 @@ void FSKdemod(demod_sample_t *samples, uint32_t nb, put_bit_func put_bit)
     // so we encounter this condition exactly once per proper preamble
     if( runcount == RUN_THRESH ) {
       lbr_time = 1;
-      printf("LBR\r\n");
+      printf("LBR\n\r");
       // invoke LBR mode
       //      ADCD1.adc->CFG1 = (ADCD1.adc->CFG1 & ~ADCx_CFG1_ADIV_MASK) | ADCx_CFG1_ADIV(ADCx_CFG1_ADIV_DIV_8);
       adcStop(&ADCD1);
@@ -209,7 +209,7 @@ void FSKdemod(demod_sample_t *samples, uint32_t nb, put_bit_func put_bit)
 	lbr_time++;
       if( lbr_time > LBR_HOLDOUT ) {
 	// restore HBR mode
-	printf("HBR\r\n");
+	printf("HBR\n\r");
 	adcStop(&ADCD1);
 	adcStartConversion(&ADCD1, &adcgrphbr, mic_sample, MIC_SAMPLE_DEPTH);
 	// ADCD1.adc->CFG1 = (ADCD1.adc->CFG1 & ~ADCx_CFG1_ADIV_MASK) | ADCx_CFG1_ADIV(ADCx_CFG1_ADIV_DIV_2);
