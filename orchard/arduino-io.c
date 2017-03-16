@@ -337,7 +337,8 @@ static int pin_to_adc(int pin) {
 
 /* Analog stuff */
 #define SYSTEM_ANALOG_RESOLUTION 12
-static uint8_t analog_read_resolution = SYSTEM_ANALOG_RESOLUTION;
+/* Default to 10 bits for Arduino compatibility */
+static uint8_t analog_read_resolution = 10;
 
 void analogReadResolution(int bits) {
   if ((bits < 0) || (bits > 31))
