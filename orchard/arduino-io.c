@@ -248,9 +248,23 @@ void digitalWrite(int pin, int value) {
   if (!canUsePin(pin))
     return;
 
+  switch (palGetPadMode(port, pad)) {
+  /* If we Write to a pin that's an input, set/clear the pullup instead.
+   * See documentation for digitalWrite(). */
+  case PAL_MODE_INPUT_PULLDOWN:
+  case PAL_MODE_INPUT:
+  case PAL_MODE_INPUT_PULLUP:
+    if (value)
+      palSetPadMode(port, pad, PAL_MODE_INPUT_PULLUP);
+    else
+      palSetPadMode(port, pad, PAL_MODE_INPUT);
+    return; /* Return, and don't set a new value.*/
+
   /* Mux this pin as an output, if it's set as ALTERNATIVE_2 (i.e. PWM) */
-  if (palGetPadMode(port, pad) == PAL_MODE_ALTERNATIVE_2)
+  case PAL_MODE_ALTERNATIVE_2:
     palSetPadMode(port, pad, PAL_MODE_OUTPUT_PUSHPULL);
+    break;
+  }
 
   /* Disable the running PWM, if one exists */
   if ((pin == D4) || (pin == A4) || (pin == 4))
