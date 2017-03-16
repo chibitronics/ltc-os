@@ -296,7 +296,7 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
       /* Hurray, we're done! mark the whole thing as complete. */
       uint32_t dummy = 0;
       UPDATE_LOCK;
-      err = flashProgram((uint8_t *)(&(storageHdr->complete)), (uint8_t *)&dummy, sizeof(uint32_t));
+      err = flashProgram((uint8_t *)&dummy, (uint8_t *)(&(storageHdr->complete)), sizeof(uint32_t));
       UPDATE_UNLOCK;
       astate = APP_UPDATED;
       PROG_STATG_OFF;
