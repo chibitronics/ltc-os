@@ -1,5 +1,6 @@
 gitversion.h
 build/
+build-*/
 debug/
 .dep/
 *.swp
