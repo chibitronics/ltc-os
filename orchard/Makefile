@@ -5,8 +5,17 @@
 
 CH_USE_RT = TRUE
 ifeq ($(CH_USE_RT),)
-	CH_USE_RT=FALSE
+  CH_USE_RT=FALSE
 endif
+
+ifeq ($(LTC_HW_VERSION),PVT1C)
+  # LTC board, PVT, 1, no patches 
+  HWVER=0x00030100
+endif
+ifeq ($(HWVER),)
+  $(error LTC_HW_VERSION is not set or not recognized.  Set LTC_HW_VERSION to one of: PVT1C)
+endif
+BUILDDIR=build-$(LTC_HW_VERSION)
 
 # Compiler options here.
 ifeq ($(USE_OPT),)
@@ -227,7 +236,7 @@ CPPWARN = -Wall -Wextra # -Wundef
 #
 
 # List all user C define here, like -D_DEBUG=1
-UDEFS =
+UDEFS = -DLTC_HW_VERSION=$(HWVER)
 
 # Define ASM defines here
 UADEFS =
