@@ -6,9 +6,10 @@
 
 #define KINETIS_LPTMR0_HANDLER  VectorB0
 
-static uint8_t lptmr_enabled = 0;
-static uint8_t lptmr_running = 0;
-static uint8_t lptmr_pad;
+#define LPTMR_PAD(x) (x & 0x1f)
+#define LPTMR_ENABLED (1 << 6)
+#define LPTMR_RUNNING (1 << 7)
+static uint8_t lptmr_state = 0;
 static uint32_t lptmr_rate = 0;
 static ioportid_t lptmr_port;
 
@@ -32,7 +33,7 @@ static void calibrate_irc(void) {
 #define RATE 2000000 /* Sourced from 4 MHz IRC via a /2 divider */
 void enableLptmr(void) {
 
-  if (lptmr_enabled)
+  if (lptmr_state & LPTMR_ENABLED)
     return;
 
   /* Ungate clock */
@@ -64,7 +65,7 @@ void enableLptmr(void) {
   NVIC_EnableIRQ(28);
   writel(LPTMR_CSR_TIE, LPTMR0_CSR);
 
-  lptmr_enabled = 1;
+  lptmr_state |= LPTMR_ENABLED;
 }
 
 void startLptmr(ioportid_t port, uint8_t pad, uint32_t rate_hz) {
@@ -81,10 +82,14 @@ void startLptmr(ioportid_t port, uint8_t pad, uint32_t rate_hz) {
    * NOTE: If the timer is already going, we don't change the port/pad,
    * and instead use the old pad.
    */
-  if (!lptmr_running) {
-    lptmr_running = 1;
+  if (!(lptmr_state & LPTMR_RUNNING)) {
+    lptmr_state |= LPTMR_RUNNING;
     lptmr_port = port;
-    lptmr_pad = pad;
+
+    /* Pack the pad number into the lower 5 bits */
+    lptmr_state &= ~0x1f;
+    lptmr_state |= (pad & 0x1f);
+
     writel(lptmr_rate, LPTMR0_CMR);
     writel(LPTMR_CSR_TIE | LPTMR_CSR_TEN, LPTMR0_CSR);
   }
@@ -92,10 +97,10 @@ void startLptmr(ioportid_t port, uint8_t pad, uint32_t rate_hz) {
 
 void stopLptmr(void) {
 
-  if (!lptmr_running)
+  if (!(lptmr_state & LPTMR_RUNNING))
     return;
 
-  lptmr_running = 0;
+  lptmr_state &= ~LPTMR_RUNNING;
   writel(0, LPTMR0_CSR);
 }
 
@@ -112,10 +117,10 @@ OSAL_IRQ_HANDLER(KINETIS_LPTMR0_HANDLER) {
   }
   else {
     /* Ignore spurrious interrupts that happen for some reason */
-    if (!lptmr_running)
+    if (!(lptmr_state & LPTMR_RUNNING))
       return;
 
-    palTogglePad(lptmr_port, lptmr_pad);
+    palTogglePad(lptmr_port, LPTMR_PAD(lptmr_state));
 
     /* Update the counter with the new value (if it's changed).*/
     writel(lptmr_rate, LPTMR0_CMR);
