@@ -31,7 +31,8 @@
 #include "hal.h"
 #include "chprintf.h"
 #include "memstreams.h"
-char * qfp_float2str(float f,char*s,unsigned int fmt);
+#include "qfpio.h"
+
 void *memcpy(void *dest, const void *src, size_t n);
 void va_arg_align_if_necessary(void *ptr);
 
@@ -77,11 +78,6 @@ char *ch_ltoa(char *p, long num, unsigned radix) {
 }
 
 #if CHPRINTF_USE_FLOAT
-/*
-static const long pow10[FLOAT_PRECISION] = {
-    10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000
-};
-*/
 __attribute__((noinline))
 static char *ftoa(char *p, float f, int width, unsigned long precision) {
   /*
@@ -101,26 +97,36 @@ static char *ftoa(char *p, float f, int width, unsigned long precision) {
   * the string. Thus it is essential that the output buffer is large enough to accommodate
   * these characters temporarily.
   */
-  uint32_t fmt = 0x18000000;
-  uint32_t fmt_add = 0;
+  #define NUMBER_OF_SIGNIFICANT_FIGURES(x) ((x & 0xff) << 0)
+  #define MAXIMUM_NEGATIVE_EXPONENT(x) ((x & 0xff) << 8)
+  #define MAXIMUM_POSITIVE_EXPONENT(x) ((x & 0xff) << 16)
+  #define POSITIVE_MANTISSA_SYMBOL_SPACE (1 << 24)
+  #define POSITIVE_MANTISSA_SYMBOL_PLUS (1 << 25)
+  #define POSITIVE_EXPONENT_SYMBOL_SPACE (1 << 26)
+  #define POSITIVE_EXPONENT_SYMBOL_PLUS (1 << 27)
+  #define SUPPRESS_TRAILING_ZEROES (1 << 28)
+  #define FIXED_POINT_OUTPUT (1 << 29)
+  uint32_t fmt = 0
+      | MAXIMUM_NEGATIVE_EXPONENT(4)
+      | MAXIMUM_POSITIVE_EXPONENT(6)
+      | FIXED_POINT_OUTPUT
+      | NUMBER_OF_SIGNIFICANT_FIGURES(precision);
 
-  /* Formatted "%fX.Y" */
+  (void)width;
+  // Simplify things by computing the intpart separately,
+  // and letting qfp_float2str handle the float part.
+  // Split along the decimal point, and hand the decimal to
+  // qfp_float2str().
   /*
-  if (width > 0)
-    fmt_add |= (width << 8) | (width << 23);
-  */
-  fmt_add = 0x60400;
-
-  if (precision > 0)
-    fmt_add |= precision;
-  else
-    fmt_add |= 0x6;
-
-  if (!fmt_add)
-    fmt_add |= 0x60406;
-
-  fmt |= fmt_add;
-
+  int ipart = qfp_float2int(f);
+  if (ipart >= 1) {
+    f = qfp_fadd(f, qfp_int2float(-ipart));
+  } else if (ipart <= -1) {
+    f = qfp_fadd(f, qfp_int2float(-ipart));
+  }
+  p = ch_ltoa(p, ipart, 10);
+  *p++ = '.';
+*/
   return qfp_float2str(f, p, fmt);
   /*
   long l;
