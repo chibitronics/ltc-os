@@ -125,7 +125,7 @@ void putBitMac(int bit) {
     if (!pkt_len && pkt_read > sizeof(demod_pkt_header_t)) {
 
       /* If the version number doesn't match, abandon ship. */
-      if (pkt.header.version != PKT_VER)
+      if ((pkt.header.version != PKT_VER_1) && (pkt.header.version != PKT_VER_2))
         goto make_idle;
 
       if (pkt.header.type == PKTTYPE_CTRL)

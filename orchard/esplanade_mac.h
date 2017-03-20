@@ -65,7 +65,8 @@ typedef union demod_packet {
 #define PKTTYPE_CTRL  0x01
 #define PKTTYPE_DATA  0x02
 
-#define PKT_VER 0x01
+#define PKT_VER_1 0x01
+#define PKT_VER_2 0x02 /* Improved baud striping */
 
 extern volatile uint16_t pktPtr;
 extern demod_pkt_t pkt;
