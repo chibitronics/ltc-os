@@ -239,16 +239,17 @@ void detachFastInterrupt(int irq);
 #define D4 0xa4
 #define D5 0xa5
 
-#define LED_BUILTIN       PTA(12)
-#define LED_BUILTIN_RGB   PTA(6)
+#define LED_BUILTIN       32
+#define LED_BUILTIN_RGB   33
 
-#define LED_BUILTIN_RED   PTA(5)
-#define LED_BUILTIN_GREEN PTB(6)
-#define AUDIO_IN          PTB(5)
-#define UART_TX           PTB(2)
-#define UART_RX           PTB(1)
-#define SWD_CLK           PTA(0)
-#define SWD_DIO           PTA(2)
+#define LED_BUILTIN_RED   34
+#define LED_BUILTIN_GREEN 35
+#define AUDIO_IN          36
+#define UART_TX           37
+#define UART_RX           38
+#define SWD_CLK           39
+#define SWD_DIO           40
+#define RST_LEVEL         41
 
 /* Interrupts */
 
