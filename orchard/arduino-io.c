@@ -251,6 +251,8 @@ void pinMode(int pin, enum pin_mode arduino_mode) {
   uint8_t pad;
   iomode_t mode;
 
+  pin = canonicalizePin(pin);
+
   if (pinToPort(pin, &port, &pad) < 0)
     return;
 
@@ -259,11 +261,11 @@ void pinMode(int pin, enum pin_mode arduino_mode) {
     return;
 
   /* Disconnect alternate pins for A0, A1, and A3 */
-  if (pin == A0)
+  if (pin == 0)
     palSetPadMode(IOPORT1, 8, PAL_MODE_UNCONNECTED);
-  if (pin == A1)
+  if (pin == 1)
     palSetPadMode(IOPORT1, 9, PAL_MODE_UNCONNECTED);
-  if (pin == A3)
+  if (pin == 3)
     palSetPadMode(IOPORT2, 4, PAL_MODE_UNCONNECTED);
 
   if (arduino_mode == INPUT_PULLUP)
