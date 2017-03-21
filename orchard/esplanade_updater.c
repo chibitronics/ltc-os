@@ -173,6 +173,7 @@ int8_t updaterPacketProcess(demod_pkt_t *pkt) {
         break;
       }
       else {
+        astate = APP_UPDATED;
         break; // attempt to program the sticker with the same program, just abort & ignore
       }
     }
