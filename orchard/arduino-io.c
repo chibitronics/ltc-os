@@ -67,16 +67,17 @@ int canonicalizePin(int pin) {
   int masked_pin = pin;
 
   /* Convert D0..D15 to 0..15.*/
-  if ((masked_pin & 0xa0) == 0xa0)
-    masked_pin &= ~0xa0;
+  if ((masked_pin & 0xf0) == 0xa0)
+    masked_pin &= ~0xf0;
 
   /* Convert A0..A15 to 0..15.*/
-  if ((masked_pin & 0x80) == 0x80)
-    masked_pin &= ~0x80;
+  if ((masked_pin & 0xf0) == 0x80)
+    masked_pin &= ~0xf0;
 
   switch (masked_pin) {
   case PTB(10):
-  case PTA(8): /* also LED_BUILTIN */
+  case PTA(8):
+  case LED_BUILTIN:
   case 0:
     return 0;
 
@@ -101,6 +102,33 @@ int canonicalizePin(int pin) {
   case PTA(7):
   case 5:
     return 5;
+
+  case PTA(5):
+    return LED_BUILTIN_RED;
+
+  case PTA(6):
+    return LED_BUILTIN_RGB;
+
+  case PTB(6):
+    return LED_BUILTIN_GREEN;
+
+  case PTB(5):
+    return AUDIO_IN;
+
+  case PTB(2):
+    return UART_TX;
+
+  case PTB(1):
+    return UART_RX;
+
+  case PTA(0):
+    return SWD_CLK;
+
+  case PTA(2):
+    return SWD_DIO;
+
+  case PTB(7):
+    return RST_LEVEL;
 
   default:
     return pin;
@@ -180,7 +208,22 @@ int pinToPort(int pin, ioportid_t *port, uint8_t *pad) {
     *pad = 5;
     break;
 
+  case RST_LEVEL:
+    *port = IOPORT2;
+    *pad = 7;
+    break;
+
   default:
+    if ((pin & 0xf0) == 0x40) {
+      *port = IOPORT1;
+      *pad = pin & 0x1f;
+      break;
+    }
+    else if ((pin & 0xf0) == 0x60) {
+      *port = IOPORT2;
+      *pad = pin & 0x1f;
+      break;
+    }
     return -1;
   }
 
