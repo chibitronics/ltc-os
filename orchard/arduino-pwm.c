@@ -148,8 +148,15 @@ void analogWrite(int pin, int value) {
     break;
 
   case 3:
+#if LTC_HW_VERSION_PVT1C
     palSetPadMode(IOPORT2, 4, PAL_MODE_UNCONNECTED);
     mode = PAL_MODE_ALTERNATIVE_2;
+#elif LTC_HW_VERSION_PVT1E
+    palSetPadMode(IOPORT2, 3, PAL_MODE_UNCONNECTED);
+    mode = PAL_MODE_ALTERNATIVE_2;
+#else
+#error "Unrecognized LTC HW version"
+#endif
     driver = &PWMD2;
     channel = 1;
     break;
