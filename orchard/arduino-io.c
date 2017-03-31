@@ -91,7 +91,13 @@ int canonicalizePin(int pin) {
     return 2;
 
   case PTB(13):
+#if LTC_HW_VERSION_PVT1C
   case PTB(4):
+#elif LTC_HW_VERSION_PVT1E
+  case PTB(3):
+#else
+#error "Unrecognized LTC hardware version"
+#endif
   case 3:
     return 3;
 
@@ -266,7 +272,13 @@ void pinMode(int pin, enum pin_mode arduino_mode) {
   if (pin == 1)
     palSetPadMode(IOPORT1, 9, PAL_MODE_UNCONNECTED);
   if (pin == 3)
+#if LTC_HW_VERSION_PVT1C
     palSetPadMode(IOPORT2, 4, PAL_MODE_UNCONNECTED);
+#elif LTC_HW_VERSION_PVT1E
+    palSetPadMode(IOPORT2, 3, PAL_MODE_UNCONNECTED);
+#else
+#error "Unrecognized LTC HW version"
+#endif
 
   if (arduino_mode == INPUT_PULLUP)
     mode = PAL_MODE_INPUT_PULLUP;
