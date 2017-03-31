@@ -14,7 +14,7 @@ void ledShow(uint32_t pin, void *pixels, uint32_t num_leds) {
   pin = canonicalizePin(pin);
 
   /* Don't let users access illegal pins.*/
-  if (!canUsePin(pin))
+  if (pin != LED_BUILTIN_RGB && !canUsePin(pin))
     return;
 
   if (pinToPort(pin, &port, &pad) < 0)
