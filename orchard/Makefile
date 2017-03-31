@@ -11,9 +11,15 @@ endif
 ifeq ($(LTC_HW_VERSION),PVT1C)
   # LTC board, PVT, 1, no patches 
   HWVER=0x00030100
+  HWNAME=PVT1C
+endif
+ifeq ($(LTC_HW_VERSION),PVT1E)
+  # LTC board, PVT, 1, rev E
+  HWVER=0x0003010E
+  HWNAME=PVT1E
 endif
 ifeq ($(HWVER),)
-  $(error LTC_HW_VERSION is not set or not recognized.  Set LTC_HW_VERSION to one of: PVT1C)
+  $(error LTC_HW_VERSION is not set or not recognized.  Set LTC_HW_VERSION to one of: PVT1C, PVT1E)
 endif
 BUILDDIR=build-$(LTC_HW_VERSION)
 
@@ -236,7 +242,7 @@ CPPWARN = -Wall -Wextra # -Wundef
 #
 
 # List all user C define here, like -D_DEBUG=1
-UDEFS = -DLTC_HW_VERSION=$(HWVER)
+UDEFS = -DLTC_HW_VERSION=$(HWVER) -DLTC_HW_VERSION_$(HWNAME)
 
 # Define ASM defines here
 UADEFS =
