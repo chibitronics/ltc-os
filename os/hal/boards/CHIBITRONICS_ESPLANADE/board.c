@@ -47,7 +47,13 @@ const PALConfig pal_default_config =
       .port = IOPORT2,  // PORTB
       .pads = {
         /* PTB0*/ PAL_MODE_INPUT,           /* PTB1*/ PAL_MODE_OUTPUT_PUSHPULL, /* PTB2*/ PAL_MODE_OUTPUT_PUSHPULL, // dig0, uart_rx, uart_tx
-        /* PTB3*/ PAL_MODE_INPUT,           /* PTB4*/ PAL_MODE_INPUT_ANALOG,    /* PTB5*/ PAL_MODE_INPUT_ANALOG,    // mode_pb, ana3, audio
+#if LTC_HW_VERSION_PVT1C
+        /* PTB3*/ PAL_MODE_UNCONNECTED,     /* PTB4*/ PAL_MODE_INPUT_ANALOG,    /* PTB5*/ PAL_MODE_INPUT_ANALOG,    // ana3, nc, audio
+#elif LTC_HW_VERSION_PVT1E
+        /* PTB3*/ PAL_MODE_INPUT,           /* PTB4*/ PAL_MODE_UNCONNECTED,     /* PTB5*/ PAL_MODE_INPUT_ANALOG,    // nc, ana3, audio
+#else
+#error "Unrecognized LTC hardware version"
+#endif
         /* PTB6*/ PAL_MODE_OUTPUT_PUSHPULL, /* PTB7*/ PAL_MODE_INPUT,           /* PTB8*/ PAL_MODE_UNCONNECTED,     // prog_statg, rst_level, nc
         /* PTB9*/ PAL_MODE_UNCONNECTED,     /*PTB10*/ PAL_MODE_INPUT_ANALOG,    /*PTB11*/ PAL_MODE_INPUT_ANALOG,    // nc, ana0, ana1
         /*PTB12*/ PAL_MODE_UNCONNECTED,     /*PTB13*/ PAL_MODE_INPUT_ANALOG,    /*PTB14*/ PAL_MODE_UNCONNECTED,     // nc, ana3, nc
