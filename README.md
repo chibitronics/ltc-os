@@ -22,7 +22,13 @@ the SWD bus to load the firmware.
 
 ![wiring diagram](ltc-jig.jpg)
 
-The pins you want to connect to are "SWD" and "SWD".  Connect SWD to "GPIO 24" on the Raspberry Pi, and "SWC" to "GPIO 25".  You should also connect a GND.
+Above is a comprehensive wiring diagram for the production automatic tester. To simply load the OS, the only
+pins you want to connect to are "SWD" and "SWD":
+
+* Connect SWD to "GPIO 24"
+* Connect SWC to "GPIO 25"
+* It's recommended to connect RST_IN to "GPIO 18"
+* Connect a GND
 
 If you don't feel like soldering headers onto the LTC board, you can use a "debug shoe" which you can print using a 3D printer.
 It's available at: http://www.thingiverse.com/thing:2211948
