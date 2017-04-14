@@ -8,9 +8,8 @@ and using gcc6.
 1. Check out https://github.com/chibitronics/ltc-os.git
 2. Check out the build tag.  For example, version 1.9.0 has a tag of "ltc-p1-1.9.0"
 3. Change to the "orchard" dir
-4. Run "make LTC_HW_VERSION=PVT1C TRGT=arm-none-eabi-".  If you're compiling it on the Raspberry Pi itself, you can omit the "TRGT=" argument.
-5. If you get a complaint about stubs-soft.h, create an empty file of that name in the directory where the error message
-is pointing to and the error will go away.
+4. Run "make LTC_HW_VERSION=PVT1E".  If you're cross-compiling it, add " TRGT=arm-none-eabi-" to the command.
+5. If you get a complaint about stubs-soft.h, create an empty file of that name in the directory where the error message is pointing to and the error will go away.
 
 The build result will be "build/orchard.elf", an object file that can be
 loaded using openOCD into the ChibiChip.
@@ -35,24 +34,24 @@ It's available at: http://www.thingiverse.com/thing:2211948
 
 You need to compile OpenOCD from source, and enable "bcm2835gpio".  Install the toolchain.  If you're using Raspbian, it's something like this:
 
- sudo apt-get install build-essential libtool gdb which
- git clone --recursive git://git.code.sf.net/p/openocd/code openocd
- cd openocd
- ./bootstrap
- ./configure --enable-bcm2835gpio --enable-sysfsgpio --disable-werror
- make
- sudo make install
+    sudo apt-get install build-essential libtool gdb which
+    git clone --recursive git://git.code.sf.net/p/openocd/code openocd
+    cd openocd
+    ./bootstrap
+    ./configure --enable-bcm2835gpio --enable-sysfsgpio --disable-werror
+    make
+    sudo make install
 
 Then, run OpenOCD:
 
- sudo /usr/local/bin/openocd \
-  -f interface/raspberrypi2-native.cfg \
-  -c "transport select swd" \
-  -f target/kx.cfg \
-  -c "reset_config none" \
-  -c "kx.cpu configure -rtos ChibiOS" \
-  -c "init" \
-  -c "reset halt"
+    sudo /usr/local/bin/openocd \
+        -f interface/raspberrypi2-native.cfg \
+        -c "transport select swd" \
+        -f target/kx.cfg \
+        -c "reset_config none" \
+        -c "kx.cpu configure -rtos ChibiOS" \
+        -c "init" \
+        -c "reset halt"
 
 ## Loading the ELF File
 
@@ -60,11 +59,12 @@ In gdb, run "load [path-to-orchard]/build-pvt1c/orchard.elf" to upload the new O
 
 ## Attaching GDB for debugging
 
-You should then be able to attach GDB.  From your Desktop, run:
+If you've compiled your program using a normal toolchain, you can use GDB to load code and debug the software.  From your Desktop, run:
 
- arm-none-eabi-gdb -ex "target remote 192.168.xxx.xxx:3333" [platformio-generated-elf].elf
+    arm-none-eabi-gdb -ex "target remote 192.168.xxx.xxx:3333" [path-to-your-program].elf
 
-To look at OS threads in GDB, add the orchard.elf symbols using: "add-symbol-file [path-to-orchard.elf] 0".
+To look at OS threads in GDB, add the symbols from the orchard.elf file you built at load address 0:
+
+    (gdb) add-symbol-file [path-to-orchard.elf] 0
 
 You should now be able to look at threads using "info thr", and change threads with "thr [pid]".
-
