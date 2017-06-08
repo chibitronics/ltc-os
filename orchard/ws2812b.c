@@ -22,8 +22,10 @@ void ledShow(uint32_t pin, void *pixels, uint32_t num_leds) {
 
   if (port == IOPORT1)
     base = FGPIOA_BASE;
-  else if (port == IOPORT1)
+  else if (port == IOPORT2)
     base = FGPIOB_BASE;
+  else
+    return;
 
   chSysLock();
   ledUpdate(num_leds, pixels, 1 << pad,
