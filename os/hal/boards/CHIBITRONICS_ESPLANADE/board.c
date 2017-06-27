@@ -76,6 +76,11 @@ const PALConfig pal_default_config =
  */
 void __early_init(void) {
 
+  /* Immediately drive the USB D+/D- pins low, to prevent enumeration */
+  SIM->SCGC5 |= SIM_SCGC5_PORTB;
+  GPIOB->PDDR |= ((1 << 2) | (1 << 1));
+  GPIOB->PCOR  = ((1 << 2) | (1 << 1));
+
   kl2x_clock_init();
 }
 
@@ -84,6 +89,6 @@ void __early_init(void) {
  * @todo    Add your board-specific code, if any.
  */
 void boardInit(void) {
-  /* Set USB D+/D- (and also Serial pads) to 0. */
+  /* Set USB D+/D- (and also Serial pads) to 0 again. */
   GPIOB->PCOR = ((1 << 2) | (1 << 1));
 }
