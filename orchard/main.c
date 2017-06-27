@@ -212,10 +212,6 @@ static THD_FUNCTION(demod_thread, arg) {
   sdStart(&SD1, &serialConfig);
   stream = stream_driver;
 
-  // activate serial TX so we can get debug
-  //  PAL_MODE_ALTERNATIVE_3 on PTB2
-  palSetPadMode(IOPORT2, 2, PAL_MODE_ALTERNATIVE_3);
-
   adcStart(&ADCD1, &adccfg1);
   analogStart();
   demodInit();
