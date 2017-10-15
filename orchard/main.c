@@ -320,6 +320,15 @@ int main(void)
   /* Enable the 1V bandgap */
   writeb(PMC_REGSC_BGBE, PMC_REGSC);
 
+  // set all pins to "0" state to prevent undue power consumption
+  {
+    int i;
+    for (i = 0; i < 6; i++) {
+      pinMode(i, OUTPUT);
+      digitalWrite(i, 0);
+    }
+  }
+
   // these lights both start "on"; differentiates crashes in boot from a bad power cable
   PROG_STATR_ON;
   PROG_STATG_ON;
