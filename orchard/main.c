@@ -311,9 +311,7 @@ int main(void)
 
   /* Clear the onboard LED to prevent us from blinding people. */
   {
-    extern void ledUpdate(uint32_t num_leds, void *pixels, uint32_t mask,
-                          uint32_t set_addr, uint32_t clr_addr);
-    uint32_t pixel = 0;
+    uint32_t pixel = 0x1f;
     ledUpdate(1, &pixel, (1 << 6), FGPIOA_PSOR, FGPIOA_PCOR);
   }
 
