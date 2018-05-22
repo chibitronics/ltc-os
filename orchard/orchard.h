@@ -2,7 +2,7 @@
 #define __ORCHARD_H__
 
 /* Version 1.9.1 */
-#define LTC_OS_VERSION 0x00010901
+#define LTC_OS_VERSION 0x00010902
 
 #define serialDriver                  (&SD1)
 #define stream_driver                 ((BaseSequentialStream *)serialDriver)
