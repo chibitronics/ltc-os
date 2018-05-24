@@ -4,20 +4,24 @@
 
   /***
     WS2812B Low-Level code
-      WS2812B timing requirements:
-      To transmit a "0": 400ns high, 850ns low  +/- 150ns  total = 1250ns
-	19 cycles H / 41 cycles L
-      To transmit a "1": 800ns high, 450ns low  +/- 150ns  total = 1250ns
-	38 cycles H / 22 cycles L
-      Clock balance to within +/-150ns = 7 cycles
 
-      Reset code is 50,000ns of low
+    WS2812B timing requirements:
+    To transmit a "0": 220ns-380ns high, 580ns-1.6us low
+    To transmit a "1": 580ns-1.6us high, 220ns-420ns low
 
-      Each instruction takes 20.8ns, 1250/20.8 = 60 instructions per cycle total
+    Reset code is 280,000ns of low
 
-      Data transmit to chain is {G[7:0],R[7:0],B[7:0]}
+    The Chibi Chip has a 32768 Hz crystal, and a multiplier of 1464, giving
+    a clock rate of 47972352 Hz (47.972352 MHz).
 
-      Data passed in shall be an array of bytes, GRB ordered, of length N specified as a parameter
+    1000000000.0 ns / 47972352 MHz = 20.84534024931694 ns per cycle.  Most
+    instructions are single-cycle, with the exception of loads/stores from RAM
+    and branches taken.  This forms the basis of cycle-counting.
+
+    Data transmit to chain is {G[7:0],R[7:0],B[7:0]}
+
+    The pixel buffer is an array of 8-bit bytes, ordered GRB.  Alignment
+    does not matter.
 
       extern void ledUpdate(uint32_t num_leds, void *pixels, uint32_t mask,
                             uint32_t set_addr, uint32_t clr_addr);
@@ -40,8 +44,6 @@ fbptr   .req r1  // frame buffer pointer
 
 .func ledUpdate
 ledUpdate:
-	// r0  uint8_t *fb
-	// r1  uint32_t	len
 	push {r4-r7,lr}     // Save the other parameters we'll use
 	ldr eclr, [sp, #20] // Get eclr from the stack, as argument #5
 
@@ -50,27 +52,26 @@ ledUpdate:
 	mul stop, bit       // mult by 3 for RGB
 	add stop, fbptr     // add in the fptr to finalize stop computation value
 
-	// Load a brand-new pixel from the framebuffer pointer
+	// Load a brand-new pixel from the framebuffer pointer (10 cycles to pixloop_fromtop)
 load_next_pixel:
 	str bitmask, [eset]     // start with bit set
 	mov bit, #8             // Start processing bit #8 of current pixel
-	ldrb curpix, [fbptr]    // load the word at the pointer location to r4
-	lsl curpix, curpix, #24 // shift left by 24 so the carry pops out
-	add fbptr, fbptr, #1    // Move to the next pixel
-	b pixloop_fromtop // 10 total
+	ldrb curpix, [fbptr]    // load the word at the pointer location to r5
+	lsl curpix, #24 		// shift left by 24 so the carry pops out
+	add fbptr, #1    		// Move to the next pixel
+	b pixloop_fromtop       // 9 total
 
-	// While processing the same pixel, send the next bit
+	// While processing the same pixel, send the next bit (10 cycles to pixloop_fromtop)
 send_next_bit:
-	str bitmask, [eset]   // start with bit set
-	bl wait_5_cycles
-	ldr eclr, [sp, #20]   // Burn two cycles in one opcode
+	str bitmask, [eset]   	// start with bit set
+	bl wait_5_cycles		// Match the 5 cycles from load_next_pixel
+	ldr eclr, [sp, #20]   	// Match 'b pixloop_fromtop' in load_next_pixel (delay for 2 cycles)
 	// fall-through
 
 // Both new pixels and new bits (i.e. load_next_pixel and send_next_bit)
 // should now be synchronized.
 pixloop_fromtop:
-	// 62 cycles remaining
-	bl wait_5_cycles
+	ldr eclr, [sp, #20]   	// Delay 2 cycles
 	lsl curpix, #1
 	bcs oneBranch
 
@@ -79,13 +80,12 @@ zeroBranch:
 
 oneBranch:
 
-	bl wait_15_cycles
-	bl wait_15_cycles
-	bl wait_15_cycles
+	bl wait_14_cycles
+	bl wait_14_cycles
 	str bitmask, [eclr]
 
-	bl wait_15_cycles
-	sub bit, bit, #1
+	bl wait_11_cycles
+	sub bit, #1
 	bne send_next_bit
 
 	cmp fbptr, stop
@@ -96,11 +96,11 @@ oneBranch:
 exit:
 	pop {r4-r7,pc}
 
-wait_15_cycles:
-	b wait_12_cycles
-wait_12_cycles:
-	b wait_9_cycles
-wait_9_cycles:
+wait_14_cycles:
+	b wait_11_cycles
+wait_11_cycles:
+	b wait_8_cycles
+wait_8_cycles:
 	b wait_5_cycles
 wait_5_cycles:
 	bx lr
@@ -108,13 +108,5 @@ wait_5_cycles:
 .endfunc
 .type ledUpdate, %function
 .size ledUpdate, .-ledUpdate
-
-.balign 4
-PORTESET:
-.word FGPIOA_PSOR
-PORTECLR:
-.word FGPIOA_PCOR
-LEDBIT:
-.word (1<<3)
 
 .end
